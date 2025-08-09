@@ -21,6 +21,43 @@ for [Cisco Modeling Labs (CML)](https://www.cisco.com/c/en/us/products/cloud-sys
 
 ## Getting Started
 
+You have a couple of choices to hook this server up to your favorite MCP client.  Probably the easiest way is to use `uvx`, which downloads the server from PyPi and runs it in a standalone environment.  For that, you need to edit your client's config and add something like the following.  This example is for Claude Desktop:
+
+```json
+{
+  "mcpServers": {
+    "Cisco Modeling Labs MCP Server": {
+      "command": "uvx",
+      "args": [
+        "cml-mcp"
+      ],
+      "env": {
+        "CML_URL": "<URL_OF_CML_SERVER>",
+        "CML_USERNAME": "<USERNAME_ON_CML_SERVER>",
+        "CML_PASSWORD": "<PASSWORD_ON_CML_SERVER>",
+        "PYATS_USERNAME": "<DEVICE_USERNAME>",
+        "PYATS_PASSWORD": "<DEVICE_PASSWORD>",
+        "PYATS_AUTH_PASS": "<DEVICE_ENABLE_PASSWORD>"
+      }
+    }
+  }
+}
+```
+
+The `PYATS` environment variables are optional but will be required if you want to run commands on the devices running within CML.
+
+An alternative is to use FastMCP CLI to install the server into your favorite client.  FastMCP CLI supports Claude Desktop, Claude Code, Cursor, and manual JSON generation.  To use FastMCP, do the following:
+
+1. Clone this repository:
+
+    ```sh
+    git clone https://github.com/xorrkaz/cml-mcp.git
+    ```
+
+1. Change directory to the cloned repository.
+
+1. Run `uv sync` to install all the correct dependencies, including FastMCP 2.0.
+
 1. Create a `.env` file with the following variables set:
 
     ```sh
@@ -33,7 +70,11 @@ for [Cisco Modeling Labs (CML)](https://www.cisco.com/c/en/us/products/cloud-sys
     PYATS_AUTH_PASS=<DEVICE_ENABLE_PASSWORD>
     ```
 
-2. Configure the MCP client to start the MCP server.
+1. Run the FastMCP CLI command to install the server.  For example:
+
+    ```sh
+    fastmcp install claude-desktop src/cml_mcp/server.py:server_mcp --project `realpath .` --env-file .env
+    ```
 
 ## Usage
 
