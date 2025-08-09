@@ -71,7 +71,7 @@ async def get_cml_labs(user: UserName | None = None) -> list[Lab] | dict[str, st
         user (UserName | None): The username to filter labs by. If None, defaults to the configured username.
 
     Returns:
-        list[Lab] | dict: A list of Lab objects owned by the user, or a dictionary with an error message if an error occurs.
+        list[Lab] | dict[str, str]: A list of Lab objects owned by the user, or a dictionary with an error message if an error occurs.
     """
     if not user:
         user = settings.cml_username  # Default to the configured username
@@ -103,7 +103,7 @@ async def get_cml_status() -> SystemHealth | dict[str, str]:
 
     Returns:
         SystemHealth: The health/status of the CML server.
-        dict: An error dictionary if an exception occurs.
+        dict[str, str]: An error dictionary if an exception occurs.
     """
     try:
         status = await cml_client.get("/system_health")
@@ -121,7 +121,7 @@ async def get_cml_node_definitions() -> list[SimplifiedNodeDefinitionResponse] |
 
     Returns:
         list[SimplifiedNodeDefinitionResponse]: A list of simplified node definitions.
-        dict: An error dictionary if an exception occurs.
+        dict[str, str]: An error dictionary if an exception occurs.
     """
     try:
         node_definitions = await cml_client.get("/simplified_node_definitions")
@@ -142,7 +142,7 @@ async def get_node_definition_detail(nid: UUID4Type) -> NodeDefinition | dict[st
 
     Returns:
         NodeDefinition: The node definition details.
-        dict: An error dictionary if an exception occurs.
+        dict[str, str]: An error dictionary if an exception occurs.
     """
     try:
         node_definition = await cml_client.get(f"/node_definitions/{nid}")
@@ -163,7 +163,7 @@ async def create_lab_topology(topology: Topology) -> UUID4Type | dict[str, str]:
 
     Returns:
         UUID4Type: The new lab topology ID if successful.
-        dict: An error dictionary if an error occurs.
+        dict[str, str]: An error dictionary if an error occurs.
     """
     try:
         resp = await cml_client.post("/import", data=topology.model_dump())
@@ -184,7 +184,7 @@ async def start_cml_lab(lid: UUID4Type) -> None | dict[str, str]:
 
     Returns:
         None: If successful.
-        dict: An error dictionary if an error occurs.
+        dict[str, str]: An error dictionary if an error occurs.
     """
     try:
         await cml_client.put(f"/labs/{lid}/start")
@@ -230,7 +230,7 @@ async def stop_cml_lab(lid: UUID4Type) -> None | dict[str, str]:
 
     Returns:
         None: If successful.
-        dict: An error dictionary if an error occurs.
+        dict[str, str]: An error dictionary if an error occurs.
     """
     try:
         await stop_lab(lid)
@@ -250,7 +250,7 @@ async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> None | dict[str, str]:
 
     Returns:
         None: If successful.
-        dict: An error dictionary if an error occurs.
+        dict[str, str]: An error dictionary if an error occurs.
     """
     try:
         result = await ctx.elicit("Are you sure you want to wipe the lab?")
@@ -274,7 +274,7 @@ async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> None | dict[str, str]:
 
     Returns:
         None: If successful.
-        dict: An error dictionary if an error occurs.
+        dict[str, str]: An error dictionary if an error occurs.
     """
     try:
         result = await ctx.elicit("Are you sure you want to delete the lab?")
@@ -302,7 +302,7 @@ async def configure_cml_node(lid: UUID4Type, nid: UUID4Type, config: NodeConfigu
 
     Returns:
         UUID4Type: The ID of the node configured if successful.
-        dict: An error dictionary if an error occurs.
+        dict[str, str]: An error dictionary if an error occurs.
     """
     payload = {"configuration": str(config)}
     try:
@@ -324,7 +324,7 @@ async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node] | dict[str, str]:
 
     Returns:
         list[Node]: List of node objects (without their configurations).
-        dict: An error dictionary if an error occurs.
+        dict[str, str]: An error dictionary if an error occurs.
     """
     try:
         resp = await cml_client.get(f"/labs/{lid}/nodes", data={"data": True, "operational": True, "exclude_configurations": True})
@@ -345,7 +345,7 @@ async def get_cml_lab_by_title(title: LabTitle) -> Lab | dict[str, str]:
 
     Returns:
         Lab: The lab object if found.
-        dict: An error dictionary if an error occurs or lab is not found.
+        dict[str, str]: An error dictionary if an error occurs or lab is not found.
     """
     try:
         labs = await get_all_labs()
@@ -371,7 +371,7 @@ async def stop_cml_node(lid: UUID4Type, nid: UUID4Type) -> None | dict[str, str]
 
     Returns:
         None: If successful.
-        dict: An error dictionary if an error occurs.
+        dict[str, str]: An error dictionary if an error occurs.
     """
     try:
         await cml_client.put(f"/labs/{lid}/nodes/{nid}/state/stop")
@@ -392,7 +392,7 @@ async def start_cml_node(lid: UUID4Type, nid: UUID4Type) -> None | dict[str, str
 
     Returns:
         None: If successful.
-        dict: An error dictionary if an error occurs.
+        dict[str, str]: An error dictionary if an error occurs.
     """
     try:
         await cml_client.put(f"/labs/{lid}/nodes/{nid}/state/start")
@@ -413,7 +413,7 @@ async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> None | 
 
     Returns:
         None: If successful.
-        dict: An error dictionary if an error occurs.
+        dict[str, str]: An error dictionary if an error occurs.
     """
     try:
         result = await ctx.elicit("Are you sure you want to wipe the node?")
@@ -439,7 +439,7 @@ def send_cli_command(lid: UUID4Type, label: NodeLabel, command: str, config_comm
         config_command (bool, optional): If True, send as a configuration command. Defaults to False.
 
     Returns:
-        str | dict: The command output if successful, or a dictionary with an error message if an error occurs.
+        str | dict[str, str]: The command output if successful, or a dictionary with an error message if an error occurs.
     """
     cwd = os.getcwd()  # Save the current working directory
     try:
