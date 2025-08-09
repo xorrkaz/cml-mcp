@@ -64,7 +64,7 @@ class CMLClient(object):
             self.client.headers.update({"Authorization": f"Bearer {self.token}"})
             logger.info("Authenticated with CML API")
         except Exception as e:
-            logger.exception(f"Failed to authenticate with CML API: {e}")
+            logger.exception(f"Failed to authenticate with CML API: {e}", exc_info=True)
             raise e
 
     async def check_authentication(self) -> None:
