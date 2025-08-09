@@ -25,10 +25,10 @@ install:
 
 [group('lifecycle')]
 publish: build
-    @echo -n PyPi Token:
-    @read -s token
-    @echo
-    @echo "Publishing package to PyPi..."
+    @echo -n PyPi Token: ; \
+    read -s token ; \
+    echo ; \
+    echo "Publishing package to PyPi..." ; \
     uv publish --token "$token"
 
 # Remove temporary files

@@ -5,7 +5,7 @@ build-backend = "uv_build"
 [project]
 name = "cml-mcp"
 version = "0.1.0"
-license = "BSD-2-Clause"
+license = "BSD-2-Clause AND LicenseRef-Proprietary"
 license-files = ["LICENSE"]
 authors = [{ name = "Joe Clarke", email = "jclarke@cisco.com" }]
 description = "Cisco Modeling Labs MCP Server"
@@ -13,7 +13,6 @@ requires-python = ">=3.12"
 readme = "README.md"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: BSD-2-Clause",
     "Operating System :: OS Independent",
 ]
 dependencies = [
