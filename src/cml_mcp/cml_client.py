@@ -82,7 +82,7 @@ class CMLClient(object):
                     logger.debug("Authentication failed, re-authenticating")
                     self.token = None
             except httpx.RequestError as e:
-                logger.error(f"Error checking authentication: {e}")
+                logger.error(f"Error checking authentication: {e}", exc_info=True)
                 raise e
 
         # If token is None or authentication failed, re-authenticate
@@ -103,7 +103,7 @@ class CMLClient(object):
             resp.raise_for_status()
             return resp.json().get("admin", False)
         except Exception as e:
-            logger.error(f"Error checking admin status: {e}")
+            logger.error(f"Error checking admin status: {e}", exc_info=True)
             return False
 
     async def get(self, endpoint: str, params: dict | None = None) -> dict:
