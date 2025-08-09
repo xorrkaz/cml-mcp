@@ -40,7 +40,7 @@ class CMLClient(object):
     Handles authentication and provides methods to fetch system and lab information.
     """
 
-    def __init__(self, host, username, password):
+    def __init__(self, host: str, username: str, password: str):
         self.base_url = host.rstrip("/")
         self.api_base = f"{self.base_url}/api/v0"
         self.client = httpx.AsyncClient(verify=False, timeout=API_TIMEOUT)
