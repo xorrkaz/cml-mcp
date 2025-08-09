@@ -10,10 +10,28 @@ license-files = ["LICENSE"]
 authors = [{ name = "Joe Clarke", email = "jclarke@cisco.com" }]
 description = "Cisco Modeling Labs MCP Server"
 requires-python = ">=3.12"
-dependencies = ["httpx", "fastmcp", "fastapi", "pydantic_strict_partial", "typer", "virl2_client", "pyats[full]"]
+readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: BSD-2-Clause",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "httpx",
+    "fastmcp",
+    "fastapi",
+    "pydantic_strict_partial",
+    "typer",
+    "virl2_client",
+    "pyats[full]",
+]
 
 [project.scripts]
 cml-mcp = "cml_mcp.__main__:main"
+
+[project.urls]
+Homepage = "https://github.com/xorrkaz/cml-mcp"
+Issues = "https://github.com/xorrkaz/cml-mcp/issues"
 
 [tool.black]
 line-length = 140

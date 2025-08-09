@@ -17,10 +17,23 @@ for [Cisco Modeling Labs (CML)](https://www.cisco.com/c/en/us/products/cloud-sys
 - Python 3.12+
 - Cisco Modeling Labs (CML) instance
 - PyATS (for device command execution)
+- The [uv](https://docs.astral.sh/uv/) Python package/project manager
 
 ## Getting Started
 
-TODO
+1. Create a `.env` file with the following variables set:
+
+    ```sh
+    CML_URL=<URL_OF_CML_SERVER>
+    CML_USERNAME=<USERNAME_ON_CML_SERVER>
+    CML_PASSWORD=<PASSWORD_ON_CML_SERVER>
+    # Optional in order to run commands
+    PYATS_USERNAME=<DEVICE_USERNAME>
+    PYATS_PASSWORD=<DEVICE_PASSWORD>
+    PYATS_AUTH_PASS=<DEVICE_ENABLE_PASSWORD>
+    ```
+
+2. Configure the MCP client to start the MCP server.
 
 ## Usage
 

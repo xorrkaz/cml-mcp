@@ -63,7 +63,7 @@ async def get_all_labs() -> list[UUID4Type]:
 
 
 @server_mcp.tool
-async def get_cml_labs(user: UserName | None = None) -> list[Lab] | dict:
+async def get_cml_labs(user: UserName | None = None) -> list[Lab] | dict[str, str]:
     """
     Get the list of labs for a specific user or all labs if the user is an admin.
 
@@ -90,15 +90,14 @@ async def get_cml_labs(user: UserName | None = None) -> list[Lab] | dict:
             if lab_details.get("owner_username") == str(user):
                 ulabs.append(Lab(**lab_details))
         return ulabs
+    except httpx.HTTPStatusError as e:
+        return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
-        # Handle HTTP errors and other exceptions
-        if isinstance(e, httpx.HTTPStatusError):
-            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
         return {"error": str(e)}
 
 
 @server_mcp.tool
-async def get_cml_status() -> SystemHealth | dict:
+async def get_cml_status() -> SystemHealth | dict[str, str]:
     """
     Get the status of the CML server.
 
@@ -107,20 +106,16 @@ async def get_cml_status() -> SystemHealth | dict:
         dict: An error dictionary if an exception occurs.
     """
     try:
-        # Make an async GET request to the /system_health endpoint of the CML server
         status = await cml_client.get("/system_health")
-        # Parse the response into a SystemHealth object and return it
         return SystemHealth(**status)
+    except httpx.HTTPStatusError as e:
+        return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
-        # If the exception is an HTTP error, return a detailed error message
-        if isinstance(e, httpx.HTTPStatusError):
-            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
-        # For any other exception, return the string representation of the error
         return {"error": str(e)}
 
 
 @server_mcp.tool
-async def get_cml_node_definitions() -> list[SimplifiedNodeDefinitionResponse] | dict:
+async def get_cml_node_definitions() -> list[SimplifiedNodeDefinitionResponse] | dict[str, str]:
     """
     Get the list of node definitions from the CML server.
 
@@ -131,14 +126,14 @@ async def get_cml_node_definitions() -> list[SimplifiedNodeDefinitionResponse] |
     try:
         node_definitions = await cml_client.get("/simplified_node_definitions")
         return [SimplifiedNodeDefinitionResponse(**nd) for nd in node_definitions]
+    except httpx.HTTPStatusError as e:
+        return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
-        if isinstance(e, httpx.HTTPStatusError):
-            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
         return {"error": str(e)}
 
 
 @server_mcp.tool
-async def get_node_definition_detail(nid: UUID4Type) -> NodeDefinition | dict:
+async def get_node_definition_detail(nid: UUID4Type) -> NodeDefinition | dict[str, str]:
     """
     Get detailed information about a specific node definition by its ID.
 
@@ -152,14 +147,14 @@ async def get_node_definition_detail(nid: UUID4Type) -> NodeDefinition | dict:
     try:
         node_definition = await cml_client.get(f"/node_definitions/{nid}")
         return NodeDefinition(**node_definition)
+    except httpx.HTTPStatusError as e:
+        return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
-        if isinstance(e, httpx.HTTPStatusError):
-            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
         return {"error": str(e)}
 
 
 @server_mcp.tool
-async def create_lab_topology(topology: Topology) -> UUID4Type | dict:
+async def create_lab_topology(topology: Topology) -> UUID4Type | dict[str, str]:
     """
     Create a new lab topology.
 
@@ -173,14 +168,14 @@ async def create_lab_topology(topology: Topology) -> UUID4Type | dict:
     try:
         resp = await cml_client.post("/import", data=topology.model_dump())
         return UUID4Type(resp["id"])
+    except httpx.HTTPStatusError as e:
+        return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
-        if isinstance(e, httpx.HTTPStatusError):
-            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
         return {"error": str(e)}
 
 
 @server_mcp.tool
-async def start_cml_lab(lid: UUID4Type) -> None | dict:
+async def start_cml_lab(lid: UUID4Type) -> None | dict[str, str]:
     """
     Start a CML lab by its ID.
 
@@ -193,9 +188,9 @@ async def start_cml_lab(lid: UUID4Type) -> None | dict:
     """
     try:
         await cml_client.put(f"/labs/{lid}/start")
+    except httpx.HTTPStatusError as e:
+        return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
-        if isinstance(e, httpx.HTTPStatusError):
-            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
         return {"error": str(e)}
 
 
@@ -226,7 +221,7 @@ async def wipe_lab(lid: UUID4Type) -> None:
 
 
 @server_mcp.tool
-async def stop_cml_lab(lid: UUID4Type) -> None | dict:
+async def stop_cml_lab(lid: UUID4Type) -> None | dict[str, str]:
     """
     Stop a CML lab by its ID.
 
@@ -239,14 +234,14 @@ async def stop_cml_lab(lid: UUID4Type) -> None | dict:
     """
     try:
         await stop_lab(lid)
+    except httpx.HTTPStatusError as e:
+        return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
-        if isinstance(e, httpx.HTTPStatusError):
-            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
         return {"error": str(e)}
 
 
 @server_mcp.tool
-async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> None | dict:
+async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> None | dict[str, str]:
     """
     Wipe a CML lab by its ID.
 
@@ -263,14 +258,14 @@ async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> None | dict:
             await wipe_lab(lid)
         else:
             raise Exception("Wipe operation cancelled by user.")
+    except httpx.HTTPStatusError as e:
+        return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
-        if isinstance(e, httpx.HTTPStatusError):
-            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
         return {"error": str(e)}
 
 
 @server_mcp.tool
-async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> None | dict:
+async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> None | dict[str, str]:
     """
     Delete a CML lab by its ID. If the lab is running and/or not wiped, it will be stopped and wiped first.
 
@@ -289,14 +284,14 @@ async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> None | dict:
             await cml_client.delete(f"/labs/{lid}")
         else:
             raise Exception("Delete operation cancelled by user.")
+    except httpx.HTTPStatusError as e:
+        return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
-        if isinstance(e, httpx.HTTPStatusError):
-            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
         return {"error": str(e)}
 
 
 @server_mcp.tool
-async def configure_cml_node(lid: UUID4Type, nid: UUID4Type, config: NodeConfigurationContent) -> UUID4Type | dict:
+async def configure_cml_node(lid: UUID4Type, nid: UUID4Type, config: NodeConfigurationContent) -> UUID4Type | dict[str, str]:
     """
     Configure a node in a CML lab by its lab ID and node ID. The node must be in a BOOTED (i.e., wiped) state.
 
@@ -313,14 +308,14 @@ async def configure_cml_node(lid: UUID4Type, nid: UUID4Type, config: NodeConfigu
     try:
         resp = await cml_client.patch(f"/labs/{lid}/nodes/{nid}", data=payload)
         return UUID4Type(resp)
+    except httpx.HTTPStatusError as e:
+        return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
-        if isinstance(e, httpx.HTTPStatusError):
-            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
         return {"error": str(e)}
 
 
 @server_mcp.tool
-async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node] | dict:
+async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node] | dict[str, str]:
     """
     Get a list of nodes for a CML lab by its ID.
 
@@ -334,14 +329,14 @@ async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node] | dict:
     try:
         resp = await cml_client.get(f"/labs/{lid}/nodes", data={"data": True, "operational": True, "exclude_configurations": True})
         return [Node(**node) for node in resp]
+    except httpx.HTTPStatusError as e:
+        return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
-        if isinstance(e, httpx.HTTPStatusError):
-            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
         return {"error": str(e)}
 
 
 @server_mcp.tool
-async def get_cml_lab_by_title(title: LabTitle) -> Lab | dict:
+async def get_cml_lab_by_title(title: LabTitle) -> Lab | dict[str, str]:
     """
     Get a CML lab by its title.
 
@@ -359,14 +354,14 @@ async def get_cml_lab_by_title(title: LabTitle) -> Lab | dict:
             if lab["lab_title"] == str(title):
                 return Lab(**lab)
         return {"error": "Lab not found"}
+    except httpx.HTTPStatusError as e:
+        return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
-        if isinstance(e, httpx.HTTPStatusError):
-            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
         return {"error": str(e)}
 
 
 @server_mcp.tool
-async def stop_cml_node(lid: UUID4Type, nid: UUID4Type) -> None | dict:
+async def stop_cml_node(lid: UUID4Type, nid: UUID4Type) -> None | dict[str, str]:
     """
     Stop a node in a CML lab by its lab ID and node ID.
 
@@ -380,14 +375,14 @@ async def stop_cml_node(lid: UUID4Type, nid: UUID4Type) -> None | dict:
     """
     try:
         await cml_client.put(f"/labs/{lid}/nodes/{nid}/state/stop")
+    except httpx.HTTPStatusError as e:
+        return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
-        if isinstance(e, httpx.HTTPStatusError):
-            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
         return {"error": str(e)}
 
 
 @server_mcp.tool
-async def start_cml_node(lid: UUID4Type, nid: UUID4Type) -> None | dict:
+async def start_cml_node(lid: UUID4Type, nid: UUID4Type) -> None | dict[str, str]:
     """
     Start a node in a CML lab by its lab ID and node ID.
 
@@ -401,14 +396,14 @@ async def start_cml_node(lid: UUID4Type, nid: UUID4Type) -> None | dict:
     """
     try:
         await cml_client.put(f"/labs/{lid}/nodes/{nid}/state/start")
+    except httpx.HTTPStatusError as e:
+        return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
-        if isinstance(e, httpx.HTTPStatusError):
-            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
         return {"error": str(e)}
 
 
 @server_mcp.tool
-async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> None | dict:
+async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> None | dict[str, str]:
     """
     Wipe a node in a CML lab by its lab ID and node ID. Node must be stopped first.
 
@@ -426,14 +421,14 @@ async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> None | 
             await cml_client.put(f"/labs/{lid}/nodes/{nid}/wipe_disks")
         else:
             raise Exception("Wipe operation cancelled by user.")
+    except httpx.HTTPStatusError as e:
+        return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
-        if isinstance(e, httpx.HTTPStatusError):
-            return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
         return {"error": str(e)}
 
 
 @server_mcp.tool
-def send_cli_command(lid: UUID4Type, label: NodeLabel, command: str, config_command: bool = False) -> str | dict:
+def send_cli_command(lid: UUID4Type, label: NodeLabel, command: str, config_command: bool = False) -> str | dict[str, str]:
     """
     Send a CLI command to a node in a CML lab by its lab ID and node label.
 
