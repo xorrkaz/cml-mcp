@@ -1,0 +1,22 @@
+[build-system]
+requires = ["uv-build"]
+build-backend = "uv_build"
+
+[project]
+name = "cml-mcp"
+version = "0.1.0"
+license = "BSD-2-Clause"
+license-files = ["LICENSE"]
+authors = [{ name = "Joe Clarke", email = "jclarke@cisco.com" }]
+description = "Cisco Modeling Labs MCP Server"
+requires-python = ">=3.12"
+dependencies = ["httpx", "fastmcp", "fastapi", "pydantic_strict_partial", "typer", "virl2_client", "pyats[full]"]
+
+[project.scripts]
+cml-mcp = "cml_mcp.__main__:main"
+
+[tool.black]
+line-length = 140
+
+[dependency-groups]
+dev = ["pytest"]
