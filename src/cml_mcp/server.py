@@ -95,6 +95,7 @@ async def get_cml_labs(user: UserName | None = None) -> list[Lab] | dict[str, st
     except httpx.HTTPStatusError as e:
         return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
+        logger.error(f"Error getting CML labs: {str(e)}", exc_info=True)
         return {"error": str(e)}
 
 
@@ -113,6 +114,7 @@ async def get_cml_status() -> SystemHealth | dict[str, str]:
     except httpx.HTTPStatusError as e:
         return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
+        logger.error(f"Error getting CML status: {str(e)}", exc_info=True)
         return {"error": str(e)}
 
 
@@ -131,6 +133,7 @@ async def get_cml_node_definitions() -> list[SimplifiedNodeDefinitionResponse] |
     except httpx.HTTPStatusError as e:
         return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
+        logger.error(f"Error getting CML node definitions: {str(e)}", exc_info=True)
         return {"error": str(e)}
 
 
@@ -152,6 +155,7 @@ async def get_node_definition_detail(nid: UUID4Type) -> NodeDefinition | dict[st
     except httpx.HTTPStatusError as e:
         return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
+        logger.error(f"Error getting node definition detail for {nid}: {str(e)}", exc_info=True)
         return {"error": str(e)}
 
 
@@ -173,6 +177,7 @@ async def create_lab_topology(topology: Topology) -> UUID4Type | dict[str, str]:
     except httpx.HTTPStatusError as e:
         return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
+        logger.error(f"Error creating lab topology: {str(e)}", exc_info=True)
         return {"error": str(e)}
 
 
@@ -193,6 +198,7 @@ async def start_cml_lab(lid: UUID4Type) -> None | dict[str, str]:
     except httpx.HTTPStatusError as e:
         return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
+        logger.error(f"Error starting CML lab {lid}: {str(e)}", exc_info=True)
         return {"error": str(e)}
 
 
@@ -239,6 +245,7 @@ async def stop_cml_lab(lid: UUID4Type) -> None | dict[str, str]:
     except httpx.HTTPStatusError as e:
         return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
+        logger.error(f"Error stopping CML lab {lid}: {str(e)}", exc_info=True)
         return {"error": str(e)}
 
 
@@ -257,7 +264,7 @@ async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> None | dict[str, str]:
     try:
         elicit_supported = True
         try:
-            result = await ctx.elicit("Are you sure you want to delete the lab?")
+            result = await ctx.elicit("Are you sure you want to wipe the lab?")
         except McpError as me:
             if me.error.code == METHOD_NOT_FOUND:
                 elicit_supported = False
@@ -270,6 +277,7 @@ async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> None | dict[str, str]:
     except httpx.HTTPStatusError as e:
         return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
+        logger.error(f"Error wiping CML lab {lid}: {str(e)}", exc_info=True)
         return {"error": str(e)}
 
 
@@ -304,6 +312,7 @@ async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> None | dict[str, str]:
     except httpx.HTTPStatusError as e:
         return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
+        logger.error(f"Error deleting CML lab {lid}: {str(e)}", exc_info=True)
         return {"error": str(e)}
 
 
@@ -328,6 +337,7 @@ async def configure_cml_node(lid: UUID4Type, nid: UUID4Type, config: NodeConfigu
     except httpx.HTTPStatusError as e:
         return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
+        logger.error(f"Error configuring CML node {nid} in lab {lid}: {str(e)}", exc_info=True)
         return {"error": str(e)}
 
 
@@ -349,6 +359,7 @@ async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node] | dict[str, str]:
     except httpx.HTTPStatusError as e:
         return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
+        logger.error(f"Error getting nodes for CML lab {lid}: {str(e)}", exc_info=True)
         return {"error": str(e)}
 
 
@@ -374,6 +385,7 @@ async def get_cml_lab_by_title(title: LabTitle) -> Lab | dict[str, str]:
     except httpx.HTTPStatusError as e:
         return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
+        logger.error(f"Error getting CML lab by title {title}: {str(e)}", exc_info=True)
         return {"error": str(e)}
 
 
@@ -395,6 +407,7 @@ async def stop_cml_node(lid: UUID4Type, nid: UUID4Type) -> None | dict[str, str]
     except httpx.HTTPStatusError as e:
         return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
+        logger.error(f"Error stopping CML node {nid} in lab {lid}: {str(e)}", exc_info=True)
         return {"error": str(e)}
 
 
@@ -416,6 +429,7 @@ async def start_cml_node(lid: UUID4Type, nid: UUID4Type) -> None | dict[str, str
     except httpx.HTTPStatusError as e:
         return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
+        logger.error(f"Error starting CML node {nid} in lab {lid}: {str(e)}", exc_info=True)
         return {"error": str(e)}
 
 
@@ -435,7 +449,7 @@ async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> None | 
     try:
         elicit_supported = True
         try:
-            result = await ctx.elicit("Are you sure you want to delete the lab?")
+            result = await ctx.elicit("Are you sure you want to wipe the node?")
         except McpError as me:
             if me.error.code == METHOD_NOT_FOUND:
                 elicit_supported = False
@@ -448,6 +462,7 @@ async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> None | 
     except httpx.HTTPStatusError as e:
         return {"error": f"HTTP error {e.response.status_code}: {e.response.text}"}
     except Exception as e:
+        logger.error(f"Error wiping CML node {nid} in lab {lid}: {str(e)}", exc_info=True)
         return {"error": str(e)}
 
 
@@ -477,6 +492,7 @@ def send_cli_command(lid: UUID4Type, label: NodeLabel, command: str, config_comm
         # Send the command as an exec/operational command
         return pylab.run_command(str(label), command)
     except Exception as e:
+        logger.error(f"Error sending CLI command '{command}' to node {label} in lab {lid}: {str(e)}", exc_info=True)
         return {"error": str(e)}
     finally:
         os.chdir(cwd)  # Restore the original working directory
