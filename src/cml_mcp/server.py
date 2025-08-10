@@ -82,7 +82,7 @@ async def get_cml_labs(user: UserName | None = None) -> list[Lab] | Error:
     try:
         # If the requested user is not the configured user and is not an admin, deny access
         if str(user) != settings.cml_username and not await cml_client.is_admin():
-            return {"error": "User is not an admin and cannot view all labs."}
+            return Error(**{"error": "User is not an admin and cannot view all labs."})
         ulabs = []
         # Get all labs from the CML server
         labs = await get_all_labs()
