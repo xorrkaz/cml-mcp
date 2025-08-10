@@ -46,6 +46,7 @@ class CMLClient(object):
         self.client = httpx.AsyncClient(verify=False, timeout=API_TIMEOUT)
         self.vclient = virl2_client.ClientLibrary(host, username, password, ssl_verify=False)
         self.token = None
+        self.admin = None
         self.username = username
         self.password = password
 
@@ -95,13 +96,16 @@ class CMLClient(object):
         Check if the current user is an admin.
         Returns True if the user is an admin, False otherwise.
         """
+        if self.admin is not None:
+            return self.admin
         try:
             resp = await self.client.get(f"/api/v0/users/{self.username}/id")
             resp.raise_for_status()
             user_id = resp.json()
             resp = await self.client.get(f"/api/v0/users/{user_id}")
             resp.raise_for_status()
-            return resp.json().get("admin", False)
+            self.admin = resp.json().get("admin", False)
+            return self.admin
         except Exception as e:
             logger.error(f"Error checking admin status: {e}", exc_info=True)
             return False
