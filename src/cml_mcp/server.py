@@ -27,7 +27,9 @@ import os
 import tempfile
 
 import httpx
-from fastmcp import FastMCP, Context
+from fastmcp import Context, FastMCP
+from mcp.shared.exceptions import McpError
+from mcp.types import METHOD_NOT_FOUND
 from virl2_client.models.cl_pyats import ClPyats
 
 from cml_mcp.cml_client import CMLClient
@@ -253,8 +255,15 @@ async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> None | dict[str, str]:
         dict[str, str]: An error dictionary if an error occurs.
     """
     try:
-        result = await ctx.elicit("Are you sure you want to wipe the lab?")
-        if result.action == "accept":
+        elicit_supported = True
+        try:
+            result = await ctx.elicit("Are you sure you want to delete the lab?")
+        except McpError as me:
+            if me.error.code == METHOD_NOT_FOUND:
+                elicit_supported = False
+            else:
+                raise me
+        if not elicit_supported or result.action == "accept":
             await wipe_lab(lid)
         else:
             raise Exception("Wipe operation cancelled by user.")
@@ -277,8 +286,16 @@ async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> None | dict[str, str]:
         dict[str, str]: An error dictionary if an error occurs.
     """
     try:
-        result = await ctx.elicit("Are you sure you want to delete the lab?")
-        if result.action == "accept":
+
+        elicit_supported = True
+        try:
+            result = await ctx.elicit("Are you sure you want to delete the lab?")
+        except McpError as me:
+            if me.error.code == METHOD_NOT_FOUND:
+                elicit_supported = False
+            else:
+                raise me
+        if not elicit_supported or result.action == "accept":
             await stop_lab(lid)  # Ensure the lab is stopped before deletion
             await wipe_lab(lid)  # Ensure the lab is wiped before deletion
             await cml_client.delete(f"/labs/{lid}")
@@ -416,8 +433,15 @@ async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> None | 
         dict[str, str]: An error dictionary if an error occurs.
     """
     try:
-        result = await ctx.elicit("Are you sure you want to wipe the node?")
-        if result.action == "accept":
+        elicit_supported = True
+        try:
+            result = await ctx.elicit("Are you sure you want to delete the lab?")
+        except McpError as me:
+            if me.error.code == METHOD_NOT_FOUND:
+                elicit_supported = False
+            else:
+                raise me
+        if not elicit_supported or result.action == "accept":
             await cml_client.put(f"/labs/{lid}/nodes/{nid}/wipe_disks")
         else:
             raise Exception("Wipe operation cancelled by user.")
