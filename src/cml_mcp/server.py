@@ -37,7 +37,7 @@ from cml_mcp.schemas.common import UserName, UUID4Type
 from cml_mcp.schemas.labs import Lab, LabTitle
 from cml_mcp.schemas.node_definitions import NodeDefinition, SimplifiedNodeDefinitionResponse
 from cml_mcp.schemas.nodes import Node, NodeConfigurationContent, NodeLabel
-from cml_mcp.schemas.system import SystemHealth
+from cml_mcp.schemas.system import SystemHealth, SystemInformation
 from cml_mcp.schemas.topologies import Topology
 from cml_mcp.settings import settings
 from cml_mcp.types import Error
@@ -97,6 +97,25 @@ async def get_cml_labs(user: UserName | None = None) -> list[Lab] | Error:
         return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
     except Exception as e:
         logger.error(f"Error getting CML labs: {str(e)}", exc_info=True)
+        return Error(**{"error": str(e)})
+
+
+@server_mcp.tool
+async def get_cml_information() -> SystemInformation | Error:
+    """
+    Get information about the CML server.
+
+    Returns:
+        SystemInformation: The system information.
+        Error: An Error object if an exception occurs.
+    """
+    try:
+        info = await cml_client.get("/system_information")
+        return SystemInformation(**info)
+    except httpx.HTTPStatusError as e:
+        return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
+    except Exception as e:
+        logger.error(f"Error getting CML information: {str(e)}", exc_info=True)
         return Error(**{"error": str(e)})
 
 
