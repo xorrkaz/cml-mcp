@@ -98,7 +98,7 @@ class CMLClient(object):
         try:
             resp = await self.client.get(f"/api/v0/users/{self.username}/id")
             resp.raise_for_status()
-            user_id = resp.json().get("id")
+            user_id = resp.json()
             resp = await self.client.get(f"/api/v0/users/{user_id}")
             resp.raise_for_status()
             return resp.json().get("admin", False)
