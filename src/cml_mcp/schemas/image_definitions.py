@@ -68,8 +68,6 @@ class ImageDefinition(BaseModel, extra="forbid"):
         default=None,
         description="Whether the image definition can be updated or deleted.",
     )
-    # the 20 MB limit in nginx is not set for node definitions
-    # (the default 100 kB limit is set instead)
     configuration: NodeConfigurationContent = None
     pyats: Pyats | None = None
     ram: int | None = Field(default=None, ge=1, le=1048576, description="Memory (MiB).")
@@ -77,7 +75,6 @@ class ImageDefinition(BaseModel, extra="forbid"):
     cpu_limit: int | None = Field(default=None, ge=20, le=100, description="CPU Limit.")
     data_volume: int | None = Field(default=None, ge=0, le=4096, description="Data Disk Size (GiB).")
     boot_disk_size: int | None = Field(default=None, ge=0, le=4096, description="Boot Disk Size (GiB).")
-    # TODO: verify it works as expected not tested yet
     model_config = ConfigDict(
         json_schema_extra={
             "example": {

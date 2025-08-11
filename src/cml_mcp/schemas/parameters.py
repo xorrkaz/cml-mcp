@@ -76,7 +76,6 @@ SearchQueryPathParameter = Annotated[str, Path(description="The search query par
 TagPathParameter = Annotated[str, Path(description="The unique tag path parameter.", examples=["Core"])]
 
 
-# maximum: 64 # from number of serial ports on node_definition
 ConsoleIdPathParameter = Annotated[
     int,
     Path(
@@ -88,7 +87,6 @@ ConsoleIdPathParameter = Annotated[
 ]
 
 
-# keep in sync with DefinitionId from common.py
 DefinitionIDPathParameter = Annotated[
     str,
     Path(

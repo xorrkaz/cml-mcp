@@ -15,7 +15,6 @@ Hostpubkey = Annotated[
 ]
 
 
-# $id: http://virl.lab/compute_host.json
 class ComputeHostInternal(BaseModel, extra="forbid"):
     id: UUID4Type = Field(...)
     server_address: IPAddress = Field(...)

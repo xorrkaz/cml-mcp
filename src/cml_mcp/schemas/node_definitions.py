@@ -218,7 +218,6 @@ CompletedNode = Annotated[str, Field(max_length=128)]
 
 
 class Boot(BaseModel, extra="forbid"):
-    # just a random upper bound
     timeout: int = Field(..., description="Timeout (seconds).", examples=[60], le=86400)
     completed: conlist(CompletedNode, min_length=1) = Field(
         default=None,

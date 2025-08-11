@@ -93,19 +93,11 @@ class LldEvent(NamedTuple):
     data: dict = {}
 
 
-# Events that are commented out are libvirt events that are not used at all.
-# We don't actually need this enum.  We could use libvirt events instead.
-# But this is more readable.
 class NodeEventTypes(Enum):
     DEFINED = 0
     UNDEFINED = 1
     STARTED = 2
-    # SUSPENDED = 3
-    # RESUMED = 4
     STOPPED = 5
-    # SHUTDOWN = 6
-    # PMSUSPENDED = 7
-    # CRASHED = 8
 
 
 class LldNodeEvent(NamedTuple):

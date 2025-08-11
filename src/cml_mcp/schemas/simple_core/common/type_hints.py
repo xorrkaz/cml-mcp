@@ -34,7 +34,6 @@ VNCKey = NewType("VNCKey", str)
 ServiceKey = ConsoleKey | LinkCaptureKey | VNCKey
 
 
-# TODO: These should be defined within the permissions model
 class Service(Enum):
     CONSOLE = "Console"
     PCAP = "PCAP"

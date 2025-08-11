@@ -32,7 +32,6 @@ class InterfaceUpdate(BaseModel, extra="forbid"):
     mac_address: MACAddress = Field(default=None)
 
 
-# without id
 class InterfaceBase(BaseModel):
     """Interface object."""
 
@@ -62,7 +61,6 @@ InterfaceUpdateBody = Annotated[
 ]
 
 
-# responses
 class InterfaceOperationalDataResponse(BaseModel, extra="forbid"):
     device_name: LinuxInterfaceName | None = Field(default=None, max_length=64, description="Device name.")
     mac_address: MACAddress = Field(default=None)

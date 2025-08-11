@@ -50,8 +50,7 @@ DiskSpace = Annotated[int | None, Field(ge=0, le=4096, description="Disk space i
 
 IOLAppId = Annotated[int | None, Field(ge=1, le=1022, description="IOL Application ID. Can be null.")]
 
-# max length is 20MB and is checked by nginx
-# it makes no sense to validate it here as it mostly just pollutes logs
+
 NodeConfigurationContent = Annotated[str | None, Field(description="Node configuration (no more than 20MB).")]
 
 
@@ -71,17 +70,12 @@ class NodeConfigurationFile(BaseModel, extra="forbid"):
     content: NodeConfigurationContent = Field(default=None)
 
 
-# When GET, we need to both be backwards compatible and return all files, which
-# is only possible by deprecating the old `/configuration` parameter and adding a new
-# `/configurations` parameter which returns an array of files.
 NodeConfigurationFiles = Annotated[
     list[NodeConfigurationFile],
     Field(description="List of node configuration file objects."),
 ]
 
-# When PATCHing, all these formats make sense; just a string if all you want to touch
-# is the main config, a single object if you just want to edit one non-main config,
-# or an array if you want to do multiple files at once.
+
 NodeConfiguration = Annotated[
     NodeConfigurationContent | NodeConfigurationFiles | NodeConfigurationFile,
     Field(
@@ -104,13 +98,11 @@ class NodeParameters(BaseModel, extra="allow"):
     @model_validator(mode="after")
     def check_types(self):
         for field_name, value in self.__dict__.items():
-            # basically just nullable string.
             if value is not None and not isinstance(value, str):
                 raise TypeError(f"Value for '{field_name}' must be a string or None," f"but got {type(value).__name__}.")
         return self
 
 
-# Shared properties for all Node objects, excluding configuration
 class NodeBase(BaseModel, extra="allow"):
     """Node object base."""
 
@@ -127,8 +119,6 @@ class NodeBase(BaseModel, extra="allow"):
     tags: TagArray = Field(default=None)
 
 
-# Exactly the base properties are updatable, but we can also use string to set just
-# the main config file or a single object outside an array
 class NodeUpdate(NodeBase, extra="forbid"):
     cpus: Cpus = Field(default=None)
     configuration: NodeConfiguration = Field(default=None)
@@ -153,7 +143,6 @@ class BootProgresses(StrEnum):
 BootProgress = Annotated[BootProgresses, Field(description="Node boot progress.")]
 
 
-# Node requires node definition, position and label
 class NodeDefinedBase(NodeBase, extra="allow"):
     node_definition: DefinitionID = Field(..., description="Node Definition ID for the specified node.")
     x: Coordinate = Field(...)
@@ -165,7 +154,6 @@ class NodeDefined(NodeDefinedBase, extra="allow"):
     cpus: Cpus = Field(default=None)
 
 
-# Create node requires node definition, position and label
 class NodeCreate(NodeDefined, extra="forbid"):
     configuration: NodeConfiguration = Field(default=None)
 
@@ -198,7 +186,6 @@ class NodeOperationalData(BaseModel, extra="forbid"):
     serial_consoles: list[ConsoleKeyDetails] = Field(default=None)
 
 
-# Node with operational data and proper UUID id
 class Node(NodeDefinedBase, extra="forbid"):
     id: NodeId
     boot_progress: BootProgress = Field(
@@ -235,7 +222,6 @@ NodeCreateBody = Annotated[NodeCreate, Body(description="A JSON object with a no
 NodeUpdateBody = Annotated[NodeUpdate, Body(description="A JSON object with a node's updatable properties.")]
 
 
-# responses
 class NodeStateResponse(BaseModel, extra="forbid"):
     state: str = Field(default=None)
     progress: str = Field(default=None)

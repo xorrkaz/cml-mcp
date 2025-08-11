@@ -21,9 +21,7 @@ BYTES_IN_GB = 1024**3
 EVENT_LIMIT = 10000
 EVENT_CLEAR = int(EVENT_LIMIT * 0.05)
 
-# from /usr/include/sys/syslog.h
-# #define LOG_LOCAL6      (22<<3) /* reserved for local use */
-# Python defines it like C, SyslogHandler shifts it and adds priority
+
 TELEMETRY_LOG_LEVEL = 22
 
 SSHD_CLUSTER_PORT = 1222
@@ -38,16 +36,13 @@ NODE_DEFINITION_DIRECTORY = f"{LIBVIRT_IMAGES}/node-definitions"
 USER_IMAGES = os.environ.get("USER_IMAGES", str(BASE_DIR / "images"))
 DEFAULT_VIRL2 = "/etc/default/virl2"
 IMAGES_STATE = BASE_DIR / "base_images.state"
-# name of the node configuration customizer script
 CONFIG_CUSTOMIZER = "cml-customizer.sh"
 
 CML_NAMESPACE_URI = "http://cisco.com/cml"
 CML_NS_PREFIX = "cml"
 
-# Prefix used for unmanaged switch interfaces
 UMS_PREFIX = "ums-"
 
-# disk image formats supported for VMs
 QCOW2 = "qcow2"
 QCOW = "qcow"
 IOL = "iol"

@@ -112,8 +112,6 @@ AnnotationUpdateBody = Annotated[
 AnnotationUuidDescription = "Annotation Unique identifier."
 
 
-# explicitly set extra='forbid' to raise ResponseValidationError
-# when data not present in schema is about to be exposed to user
 class TextAnnotationResponse(TextAnnotation, extra="forbid"):
     id: UUID4Type = Field(..., description=AnnotationUuidDescription)
 

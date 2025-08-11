@@ -46,7 +46,6 @@ class GroupUpdateBase(BaseModel, extra="forbid"):
     )
 
 
-# TODO: drop in CML 2.9 + 2 releases
 class GroupUpdateOld(GroupUpdateBase):
     labs: list[GroupLab] = Field(
         default=None,

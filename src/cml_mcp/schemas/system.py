@@ -68,7 +68,6 @@ class ExternalConnectorBase(BaseModel, extra="allow"):
     )
 
 
-# External connector models will be moved to separate file soon.
 ExternalConnectorLabel = Annotated[Label, Field(description="Unique label for the external connector.")]
 
 

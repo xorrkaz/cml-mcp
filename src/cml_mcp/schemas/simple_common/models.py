@@ -15,7 +15,7 @@ from .constants import SUPPORTED_IMAGE_FORMATS
 class DomainDriver(Enum):
     KVM = 1
     LXC = 2
-    NONE = 3  # use for external connector
+    NONE = 3
     IOL = 4
     DOCKER = 5
     UMS = 6
@@ -52,13 +52,11 @@ class DomainDriver(Enum):
             return SUPPORTED_IMAGE_FORMATS[:2]
         if self is DomainDriver.IOL:
             return SUPPORTED_IMAGE_FORMATS[2:3]
-        # LXC is not really supported, and only superficially same as Docker
         return SUPPORTED_IMAGE_FORMATS[3:]
 
 
 @attr.s(kw_only=True)
 class ConsistencyResult:
-    # Converters are used to convert None to a default value.
     missing_nodes: set[str] = attr.ib(converter=attr.converters.default_if_none(set()), factory=set)
     orphaned_nodes: set[str] = attr.ib(converter=attr.converters.default_if_none(set()), factory=set)
 

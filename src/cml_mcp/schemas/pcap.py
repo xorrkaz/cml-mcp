@@ -17,7 +17,6 @@ LINK_ENCAP_DESCRIPTION = "Link encapsulation"
 CaptureKeyPathParameter = Annotated[UUID4Type, Path(description="The UUID of the PCAP (link capture key).")]
 
 
-# maximum: 1000000 # this is random
 PacketIdPathParameter = Annotated[
     int,
     Path(
@@ -29,8 +28,6 @@ PacketIdPathParameter = Annotated[
 ]
 
 
-# The enum values presented here need to be in sync with the UI in
-# LinkPacketCapture.vue and the fabric in link type.
 class LinkEncaps(StrEnum):
     ethernet = "ethernet"
     frelay = "frelay"

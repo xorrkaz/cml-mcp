@@ -40,8 +40,7 @@ CNArray = Annotated[
     Field(description="An array of LDAP CNs.", examples=["group-1", "group-2"]),
 ]
 
-# length validation moved to backend so it does not return entered certificate
-# in response on unsuccessful validation
+
 PublicCertificate = Annotated[
     str,
     Field(
@@ -85,10 +84,7 @@ class GroupAuthData(BaseModel):
 class SystemAuthConfigBase(BaseModel, extra="allow"):
     """System Authentication Configuration Object."""
 
-    method: Literal["ldap", "local"] = Field(
-        ..., description="What authentication method should be used."
-    )
-    # allow empty string or string matches pattern
+    method: Literal["ldap", "local"] = Field(..., description="What authentication method should be used.")
     server_urls: str = Field(
         default=None,
         max_length=256,
@@ -314,7 +310,6 @@ class AuthenticateResponse(BaseModel):
     id: UUID4Type = Field(default=None, description="ID of a user")
     token: JwtToken = Field(default=None)
     admin: bool = Field(default=None, examples=[False])
-    # connection returns null when no errors
     error: str | None = Field(
         default=None,
         description="Error messages for errors that occurred while authenticating, "

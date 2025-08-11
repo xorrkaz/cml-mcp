@@ -103,7 +103,6 @@ class LabCreate(BaseModel, extra="forbid"):
     owner: LabOwner = Field(default=None)
     description: LabDescription = Field(default=None)
     notes: LabNotes = Field(default=None)
-    # TODO: drop in CML 2.9 + 2 releases
     groups: list[LabGroup] = Field(
         default=None,
         deprecated=True,
@@ -135,7 +134,6 @@ class Lab(BaseDBModel):
         description="Number of connections between nodes in the lab.",
         ge=0,
     )
-    # TODO: drop in CML 2.9 + 2 releases
     groups: list[LabGroup] = Field(
         default=None,
         deprecated=True,

@@ -29,7 +29,6 @@ HTTP_URL_REG = rf"^{ORIGIN_REG}(/[\w.-]+)+(?![\n\r])$"
 
 
 def _remove_duplicates(lst: list) -> list:
-    # list elements must be hashable
     return list(set(lst))
 
 
@@ -42,13 +41,7 @@ FilePath = Annotated[
     ),
 ]
 
-# Create a custom annotated string for UUID4 as using UUID4 from Pydantic
-# causes issues with SQLAlchemy. We need to wrap fields with str(lab_id)
-# because passing the UUID4 class directly does not work.
-# A UUID-4 has five groups of lowercase hexadecimal characters, the first has 8 chars,
-# the second 4 chars, the third 4 chars, the fourth 4 chars, the fifth 12 chars.
-# However, to make it a valid UUID4 the third group (the one in the middle)
-# must start with a 4 and the fourth group must start with 8, 9, a or b.
+
 UUID4Type = Annotated[
     str,
     Field(
@@ -261,11 +254,9 @@ class States(StrEnum):
 State = Annotated[States, Field(description="The state of the element.")]
 
 
-# should be in sync with BaseDbMixin from simple core
 class BaseDBModel(BaseModel):
     """Base class for all database based models."""
 
-    # TODO: remove default=None from all of these
     id: UUID4Type = Field(default=None)
     created: DateTimeString = Field(
         default=None,

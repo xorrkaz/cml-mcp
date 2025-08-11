@@ -35,9 +35,6 @@ class Link(LinkConnectionInfo, extra="forbid"):
     state: State = Field(default=None, description="The status of the link in the lab.")
 
 
-# this must be in sync with the schema in the fabric (except the commented out lines)
-# $id: condition
-# additionalProperties: false
 class LinkCondition(BaseModel):
     bandwidth: int = Field(default=None, description="Bandwidth of the link in kbps.", ge=0, le=10000000)
     latency: int = Field(default=None, description="Delay of the link in ms.", ge=0, le=10000)
@@ -86,5 +83,4 @@ LinkCreateBody = Annotated[
     Body(description="The body is a JSON object that indicates the source " "and destination interfaces of the link to be created."),
 ]
 
-# responses
 LinkResponse = Annotated[Link, Field(description="The response body is a JSON link object.")]
