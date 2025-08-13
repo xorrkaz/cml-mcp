@@ -7,7 +7,7 @@ import re
 from enum import StrEnum
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field, conlist, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from cml_mcp.schemas.common import DefinitionID, FilePath
 from cml_mcp.schemas.nodes import NodeConfigurationContent, NodeParameters
@@ -179,29 +179,29 @@ class Interfaces(BaseModel, extra="forbid"):
         ge=0,
         le=4,
     )
-    physical: conlist(PhysicalField, min_length=1) = Field(..., description="List of physical interfaces.")
+    physical: list[PhysicalField] = Field(..., description="List of physical interfaces.")
     has_loopback_zero: bool = Field(..., description="Has `loopback0` interface (used with ANK).")
-    min_count: int = Field(
+    min_count: int | None = Field(
         default=None,
         description="Minimal number of physical interfaces needed to start a node.",
         ge=0,
         le=64,
     )
-    default_count: int = Field(default=None, description="Default number of physical interfaces.", ge=1, le=64)
-    iol_static_ethernets: Literal[0, 4, 8, 12, 16] = Field(
+    default_count: int | None = Field(default=None, description="Default number of physical interfaces.", ge=1, le=64)
+    iol_static_ethernets: Literal[0, 4, 8, 12, 16] | None = Field(
         default=None,
         description="Only for IOL nodes, the number of static Ethernet interfaces"
         " preceding any serial interface; default 0 means "
         "all interfaces are Ethernet.",
     )
-    loopback: conlist(LoopBackField, min_length=1) = Field(default=None, description="List of loopback interfaces.")
-    management: conlist(ManagementField, min_length=1) = Field(default=None, description="List of management interfaces.")
+    loopback: list[LoopBackField] = Field(default_factory=list, description="List of loopback interfaces.")
+    management: list[ManagementField] = Field(default_factory=list, description="List of management interfaces.")
 
-    @model_validator(mode="after")
-    def validate_one_of(self):
-        if self.has_loopback_zero and not self.loopback:
-            raise ValueError("loopback must be specified when has_loopback_zero=True")
-        return self
+    # @model_validator(mode="after")
+    # def validate_one_of(self):
+    #     if self.has_loopback_zero and not self.loopback:
+    #         raise ValueError("loopback must be specified when has_loopback_zero=True")
+    #     return self
 
 
 class VMProperties(BaseModel, extra="forbid"):
@@ -219,7 +219,7 @@ CompletedNode = Annotated[str, Field(max_length=128)]
 
 class Boot(BaseModel, extra="forbid"):
     timeout: int = Field(..., description="Timeout (seconds).", examples=[60], le=86400)
-    completed: conlist(CompletedNode, min_length=1) = Field(
+    completed: list[CompletedNode] = Field(
         default=None,
         description='A list of strings which should be matched to determine when the node is "ready".',
         examples=[[CompletedNode("string")]],
@@ -342,7 +342,7 @@ class ConfigurationProvisioning(BaseModel, extra="forbid"):
     Provisioning configuration details.
     """
 
-    files: conlist(ConfigurationFile, min_length=1) = Field(..., description="List of node configuration file objects.")
+    files: list[ConfigurationFile] = Field(..., description="List of node configuration file objects.")
     media_type: ConfigurationMediaTypes = Field(..., description="The type of the configuration media.")
     volume_name: str = Field(
         ...,
@@ -390,7 +390,7 @@ class Ui(BaseModel, extra="forbid"):
     icon: Icons = Field(..., description="The icon to use with this node type.")
     label: str = Field(..., description="The node type label.", min_length=1, max_length=32)
     visible: bool = Field(..., description="Determines visibility in the UI for this node type.")
-    group: Literal["Cisco", "Others"] = Field(default=None, description="Intended to group similar node types (unused).")
+    group: Literal["Cisco", "Others"] | None = Field(default=None, description="Intended to group similar node types (unused).")
     description: str = Field(
         default=None,
         description="The description of the node type (can be Markdown).",

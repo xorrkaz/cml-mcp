@@ -35,7 +35,7 @@ from virl2_client.models.cl_pyats import ClPyats
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.schemas.common import UserName, UUID4Type
 from cml_mcp.schemas.labs import Lab, LabTitle
-from cml_mcp.schemas.licensing import LicensingStatus
+# from cml_mcp.schemas.licensing import LicensingStatus
 from cml_mcp.schemas.node_definitions import NodeDefinition, SimplifiedNodeDefinitionResponse
 from cml_mcp.schemas.nodes import Node, NodeConfigurationContent, NodeLabel
 from cml_mcp.schemas.system import SystemHealth, SystemInformation, SystemStats
@@ -169,10 +169,10 @@ async def get_cml_licensing_details() -> dict | Error:
     """
     try:
         licensing_info = await cml_client.get("/licensing")
-        # This is needed since FastMCP will try and dump the model, but the
-        # timestamps are serialized to Python objects, which are not themselves
-        # re-serializable.
-        return LicensingStatus(**licensing_info).model_dump(mode="json")
+        # This is needed because some clients attempt to serialize the response
+        # with Python classes for datetime rather than as pure JSON.  Cursor
+        # is notably affected whereas Claude Desktop is not.
+        return licensing_info
     except httpx.HTTPStatusError as e:
         return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
     except Exception as e:
@@ -186,7 +186,7 @@ async def get_cml_node_definitions() -> list[SimplifiedNodeDefinitionResponse] |
     Get the list of node definitions from the CML server.
 
     Returns:
-        list[SimplifiedNodeDefinitionResponse]: A list of simplified node definitions.
+        list[SimplifiedNodeDefinitionResponse]: A list of SimplifiedNodeDefinitionResponse objects.
         Error: An Error object if an exception occurs.
     """
     try:
