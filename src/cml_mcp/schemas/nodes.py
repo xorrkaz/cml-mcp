@@ -214,7 +214,7 @@ class Node(NodeDefinedBase, extra="forbid"):
     configuration: NodeConfiguration = Field(default=None)
     pinned_compute_id: PinnedComputeID = Field(default=None)
     lab_id: UUID4Type = Field(default=None)
-    serial_consoles: list[ConsoleKeyDetails] = Field(default=None)
+    serial_consoles: list[ConsoleKeyDetails] = Field(default_factory=list)
 
 
 NodeCreateBody = Annotated[NodeCreate, Body(description="A JSON object with a node's fundamental properties.")]

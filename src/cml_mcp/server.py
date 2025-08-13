@@ -35,9 +35,10 @@ from virl2_client.models.cl_pyats import ClPyats
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.schemas.common import UserName, UUID4Type
 from cml_mcp.schemas.labs import Lab, LabTitle
+from cml_mcp.schemas.licensing import LicensingStatus
 from cml_mcp.schemas.node_definitions import NodeDefinition, SimplifiedNodeDefinitionResponse
 from cml_mcp.schemas.nodes import Node, NodeConfigurationContent, NodeLabel
-from cml_mcp.schemas.system import SystemHealth, SystemInformation
+from cml_mcp.schemas.system import SystemHealth, SystemInformation, SystemStats
 from cml_mcp.schemas.topologies import Topology
 from cml_mcp.settings import settings
 from cml_mcp.types import Error
@@ -139,6 +140,47 @@ async def get_cml_status() -> SystemHealth | Error:
 
 
 @server_mcp.tool
+async def get_cml_statistics() -> SystemStats | Error:
+    """
+    Get statistics about the CML server.
+
+    Returns:
+        SystemStats: The system statistics.
+        Error: An Error object if an exception occurs.
+    """
+    try:
+        stats = await cml_client.get("/system_stats")
+        return SystemStats(**stats)
+    except httpx.HTTPStatusError as e:
+        return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
+    except Exception as e:
+        logger.error(f"Error getting CML statistics: {str(e)}", exc_info=True)
+        return Error(**{"error": str(e)})
+
+
+@server_mcp.tool
+async def get_cml_licensing_details() -> dict | Error:
+    """
+    Get licensing details from the CML server.
+
+    Returns:
+        dict: The licensing status as a dict corresponding to a LicensingStatus object.
+        Error: An Error object if an exception occurs.
+    """
+    try:
+        licensing_info = await cml_client.get("/licensing")
+        # This is needed since FastMCP will try and dump the model, but the
+        # timestamps are serialized to Python objects, which are not themselves
+        # re-serializable.
+        return LicensingStatus(**licensing_info).model_dump(mode="json")
+    except httpx.HTTPStatusError as e:
+        return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
+    except Exception as e:
+        logger.error(f"Error getting CML licensing details: {str(e)}", exc_info=True)
+        return Error(**{"error": str(e)})
+
+
+@server_mcp.tool
 async def get_cml_node_definitions() -> list[SimplifiedNodeDefinitionResponse] | Error:
     """
     Get the list of node definitions from the CML server.
@@ -180,18 +222,22 @@ async def get_node_definition_detail(nid: UUID4Type) -> NodeDefinition | Error:
 
 
 @server_mcp.tool
-async def create_lab_topology(topology: Topology) -> UUID4Type | Error:
+async def create_lab_topology(topology: Topology | dict) -> UUID4Type | Error:
     """
     Create a new lab topology.
 
     Args:
-        topology (Topology): The topology definition.
+        topology (Topology | dict): The topology definition.
 
     Returns:
         UUID4Type: The new lab topology ID if successful.
         Error: An Error object if an error occurs.
     """
     try:
+        # Cursor passes a dict representing the schema of a Topology.
+        # Handle this conversion.
+        if isinstance(topology, dict):
+            topology = Topology(**topology)
         resp = await cml_client.post("/import", data=topology.model_dump())
         return UUID4Type(resp["id"])
     except httpx.HTTPStatusError as e:
@@ -374,8 +420,19 @@ async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node] | Error:
         Error: An Error object if an error occurs.
     """
     try:
-        resp = await cml_client.get(f"/labs/{lid}/nodes", data={"data": True, "operational": True, "exclude_configurations": True})
-        return [Node(**node) for node in resp]
+        resp = await cml_client.get(f"/labs/{lid}/nodes", params={"data": True, "operational": True, "exclude_configurations": True})
+        rnodes = []
+        for node in list(resp):
+            # XXX: Fixup known issues with bad data coming from
+            # certain node types.
+            if node["operational"].get("vnc_key") == "":
+                node["operational"]["vnc_key"] = None
+            if node["operational"].get("image_definition") == "":
+                node["operational"]["image_definition"] = None
+            if node["operational"].get("serial_consoles") is None:
+                node["operational"]["serial_consoles"] = []
+            rnodes.append(Node(**node))
+        return rnodes
     except httpx.HTTPStatusError as e:
         return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
     except Exception as e:

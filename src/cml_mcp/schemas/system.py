@@ -404,7 +404,7 @@ class DomInfo(NodeCountsBase, extra="forbid"):
 
 class CpuHealthStats(BasicCpuStats, extra="forbid"):
     model: str = Field(..., description="The CPU model name.")
-    hyperthreading: bool = Field(..., description="Indicates if hyperthreading is enabled.")
+    hyperthreading: bool = Field(default=False, description="Indicates if hyperthreading is enabled.")
     predicted: int = Field(..., description="The number of predicted CPUs.", ge=0)
     load: list[float] = Field(..., description="The CPU load (last few entries).")
 

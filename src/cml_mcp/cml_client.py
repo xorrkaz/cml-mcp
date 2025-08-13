@@ -23,6 +23,7 @@
 # SUCH DAMAGE.
 
 import logging
+from typing import Any
 
 import httpx
 import virl2_client
@@ -110,7 +111,7 @@ class CMLClient(object):
             logger.error(f"Error checking admin status: {e}", exc_info=True)
             return False
 
-    async def get(self, endpoint: str, params: dict | None = None) -> dict:
+    async def get(self, endpoint: str, params: dict | None = None) -> Any:
         """
         Make a GET request to the CML API.
         """
@@ -124,7 +125,7 @@ class CMLClient(object):
             logger.error(f"Error making GET request to {url}: {e}", exc_info=True)
             raise e
 
-    async def post(self, endpoint: str, data: dict | None = None) -> dict | None:
+    async def post(self, endpoint: str, data: dict | None = None) -> Any | None:
         """
         Make a POST request to the CML API.
         """
@@ -140,7 +141,7 @@ class CMLClient(object):
             logger.error(f"Error making POST request to {url}: {e}", exc_info=True)
             raise e
 
-    async def put(self, endpoint: str, data: dict | None = None) -> dict | None:
+    async def put(self, endpoint: str, data: dict | None = None) -> Any | None:
         """
         Make a PUT request to the CML API.
         """
@@ -172,7 +173,7 @@ class CMLClient(object):
             logger.error(f"Error making DELETE request to {url}: {e}", exc_info=True)
             raise e
 
-    async def patch(self, endpoint: str, data: dict | None = None) -> dict | None:
+    async def patch(self, endpoint: str, data: dict | None = None) -> Any | None:
         """
         Make a PATCH request to the CML API.
         """
