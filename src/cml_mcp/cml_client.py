@@ -99,11 +99,13 @@ class CMLClient(object):
         """
         if self.admin is not None:
             return self.admin
+
+        await self.check_authentication()
         try:
-            resp = await self.client.get(f"/api/v0/users/{self.username}/id")
+            resp = await self.client.get(f"{self.base_url}/api/v0/users/{self.username}/id")
             resp.raise_for_status()
             user_id = resp.json()
-            resp = await self.client.get(f"/api/v0/users/{user_id}")
+            resp = await self.client.get(f"{self.base_url}/api/v0/users/{user_id}")
             resp.raise_for_status()
             self.admin = resp.json().get("admin", False)
             return self.admin

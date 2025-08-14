@@ -552,7 +552,8 @@ def send_cli_command(lid: UUID4Type, label: NodeLabel, command: str, config_comm
         lid (UUID4Type): The lab ID.
         label (NodeLabel): The label of the node to send the command to.
         command (str): The CLI command to send.
-        config_command (bool, optional): If True, send as a configuration command. Defaults to False.
+        config_command (bool, optional): If True, send as a configuration command.
+         This will automatically put the device in config mode. Defaults to False.
 
     Returns:
         str | Error: The command output if successful, or an Error object if an error occurs.
