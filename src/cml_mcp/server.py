@@ -25,6 +25,7 @@
 import logging
 import os
 import tempfile
+from typing import Any
 
 import httpx
 from fastmcp import Context, FastMCP
@@ -77,7 +78,8 @@ async def get_cml_labs(user: UserName | None = None) -> list[Lab] | Error:
     Returns:
         list[Lab] | Error: A list of Lab objects owned by the user, or an Error object if an error occurs.
     """
-    if not user:
+    # Clients like to pass "null" as a string vs. null as a None type.
+    if not user or str(user) == "null":
         user = settings.cml_username  # Default to the configured username
 
     try:
@@ -159,12 +161,12 @@ async def get_cml_statistics() -> SystemStats | Error:
 
 
 @server_mcp.tool
-async def get_cml_licensing_details() -> dict | Error:
+async def get_cml_licensing_details() -> dict[str, Any] | Error:
     """
     Get licensing details from the CML server.
 
     Returns:
-        dict: The licensing status as a dict corresponding to a LicensingStatus object.
+        dict[str, Any]: The licensing status as a dict corresponding to a LicensingStatus object.
         Error: An Error object if an exception occurs.
     """
     try:
@@ -172,7 +174,7 @@ async def get_cml_licensing_details() -> dict | Error:
         # This is needed because some clients attempt to serialize the response
         # with Python classes for datetime rather than as pure JSON.  Cursor
         # is notably affected whereas Claude Desktop is not.
-        return licensing_info
+        return dict(licensing_info)
     except httpx.HTTPStatusError as e:
         return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
     except Exception as e:
@@ -227,7 +229,8 @@ async def create_lab_topology(topology: Topology | dict) -> UUID4Type | Error:
     Create a new lab topology.
 
     Args:
-        topology (Topology | dict): The topology definition.
+        topology (Topology | dict): The topology definition as a Topology object or a dict
+          corresponding to a Topology object.
 
     Returns:
         UUID4Type: The new lab topology ID if successful.
@@ -238,7 +241,7 @@ async def create_lab_topology(topology: Topology | dict) -> UUID4Type | Error:
         # Handle this conversion.
         if isinstance(topology, dict):
             topology = Topology(**topology)
-        resp = await cml_client.post("/import", data=topology.model_dump())
+        resp = await cml_client.post("/import", data=topology.model_dump(mode="json"))
         return UUID4Type(resp["id"])
     except httpx.HTTPStatusError as e:
         return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
@@ -544,16 +547,16 @@ async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> None | 
 
 
 @server_mcp.tool
-def send_cli_command(lid: UUID4Type, label: NodeLabel, command: str, config_command: bool = False) -> str | Error:
+def send_cli_command(lid: UUID4Type, label: NodeLabel, commands: str, config_command: bool = False) -> str | Error:
     """
-    Send a CLI command to a node in a CML lab by its lab ID and node label.
+    Send CLI command(s) to a node in a CML lab by its lab ID and node label.
 
     Args:
         lid (UUID4Type): The lab ID.
         label (NodeLabel): The label of the node to send the command to.
-        command (str): The CLI command to send.
-        config_command (bool, optional): If True, send as a configuration command.
-         This will automatically put the device in config mode. Defaults to False.
+        commands (str): The CLI command(s) to send.  Multiple commands can be specified separated by newlines.
+        config_command (bool, optional): If True, send as a configuration command(s).
+         This will automatically put the device in config mode. Defaults to False, meaning command(s) must be in exec mode.
 
     Returns:
         str | Error: The command output if successful, or an Error object if an error occurs.
@@ -566,11 +569,11 @@ def send_cli_command(lid: UUID4Type, label: NodeLabel, command: str, config_comm
         pylab.sync_testbed(settings.cml_username, settings.cml_password)  # Sync the testbed with CML credentials
         if config_command:
             # Send the command as a configuration command
-            return pylab.run_config_command(str(label), command)
+            return pylab.run_config_command(str(label), commands)
         # Send the command as an exec/operational command
-        return pylab.run_command(str(label), command)
+        return pylab.run_command(str(label), commands)
     except Exception as e:
-        logger.error(f"Error sending CLI command '{command}' to node {label} in lab {lid}: {str(e)}", exc_info=True)
+        logger.error(f"Error sending CLI command '{commands}' to node {label} in lab {lid}: {str(e)}", exc_info=True)
         return Error(**{"error": str(e)})
     finally:
         os.chdir(cwd)  # Restore the original working directory
