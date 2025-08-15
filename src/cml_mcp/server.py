@@ -58,13 +58,16 @@ from cml_mcp.settings import settings
 from cml_mcp.types import Error
 
 # Set up logging
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(threadName)s %(name)s: %(message)s")
+loglevel = logging.DEBUG if os.getenv("DEBUG", "false").lower() == "true" else logging.INFO
+logging.basicConfig(level=loglevel, format="%(asctime)s %(levelname)s %(threadName)s %(name)s: %(message)s")
 logger = logging.getLogger("cml-mcp")
 
 
 server_mcp = FastMCP(
-    "Cisco Modeling Labs MCP Server",
+    "Cisco Modeling Labs (CML)",
     dependencies=["httpx", "fastmcp", "fastapi", "pydantic_strict_partial", "typer", "virl2_client", "pyats[full]"],
+    log_level=logging.getLevelName(loglevel),
+    debug=loglevel == logging.DEBUG,
 )
 cml_client = CMLClient(host=str(settings.cml_url), username=settings.cml_username, password=settings.cml_password)
 
