@@ -44,7 +44,7 @@ from cml_mcp.schemas.annotations import (
     TextAnnotation,
     TextAnnotationResponse,
 )
-from cml_mcp.schemas.common import UserName, UUID4Type
+from cml_mcp.schemas.common import UserName, UUID4Type, DefinitionID
 from cml_mcp.schemas.interfaces import InterfaceCreate, InterfaceResponse
 from cml_mcp.schemas.labs import Lab, LabCreate, LabResponse, LabTitle
 
@@ -214,38 +214,38 @@ async def get_cml_node_definitions() -> list[SimplifiedNodeDefinitionResponse] |
         return Error(**{"error": str(e)})
 
 
-async def get_node_def_details(nid: UUID4Type) -> NodeDefinition:
+async def get_node_def_details(did: DefinitionID) -> NodeDefinition:
     """
     Get detailed information about a specific node definition by its ID.
 
     Args:
-        nid (UUID4Type): The node definition ID.
+        did (DefinitionID): The node definition ID.
 
     Returns:
         NodeDefinition: The node definition details.
     """
-    node_definition = await cml_client.get(f"/node_definitions/{nid}")
+    node_definition = await cml_client.get(f"/node_definitions/{did}", params={"json": True})
     return NodeDefinition(**node_definition)
 
 
 @server_mcp.tool
-async def get_node_definition_detail(nid: UUID4Type) -> NodeDefinition | Error:
+async def get_node_definition_detail(did: DefinitionID) -> NodeDefinition | Error:
     """
     Get detailed information about a specific node definition by its ID.
 
     Args:
-        nid (UUID4Type): The node definition ID.
+        did (DefinitionID): The node definition ID.
 
     Returns:
         NodeDefinition: The node definition details.
         Error: An Error object if an exception occurs.
     """
     try:
-        return await get_node_def_details(nid)
+        return await get_node_def_details(did)
     except httpx.HTTPStatusError as e:
         return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
     except Exception as e:
-        logger.error(f"Error getting node definition detail for {nid}: {str(e)}", exc_info=True)
+        logger.error(f"Error getting node definition detail for {did}: {str(e)}", exc_info=True)
         return Error(**{"error": str(e)})
 
 
@@ -635,11 +635,11 @@ async def get_all_links_for_lab(lid: UUID4Type) -> list[Link] | Error:
 
 
 @server_mcp.tool
-async def apply_conditioning_to_link(
+async def apply_link_conditioning(
     lid: UUID4Type, link_id: UUID4Type, condition: LinkConditionConfiguration | dict
 ) -> ConditionResponse | Error:
     """
-    Condition a link in a CML lab by its lab ID and link ID.
+    Apply link conditioning to a link in a CML lab by its lab ID and link ID.
 
     Args:
         lid (UUID4Type): The lab ID.
