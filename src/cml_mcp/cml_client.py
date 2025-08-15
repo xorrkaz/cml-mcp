@@ -191,5 +191,5 @@ class CMLClient(object):
             logger.error(f"Error making PATCH request to {url}: {e}", exc_info=True)
             raise e
 
-    async def close(self):
+    async def close(self) -> None:
         await self.client.aclose()

@@ -49,7 +49,7 @@ from cml_mcp.schemas.interfaces import InterfaceCreate, InterfaceResponse
 from cml_mcp.schemas.labs import Lab, LabCreate, LabResponse, LabTitle
 
 # from cml_mcp.schemas.licensing import LicensingStatus
-from cml_mcp.schemas.links import Link, LinkCreate
+from cml_mcp.schemas.links import Link, LinkCreate, LinkConditionConfiguration, ConditionResponse
 from cml_mcp.schemas.node_definitions import NodeDefinition, SimplifiedNodeDefinitionResponse
 from cml_mcp.schemas.nodes import Node, NodeConfigurationContent, NodeCreate, NodeLabel
 from cml_mcp.schemas.system import SystemHealth, SystemInformation, SystemStats
@@ -384,7 +384,7 @@ async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> None | Error:
     try:
         elicit_supported = True
         try:
-            result = await ctx.elicit("Are you sure you want to wipe the lab?")
+            result = await ctx.elicit("Are you sure you want to wipe the lab?", response_type=None)
         except McpError as me:
             if me.error.code == METHOD_NOT_FOUND:
                 elicit_supported = False
@@ -417,7 +417,7 @@ async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> None | Error:
 
         elicit_supported = True
         try:
-            result = await ctx.elicit("Are you sure you want to delete the lab?")
+            result = await ctx.elicit("Are you sure you want to delete the lab?", response_type=None)
         except McpError as me:
             if me.error.code == METHOD_NOT_FOUND:
                 elicit_supported = False
@@ -635,6 +635,35 @@ async def get_all_links_for_lab(lid: UUID4Type) -> list[Link] | Error:
 
 
 @server_mcp.tool
+async def apply_conditioning_to_link(
+    lid: UUID4Type, link_id: UUID4Type, condition: LinkConditionConfiguration | dict
+) -> ConditionResponse | Error:
+    """
+    Condition a link in a CML lab by its lab ID and link ID.
+
+    Args:
+        lid (UUID4Type): The lab ID.
+        link_id (UUID4Type): The link ID.
+        condition (LinkConditionConfiguration): The link conditioning config to apply as a LinkConditionConfiguration object or a dict
+          corresponding to a LinkConditionConfiguration object.
+
+    Returns:
+        ConditionResponse: If successful.
+        Error: An Error object if an error occurs.
+    """
+    try:
+        if isinstance(condition, dict):
+            condition = LinkConditionConfiguration(**condition)
+        resp = await cml_client.patch(f"/labs/{lid}/links/{link_id}/condition", data=condition.model_dump(mode="json", exclude_none=True))
+        return ConditionResponse(**resp)
+    except httpx.HTTPStatusError as e:
+        return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
+    except Exception as e:
+        logger.error(f"Error conditioning link {link_id} in lab {lid}: {str(e)}", exc_info=True)
+        return Error(**{"error": str(e)})
+
+
+@server_mcp.tool
 async def configure_cml_node(lid: UUID4Type, nid: UUID4Type, config: NodeConfigurationContent) -> UUID4Type | Error:
     """
     Configure a node in a CML lab by its lab ID and node ID. The node must be in a BOOTED (i.e., wiped) state.
@@ -778,7 +807,7 @@ async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> None | 
     try:
         elicit_supported = True
         try:
-            result = await ctx.elicit("Are you sure you want to wipe the node?")
+            result = await ctx.elicit("Are you sure you want to wipe the node?", response_type=None)
         except McpError as me:
             if me.error.code == METHOD_NOT_FOUND:
                 elicit_supported = False

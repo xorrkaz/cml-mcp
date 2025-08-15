@@ -25,7 +25,7 @@
 from pydantic import Field, BaseModel
 
 
-class Error(BaseModel):
+class Error(BaseModel, extra="forbid"):
     """Model for error responses."""
 
     error: str = Field(..., description="The error message")
