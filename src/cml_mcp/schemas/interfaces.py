@@ -77,7 +77,7 @@ class InterfaceResponse(InterfaceBase, extra="forbid"):
     src_udp_port: int | None = Field(default=None, ge=0, le=65535, description="Source UDP port (operational).")
     dst_udp_port: int | None = Field(default=None, ge=0, le=65535, description="Destination UDP port (operational).")
     device_name: LinuxInterfaceName | None = Field(default=None, max_length=64, description="Device name (operational).")
-    operational: InterfaceOperationalDataResponse = Field(
+    operational: InterfaceOperationalDataResponse | None = Field(
         default=None,
         description="Additional operational data associated with the interface.",
     )

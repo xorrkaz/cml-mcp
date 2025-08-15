@@ -35,10 +35,13 @@ from virl2_client.models.cl_pyats import ClPyats
 
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.schemas.common import UserName, UUID4Type
-from cml_mcp.schemas.labs import Lab, LabTitle
+from cml_mcp.schemas.interfaces import InterfaceResponse, InterfaceCreate
+from cml_mcp.schemas.labs import Lab, LabTitle, LabCreate, LabResponse
+
 # from cml_mcp.schemas.licensing import LicensingStatus
+from cml_mcp.schemas.links import LinkCreate, Link
 from cml_mcp.schemas.node_definitions import NodeDefinition, SimplifiedNodeDefinitionResponse
-from cml_mcp.schemas.nodes import Node, NodeConfigurationContent, NodeLabel
+from cml_mcp.schemas.nodes import Node, NodeConfigurationContent, NodeLabel, NodeCreate
 from cml_mcp.schemas.system import SystemHealth, SystemInformation, SystemStats
 from cml_mcp.schemas.topologies import Topology
 from cml_mcp.settings import settings
@@ -201,6 +204,20 @@ async def get_cml_node_definitions() -> list[SimplifiedNodeDefinitionResponse] |
         return Error(**{"error": str(e)})
 
 
+async def get_node_def_details(nid: UUID4Type) -> NodeDefinition:
+    """
+    Get detailed information about a specific node definition by its ID.
+
+    Args:
+        nid (UUID4Type): The node definition ID.
+
+    Returns:
+        NodeDefinition: The node definition details.
+    """
+    node_definition = await cml_client.get(f"/node_definitions/{nid}")
+    return NodeDefinition(**node_definition)
+
+
 @server_mcp.tool
 async def get_node_definition_detail(nid: UUID4Type) -> NodeDefinition | Error:
     """
@@ -214,8 +231,7 @@ async def get_node_definition_detail(nid: UUID4Type) -> NodeDefinition | Error:
         Error: An Error object if an exception occurs.
     """
     try:
-        node_definition = await cml_client.get(f"/node_definitions/{nid}")
-        return NodeDefinition(**node_definition)
+        return await get_node_def_details(nid)
     except httpx.HTTPStatusError as e:
         return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
     except Exception as e:
@@ -224,9 +240,34 @@ async def get_node_definition_detail(nid: UUID4Type) -> NodeDefinition | Error:
 
 
 @server_mcp.tool
-async def create_lab_topology(topology: Topology | dict) -> UUID4Type | Error:
+async def create_empty_lab(lab: LabCreate | dict) -> LabResponse | Error:
     """
-    Create a new lab topology.
+    Create an empty lab.
+
+    Args:
+        lab (LabCreate | dict): The empty lab definition as a LabCreate object or a dict
+          corresponding to a LabCreate object.
+
+    Returns:
+        LabResponse: The created lab response.
+        Error: An Error object if an exception occurs.
+    """
+    try:
+        if isinstance(lab, dict):
+            lab = LabCreate(**lab)
+        resp = await cml_client.post("/labs", data=lab.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
+        return LabResponse(**resp)
+    except httpx.HTTPStatusError as e:
+        return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
+    except Exception as e:
+        logger.error(f"Error creating empty lab topology: {str(e)}", exc_info=True)
+        return Error(**{"error": str(e)})
+
+
+@server_mcp.tool
+async def create_full_lab_topology(topology: Topology | dict) -> UUID4Type | Error:
+    """
+    Create a new lab topology with lab details, nodes, links, node configurations, and other resources.
 
     Args:
         topology (Topology | dict): The topology definition as a Topology object or a dict
@@ -241,7 +282,7 @@ async def create_lab_topology(topology: Topology | dict) -> UUID4Type | Error:
         # Handle this conversion.
         if isinstance(topology, dict):
             topology = Topology(**topology)
-        resp = await cml_client.post("/import", data=topology.model_dump(mode="json"))
+        resp = await cml_client.post("/import", data=topology.model_dump(mode="json", exclude_defaults=True))
         return UUID4Type(resp["id"])
     except httpx.HTTPStatusError as e:
         return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
@@ -382,6 +423,156 @@ async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> None | Error:
         return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
     except Exception as e:
         logger.error(f"Error deleting CML lab {lid}: {str(e)}", exc_info=True)
+        return Error(**{"error": str(e)})
+
+
+async def add_interface(lid: UUID4Type, intf: InterfaceCreate) -> InterfaceResponse:
+    """
+    Add an interface to a CML lab by its lab ID.
+
+    Args:
+        lid (UUID4Type): The lab ID.
+        intf (InterfaceCreate): The interface definition as an InterfaceCreate object.
+
+    Returns:
+        InterfaceResponse: The added interface details if successful.
+        Error: An Error object if an error occurs.
+    """
+    resp = await cml_client.post(f"/labs/{lid}/interfaces", data=intf.model_dump(mode="json", exclude_defaults=True))
+    return InterfaceResponse(**resp)
+
+
+@server_mcp.tool
+async def add_cml_node_to_lab(lid: UUID4Type, node: NodeCreate | dict) -> UUID4Type | Error:
+    """
+    Add a node to a CML lab by its ID.
+
+    Args:
+        lid (UUID4Type): The lab ID.
+        node (NodeCreate | dict): The node definition as a NodeCreate object or a dict
+          corresponding to a NodeCreate object.
+
+    Returns:
+        UUID4Type: The ID of the added node if successful.
+        Error: An Error object if an error occurs.
+    """
+    try:
+        if isinstance(node, dict):
+            node = NodeCreate(**node)
+        resp = await cml_client.post(f"/labs/{lid}/nodes", data=node.model_dump(mode="json", exclude_defaults=True))
+        # Create the default number of interfaces for the node def.  This is modeled after what happens in the UI.
+        try:
+            nd = await get_node_def_details(node.node_definition)
+            defcount = nd.device.interfaces.default_count
+            if not defcount:
+                defcount = nd.device.interfaces.min_count
+                if not defcount:
+                    defcount = 1
+            for _ in range(defcount):
+                ic = {"node": resp["id"]}
+                await add_interface(lid, InterfaceCreate(**ic))
+        except Exception as ie:
+            logger.error(f"Error adding interfaces for node {resp['id']} in lab {lid}: {str(ie)}", exc_info=True)
+        return UUID4Type(resp["id"])
+    except httpx.HTTPStatusError as e:
+        return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
+    except Exception as e:
+        logger.error(f"Error adding CML node to lab {lid}: {str(e)}", exc_info=True)
+        return Error(**{"error": str(e)})
+
+
+@server_mcp.tool
+async def add_interface_to_cml_node(lid: UUID4Type, intf: InterfaceCreate | dict) -> InterfaceResponse | Error:
+    """
+    Add an interface to a CML node by its lab ID.
+
+    Args:
+        lid (UUID4Type): The lab ID.
+        intf (InterfaceCreate | dict): The interface definition as an InterfaceCreate object or a dict
+          corresponding to an InterfaceCreate object.
+
+    Returns:
+        InterfaceResponse: The added interface details if successful.
+        Error: An Error object if an error occurs.
+    """
+    try:
+        if isinstance(intf, dict):
+            intf = InterfaceCreate(**intf)
+        return await add_interface(lid, intf)
+    except httpx.HTTPStatusError as e:
+        return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
+    except Exception as e:
+        logger.error(f"Error adding interface to node {intf.node} in lab {lid}: {str(e)}", exc_info=True)
+        return Error(**{"error": str(e)})
+
+
+@server_mcp.tool
+async def get_interfaces_for_node(lid: UUID4Type, nid: UUID4Type) -> list[InterfaceResponse] | Error:
+    """
+    Get interfaces for a specific node in a CML lab by its lab ID and node ID.
+
+    Args:
+        lid (UUID4Type): The lab ID.
+        nid (UUID4Type): The node ID.
+
+    Returns:
+        list[NodeResponse]: A list of NodeResponse objects representing the node's interfaces.
+        Error: An Error object if an error occurs.
+    """
+    try:
+        resp = await cml_client.get(f"/labs/{lid}/nodes/{nid}/interfaces", params={"data": True, "operational": False})
+        return [InterfaceResponse(**iface) for iface in resp]
+    except httpx.HTTPStatusError as e:
+        return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
+    except Exception as e:
+        logger.error(f"Error getting interfaces for node {nid} in lab {lid}: {str(e)}", exc_info=True)
+        return Error(**{"error": str(e)})
+
+
+@server_mcp.tool
+async def connect_two_nodes(lid: UUID4Type, link_info: LinkCreate | dict) -> UUID4Type | Error:
+    """
+    Create a link between two nodes in a CML lab by their interface IDs.
+
+    Args:
+        link_info (LinkCreate | dict): Details for the link to create as a LinkCreate object or a dict
+          corresponding to a LinkCreate object.
+
+    Returns:
+        UUID4Type: The ID of the link created if successful.
+        Error: An Error object if an error occurs.
+    """
+    try:
+        if isinstance(link_info, dict):
+            link_info = LinkCreate(**link_info)
+        resp = await cml_client.post(f"/labs/{lid}/links", data=link_info.model_dump(mode="json"))
+        return UUID4Type(resp["id"])
+    except httpx.HTTPStatusError as e:
+        return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
+    except Exception as e:
+        logger.error(f"Error creating link for {link_info}: {str(e)}", exc_info=True)
+        return Error(**{"error": str(e)})
+
+
+@server_mcp.tool
+async def get_all_links_for_lab(lid: UUID4Type) -> list[Link] | Error:
+    """
+    Get all links for a CML lab by its ID.
+
+    Args:
+        lid (UUID4Type): The lab ID.
+
+    Returns:
+        list[Link]: List of Link objects.
+        Error: An Error object if an error occurs.
+    """
+    try:
+        resp = await cml_client.get(f"/labs/{lid}/links", params={"data": True})
+        return [Link(**link) for link in resp]
+    except httpx.HTTPStatusError as e:
+        return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
+    except Exception as e:
+        logger.error(f"Error getting links for lab {lid}: {str(e)}", exc_info=True)
         return Error(**{"error": str(e)})
 
 
