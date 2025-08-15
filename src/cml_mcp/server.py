@@ -34,14 +34,24 @@ from mcp.types import METHOD_NOT_FOUND
 from virl2_client.models.cl_pyats import ClPyats
 
 from cml_mcp.cml_client import CMLClient
+from cml_mcp.schemas.annotations import (
+    EllipseAnnotation,
+    EllipseAnnotationResponse,
+    LineAnnotation,
+    LineAnnotationResponse,
+    RectangleAnnotation,
+    RectangleAnnotationResponse,
+    TextAnnotation,
+    TextAnnotationResponse,
+)
 from cml_mcp.schemas.common import UserName, UUID4Type
-from cml_mcp.schemas.interfaces import InterfaceResponse, InterfaceCreate
-from cml_mcp.schemas.labs import Lab, LabTitle, LabCreate, LabResponse
+from cml_mcp.schemas.interfaces import InterfaceCreate, InterfaceResponse
+from cml_mcp.schemas.labs import Lab, LabCreate, LabResponse, LabTitle
 
 # from cml_mcp.schemas.licensing import LicensingStatus
-from cml_mcp.schemas.links import LinkCreate, Link
+from cml_mcp.schemas.links import Link, LinkCreate
 from cml_mcp.schemas.node_definitions import NodeDefinition, SimplifiedNodeDefinitionResponse
-from cml_mcp.schemas.nodes import Node, NodeConfigurationContent, NodeLabel, NodeCreate
+from cml_mcp.schemas.nodes import Node, NodeConfigurationContent, NodeCreate, NodeLabel
 from cml_mcp.schemas.system import SystemHealth, SystemInformation, SystemStats
 from cml_mcp.schemas.topologies import Topology
 from cml_mcp.settings import settings
@@ -88,7 +98,7 @@ async def get_cml_labs(user: UserName | None = None) -> list[Lab] | Error:
     try:
         # If the requested user is not the configured user and is not an admin, deny access
         if str(user) != settings.cml_username and not await cml_client.is_admin():
-            return Error(**{"error": "User is not an admin and cannot view all labs."})
+            raise ValueError("User is not an admin and cannot view all labs.")
         ulabs = []
         # Get all labs from the CML server
         labs = await get_all_labs()
@@ -443,7 +453,7 @@ async def add_interface(lid: UUID4Type, intf: InterfaceCreate) -> InterfaceRespo
 
 
 @server_mcp.tool
-async def add_cml_node_to_lab(lid: UUID4Type, node: NodeCreate | dict) -> UUID4Type | Error:
+async def add_node_to_cml_lab(lid: UUID4Type, node: NodeCreate | dict) -> UUID4Type | Error:
     """
     Add a node to a CML lab by its ID.
 
@@ -482,7 +492,55 @@ async def add_cml_node_to_lab(lid: UUID4Type, node: NodeCreate | dict) -> UUID4T
 
 
 @server_mcp.tool
-async def add_interface_to_cml_node(lid: UUID4Type, intf: InterfaceCreate | dict) -> InterfaceResponse | Error:
+async def add_annotation_to_cml_lab(
+    lid: UUID4Type, annotation: TextAnnotation | RectangleAnnotation | EllipseAnnotation | LineAnnotation | dict
+) -> TextAnnotation | RectangleAnnotation | EllipseAnnotation | LineAnnotation | Error:
+    """Add an annotation to a CML lab by the lab ID.
+
+    Args:
+        lid (UUID4Type): The lab ID.
+        annotation (TextAnnotation | RectangleAnnotation | EllipseAnnotation | LineAnnotation | dict): The annotation to add as
+          a TextAnnotation, RectangleAnnotation, EllipseAnnotation, or LineAnnotation object, or a dict representing a
+          TextAnnotation, RectangleAnnotation, EllipseAnnotation, or LineAnnotation.
+
+    Returns:
+        TextAnnotationResponse | RectangleAnnotationResponse | EllipseAnnotationResponse | LineAnnotationResponse | Error:
+          The added annotation or an error.
+    """
+    try:
+        if isinstance(annotation, dict):
+            if "type" not in annotation:
+                raise ValueError("Annotation dict must contain a 'type' field.")
+            if annotation["type"] == "text":
+                annotation = TextAnnotation(**annotation)
+            elif annotation["type"] == "rectangle":
+                annotation = RectangleAnnotation(**annotation)
+            elif annotation["type"] == "ellipse":
+                annotation = EllipseAnnotation(**annotation)
+            elif annotation["type"] == "line":
+                annotation = LineAnnotation(**annotation)
+            else:
+                raise ValueError(f"Unknown annotation type: {annotation['type']}")
+        resp = await cml_client.post(f"/labs/{lid}/annotations", data=annotation.model_dump(mode="json", exclude_defaults=True))
+        if resp["type"] == "text":
+            return TextAnnotationResponse(**resp)
+        elif resp["type"] == "rectangle":
+            return RectangleAnnotationResponse(**resp)
+        elif resp["type"] == "ellipse":
+            return EllipseAnnotationResponse(**resp)
+        elif resp["type"] == "line":
+            return LineAnnotationResponse(**resp)
+        else:
+            raise ValueError(f"Unknown annotation type created: {resp['type']}")
+    except httpx.HTTPStatusError as e:
+        return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
+    except Exception as e:
+        logger.error(f"Error adding annotation to lab {lid}: {str(e)}", exc_info=True)
+        return Error(**{"error": str(e)})
+
+
+@server_mcp.tool
+async def add_interface_to_node(lid: UUID4Type, intf: InterfaceCreate | dict) -> InterfaceResponse | Error:
     """
     Add an interface to a CML node by its lab ID.
 
@@ -652,7 +710,7 @@ async def get_cml_lab_by_title(title: LabTitle) -> Lab | Error:
             lab = await cml_client.get(f"/labs/{lid}")
             if lab["lab_title"] == str(title):
                 return Lab(**lab)
-        return Error(**{"error": "Lab not found"})
+        raise ValueError(f"Lab with title '{title}' not found.")
     except httpx.HTTPStatusError as e:
         return Error(**{"error": f"HTTP error {e.response.status_code}: {e.response.text}"})
     except Exception as e:
