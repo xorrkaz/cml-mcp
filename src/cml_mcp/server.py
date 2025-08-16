@@ -83,7 +83,12 @@ async def get_all_labs() -> list[UUID4Type]:
     return [UUID4Type(lab) for lab in labs]
 
 
-@server_mcp.tool
+@server_mcp.tool(
+    annotations={
+        "title": "Get All CML Labs",
+        "readOnlyHint": True,
+    }
+)
 async def get_cml_labs(user: UserName | None = None) -> list[Lab]:
     """
     Get the list of labs for a specific user or all labs if the user is an admin.
@@ -119,7 +124,12 @@ async def get_cml_labs(user: UserName | None = None) -> list[Lab]:
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(
+    annotations={
+        "title": "Get CML System Information",
+        "readOnlyHint": True,
+    }
+)
 async def get_cml_information() -> SystemInformation:
     """
     Get information about the CML server.
@@ -137,7 +147,12 @@ async def get_cml_information() -> SystemInformation:
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(
+    annotations={
+        "title": "Get CML System Health",
+        "readOnlyHint": True,
+    }
+)
 async def get_cml_status() -> SystemHealth:
     """
     Get the status of the CML server.
@@ -155,7 +170,12 @@ async def get_cml_status() -> SystemHealth:
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(
+    annotations={
+        "title": "Get CML System Statistics",
+        "readOnlyHint": True,
+    }
+)
 async def get_cml_statistics() -> SystemStats:
     """
     Get statistics about the CML server.
@@ -173,7 +193,12 @@ async def get_cml_statistics() -> SystemStats:
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(
+    annotations={
+        "title": "Get CML License Info",
+        "readOnlyHint": True,
+    }
+)
 async def get_cml_licensing_details() -> dict[str, Any]:
     """
     Get licensing details from the CML server.
@@ -194,7 +219,12 @@ async def get_cml_licensing_details() -> dict[str, Any]:
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(
+    annotations={
+        "title": "Get All CML Node Definitions",
+        "readOnlyHint": True,
+    }
+)
 async def get_cml_node_definitions() -> list[SimplifiedNodeDefinitionResponse]:
     """
     Get the list of node definitions from the CML server.
@@ -226,7 +256,12 @@ async def get_node_def_details(did: DefinitionID) -> NodeDefinition:
     return NodeDefinition(**node_definition)
 
 
-@server_mcp.tool
+@server_mcp.tool(
+    annotations={
+        "title": "Get Details About a Node Definition",
+        "readOnlyHint": True,
+    }
+)
 async def get_node_definition_detail(did: DefinitionID) -> NodeDefinition:
     """
     Get detailed information about a specific node definition by its ID.
@@ -246,7 +281,13 @@ async def get_node_definition_detail(did: DefinitionID) -> NodeDefinition:
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(
+    annotations={
+        "title": "Create an Empty Lab",
+        "readOnlyHint": False,
+        "destructiveHint": False,
+    }
+)
 async def create_empty_lab(lab: LabCreate | dict) -> LabResponse:
     """
     Create an empty lab.
@@ -270,7 +311,13 @@ async def create_empty_lab(lab: LabCreate | dict) -> LabResponse:
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(
+    annotations={
+        "title": "Create a Full Lab Topology",
+        "readOnlyHint": False,
+        "destructiveHint": False,
+    }
+)
 async def create_full_lab_topology(topology: Topology | dict) -> UUID4Type:
     """
     Create a new lab topology with lab details, nodes, links, node configurations, and other resources.
@@ -296,16 +343,13 @@ async def create_full_lab_topology(topology: Topology | dict) -> UUID4Type:
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(annotations={"title": "Start a CML Lab", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
 async def start_cml_lab(lid: UUID4Type) -> None:
     """
     Start a CML lab by its ID.
 
     Args:
         lid (UUID4Type): The lab ID.
-
-    Returns:
-        None: If successful.
     """
     try:
         await cml_client.put(f"/labs/{lid}/start")
@@ -322,9 +366,6 @@ async def stop_lab(lid: UUID4Type) -> None:
 
     Args:
         lid (UUID4Type): The lab ID.
-
-    Returns:
-        None: If successful.
     """
     await cml_client.put(f"/labs/{lid}/stop")
 
@@ -335,23 +376,17 @@ async def wipe_lab(lid: UUID4Type) -> None:
 
     Args:
         lid (UUID4Type): The lab ID.
-
-    Returns:
-        None: If successful.
     """
     await cml_client.put(f"/labs/{lid}/wipe")
 
 
-@server_mcp.tool
+@server_mcp.tool(annotations={"title": "Stop a CML Lab", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
 async def stop_cml_lab(lid: UUID4Type) -> None:
     """
     Stop a CML lab by its ID.
 
     Args:
         lid (UUID4Type): The lab ID.
-
-    Returns:
-        None: If successful.
     """
     try:
         await stop_lab(lid)
@@ -362,16 +397,20 @@ async def stop_cml_lab(lid: UUID4Type) -> None:
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(
+    annotations={
+        "title": "Wipe a CML Lab",
+        "readOnlyHint": False,
+        "destructiveHint": True,
+        "idempotentHint": True,
+    }
+)
 async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> None:
     """
     Wipe a CML lab by its ID.
 
     Args:
         lid (UUID4Type): The lab ID.
-
-    Returns:
-        None: If successful.
     """
     try:
         elicit_supported = True
@@ -393,16 +432,19 @@ async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> None:
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(
+    annotations={
+        "title": "Delete a CML Lab",
+        "readOnlyHint": False,
+        "destructiveHint": True,
+    }
+)
 async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> None:
     """
     Delete a CML lab by its ID. If the lab is running and/or not wiped, it will be stopped and wiped first.
 
     Args:
         lid (UUID4Type): The lab ID.
-
-    Returns:
-        None: If successful.
     """
     try:
 
@@ -436,14 +478,19 @@ async def add_interface(lid: UUID4Type, intf: InterfaceCreate) -> InterfaceRespo
         intf (InterfaceCreate): The interface definition as an InterfaceCreate object.
 
     Returns:
-        InterfaceResponse: The added interface details if successful.
-        Error: An Error object if an error occurs.
+        InterfaceResponse: The added interface details.
     """
     resp = await cml_client.post(f"/labs/{lid}/interfaces", data=intf.model_dump(mode="json", exclude_defaults=True))
     return InterfaceResponse(**resp)
 
 
-@server_mcp.tool
+@server_mcp.tool(
+    annotations={
+        "title": "Add a Node to a CML Lab",
+        "readOnlyHint": False,
+        "destructiveHint": False,
+    }
+)
 async def add_node_to_cml_lab(lid: UUID4Type, node: NodeCreate | dict) -> UUID4Type:
     """
     Add a node to a CML lab by its ID.
@@ -481,7 +528,13 @@ async def add_node_to_cml_lab(lid: UUID4Type, node: NodeCreate | dict) -> UUID4T
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(
+    annotations={
+        "title": "Add an Annotation to a CML Lab",
+        "readOnlyHint": False,
+        "destructiveHint": False,
+    }
+)
 async def add_annotation_to_cml_lab(
     lid: UUID4Type, annotation: TextAnnotation | RectangleAnnotation | EllipseAnnotation | LineAnnotation | dict
 ) -> TextAnnotation | RectangleAnnotation | EllipseAnnotation | LineAnnotation:
@@ -529,7 +582,13 @@ async def add_annotation_to_cml_lab(
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(
+    annotations={
+        "title": "Add an Interface to a CML Node",
+        "readOnlyHint": False,
+        "destructiveHint": False,
+    }
+)
 async def add_interface_to_node(lid: UUID4Type, intf: InterfaceCreate | dict) -> InterfaceResponse:
     """
     Add an interface to a CML node by its lab ID.
@@ -553,7 +612,12 @@ async def add_interface_to_node(lid: UUID4Type, intf: InterfaceCreate | dict) ->
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(
+    annotations={
+        "title": "Get Interfaces for a CML Node",
+        "readOnlyHint": True,
+    }
+)
 async def get_interfaces_for_node(lid: UUID4Type, nid: UUID4Type) -> list[InterfaceResponse]:
     """
     Get interfaces for a specific node in a CML lab by its lab ID and node ID.
@@ -575,7 +639,13 @@ async def get_interfaces_for_node(lid: UUID4Type, nid: UUID4Type) -> list[Interf
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(
+    annotations={
+        "title": "Connect Two Nodes in a CML Lab",
+        "readOnlyHint": False,
+        "destructiveHint": False,
+    }
+)
 async def connect_two_nodes(lid: UUID4Type, link_info: LinkCreate | dict) -> UUID4Type:
     """
     Create a link between two nodes in a CML lab by their interface IDs.
@@ -599,7 +669,12 @@ async def connect_two_nodes(lid: UUID4Type, link_info: LinkCreate | dict) -> UUI
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(
+    annotations={
+        "title": "Get All Links for a CML Lab",
+        "readOnlyHint": True,
+    }
+)
 async def get_all_links_for_lab(lid: UUID4Type) -> list[Link]:
     """
     Get all links for a CML lab by its ID.
@@ -620,7 +695,7 @@ async def get_all_links_for_lab(lid: UUID4Type) -> list[Link]:
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(annotations={"title": "Apply Link Conditioning", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
 async def apply_link_conditioning(lid: UUID4Type, link_id: UUID4Type, condition: LinkConditionConfiguration | dict) -> ConditionResponse:
     """
     Apply link conditioning to a link in a CML lab by its lab ID and link ID.
@@ -646,7 +721,7 @@ async def apply_link_conditioning(lid: UUID4Type, link_id: UUID4Type, condition:
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(annotations={"title": "Configure a CML Node", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
 async def configure_cml_node(lid: UUID4Type, nid: UUID4Type, config: NodeConfigurationContent) -> UUID4Type:
     """
     Configure a node in a CML lab by its lab ID and node ID. The node must be in a BOOTED (i.e., wiped) state.
@@ -670,7 +745,7 @@ async def configure_cml_node(lid: UUID4Type, nid: UUID4Type, config: NodeConfigu
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(annotations={"title": "Get Nodes for a CML Lab", "readOnlyHint": True})
 async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node]:
     """
     Get a list of nodes for a CML lab by its ID.
@@ -702,7 +777,7 @@ async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node]:
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(annotations={"title": "Get a CML Lab by Title", "readOnlyHint": True})
 async def get_cml_lab_by_title(title: LabTitle) -> Lab:
     """
     Get a CML lab by its title.
@@ -727,7 +802,7 @@ async def get_cml_lab_by_title(title: LabTitle) -> Lab:
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(annotations={"title": "Stop a CML Node", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
 async def stop_cml_node(lid: UUID4Type, nid: UUID4Type) -> None:
     """
     Stop a node in a CML lab by its lab ID and node ID.
@@ -735,9 +810,6 @@ async def stop_cml_node(lid: UUID4Type, nid: UUID4Type) -> None:
     Args:
         lid (UUID4Type): The lab ID.
         nid (UUID4Type): The node ID.
-
-    Returns:
-        None: If successful.
     """
     try:
         await cml_client.put(f"/labs/{lid}/nodes/{nid}/state/stop")
@@ -748,7 +820,7 @@ async def stop_cml_node(lid: UUID4Type, nid: UUID4Type) -> None:
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(annotations={"title": "Start a CML Node", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
 async def start_cml_node(lid: UUID4Type, nid: UUID4Type) -> None:
     """
     Start a node in a CML lab by its lab ID and node ID.
@@ -756,9 +828,6 @@ async def start_cml_node(lid: UUID4Type, nid: UUID4Type) -> None:
     Args:
         lid (UUID4Type): The lab ID.
         nid (UUID4Type): The node ID.
-
-    Returns:
-        None: If successful.
     """
     try:
         await cml_client.put(f"/labs/{lid}/nodes/{nid}/state/start")
@@ -769,7 +838,7 @@ async def start_cml_node(lid: UUID4Type, nid: UUID4Type) -> None:
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(annotations={"title": "Wipe a CML Node", "readOnlyHint": False, "destructiveHint": True, "idempotentHint": True})
 async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> None:
     """
     Wipe a node in a CML lab by its lab ID and node ID. Node must be stopped first.
@@ -777,9 +846,6 @@ async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> None:
     Args:
         lid (UUID4Type): The lab ID.
         nid (UUID4Type): The node ID.
-
-    Returns:
-        None: If successful.
     """
     try:
         elicit_supported = True
@@ -801,7 +867,7 @@ async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> None:
         raise ToolError(e)
 
 
-@server_mcp.tool
+@server_mcp.tool(annotations={"title": "Send CLI Command to CML Node", "readOnlyHint": False, "destructiveHint": True})
 def send_cli_command(lid: UUID4Type, label: NodeLabel, commands: str, config_command: bool = False) -> str:
     """
     Send CLI command(s) to a node in a CML lab by its lab ID and node label.
