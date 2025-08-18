@@ -37,25 +37,22 @@ from virl2_client.models.cl_pyats import ClPyats
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.schemas.annotations import (
     EllipseAnnotation,
-    EllipseAnnotationResponse,
     LineAnnotation,
-    LineAnnotationResponse,
     RectangleAnnotation,
-    RectangleAnnotationResponse,
     TextAnnotation,
-    TextAnnotationResponse,
 )
-from cml_mcp.schemas.common import UserName, UUID4Type, DefinitionID
-from cml_mcp.schemas.interfaces import InterfaceCreate, InterfaceResponse
-from cml_mcp.schemas.labs import Lab, LabCreate, LabResponse, LabTitle
+from cml_mcp.schemas.common import DefinitionID, UserName, UUID4Type
+from cml_mcp.schemas.interfaces import InterfaceCreate
+from cml_mcp.schemas.labs import Lab, LabCreate, LabTitle
 
 # from cml_mcp.schemas.licensing import LicensingStatus
-from cml_mcp.schemas.links import Link, LinkCreate, LinkConditionConfiguration, ConditionResponse
-from cml_mcp.schemas.node_definitions import NodeDefinition, SimplifiedNodeDefinitionResponse
+from cml_mcp.schemas.links import Link, LinkConditionConfiguration, LinkCreate
+from cml_mcp.schemas.node_definitions import NodeDefinition
 from cml_mcp.schemas.nodes import Node, NodeConfigurationContent, NodeCreate, NodeLabel
 from cml_mcp.schemas.system import SystemHealth, SystemInformation, SystemStats
 from cml_mcp.schemas.topologies import Topology
 from cml_mcp.settings import settings
+from cml_mcp.types import SuperSimplifiedNodeDefinitionResponse, SimplifiedInterfaceResponse
 
 # Set up logging
 loglevel = logging.DEBUG if os.getenv("DEBUG", "false").lower() == "true" else logging.INFO
@@ -89,19 +86,15 @@ async def get_all_labs() -> list[UUID4Type]:
         "readOnlyHint": True,
     }
 )
-async def get_cml_labs(user: UserName | None = None) -> list[Lab]:
+async def get_cml_labs(user: UserName = settings.cml_username) -> list[Lab]:
     """
     Get the list of labs for a specific user or all labs if the user is an admin.
-
-    Args:
-        user (UserName | None): The username to filter labs by. If None, defaults to the configured username.
-
-    Returns:
-        list[Lab]: A list of Lab objects owned by the user.
+    To get labs for the current user, leave the "user" argument blank.
     """
-    # Clients like to pass "null" as a string vs. null as a None type.
-    if not user or str(user) == "null":
-        user = settings.cml_username  # Default to the configured username
+
+    # # Clients like to pass "null" as a string vs. null as a None type.
+    # if not user or str(user) == "null":
+    #     user = settings.cml_username  # Default to the configured username
 
     try:
         # If the requested user is not the configured user and is not an admin, deny access
@@ -133,9 +126,6 @@ async def get_cml_labs(user: UserName | None = None) -> list[Lab]:
 async def get_cml_information() -> SystemInformation:
     """
     Get information about the CML server.
-
-    Returns:
-        SystemInformation: The system information.
     """
     try:
         info = await cml_client.get("/system_information")
@@ -156,9 +146,6 @@ async def get_cml_information() -> SystemInformation:
 async def get_cml_status() -> SystemHealth:
     """
     Get the status of the CML server.
-
-    Returns:
-        SystemHealth: The health/status of the CML server.
     """
     try:
         status = await cml_client.get("/system_health")
@@ -179,9 +166,6 @@ async def get_cml_status() -> SystemHealth:
 async def get_cml_statistics() -> SystemStats:
     """
     Get statistics about the CML server.
-
-    Returns:
-        SystemStats: The system statistics.
     """
     try:
         stats = await cml_client.get("/system_stats")
@@ -202,9 +186,6 @@ async def get_cml_statistics() -> SystemStats:
 async def get_cml_licensing_details() -> dict[str, Any]:
     """
     Get licensing details from the CML server.
-
-    Returns:
-        dict[str, Any]: The licensing status as a dict corresponding to a LicensingStatus object.
     """
     try:
         licensing_info = await cml_client.get("/licensing")
@@ -225,16 +206,13 @@ async def get_cml_licensing_details() -> dict[str, Any]:
         "readOnlyHint": True,
     }
 )
-async def get_cml_node_definitions() -> list[SimplifiedNodeDefinitionResponse]:
+async def get_cml_node_definitions() -> list[SuperSimplifiedNodeDefinitionResponse]:
     """
     Get the list of node definitions from the CML server.
-
-    Returns:
-        list[SimplifiedNodeDefinitionResponse]: A list of SimplifiedNodeDefinitionResponse objects.
     """
     try:
         node_definitions = await cml_client.get("/simplified_node_definitions")
-        return [SimplifiedNodeDefinitionResponse(**nd) for nd in node_definitions]
+        return [SuperSimplifiedNodeDefinitionResponse(**nd) for nd in node_definitions]
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -265,12 +243,6 @@ async def get_node_def_details(did: DefinitionID) -> NodeDefinition:
 async def get_node_definition_detail(did: DefinitionID) -> NodeDefinition:
     """
     Get detailed information about a specific node definition by its ID.
-
-    Args:
-        did (DefinitionID): The node definition ID.
-
-    Returns:
-        NodeDefinition: The node definition details.
     """
     try:
         return await get_node_def_details(did)
@@ -288,22 +260,30 @@ async def get_node_definition_detail(did: DefinitionID) -> NodeDefinition:
         "destructiveHint": False,
     }
 )
-async def create_empty_lab(lab: LabCreate | dict) -> LabResponse:
-    """
-    Create an empty lab.
+async def create_empty_lab(lab: LabCreate | dict) -> UUID4Type:
+    """Creates an empty lab topology in CML using the provided LabCreate definition.
 
-    Args:
-        lab (LabCreate | dict): The empty lab definition as a LabCreate object or a dict
-          corresponding to a LabCreate object.
+    The LabCreate schema supports the following fields:
 
-    Returns:
-        LabResponse: The created lab response.
+    - title (str, optional): Title of the lab (1-64 characters).
+    - owner (str, optional): UUID of the lab owner.
+    - description (str, optional): Free-form textual description of the lab (max 4096 characters).
+    - notes (str, optional): Additional notes for the lab (max 32768 characters).
+    - associations (LabAssociations, optional): Object specifying lab/group and lab/user associations:
+        - groups (list[LabGroupAssociation], optional): Each with:
+            - id (str): UUID of the group.
+            - permissions (list[str]): Permissions for the group ("lab_admin", "lab_edit", "lab_exec", "lab_view").
+        - users (list[LabUserAssociation], optional): Each with:
+            - id (str): UUID of the user.
+            - permissions (list[str]): Permissions for the user ("lab_admin", "lab_edit", "lab_exec", "lab_view").
     """
     try:
+        # XXX The dict usage is a workaround for some LLMs that pass a JSON string
+        # representation of the argument object.
         if isinstance(lab, dict):
             lab = LabCreate(**lab)
-        resp = await cml_client.post("/labs", data=lab.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
-        return LabResponse(**resp)
+        resp = await cml_client.post("/labs", data=lab.model_dump(mode="json", exclude_none=True))
+        return UUID4Type(resp["id"])
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -320,21 +300,31 @@ async def create_empty_lab(lab: LabCreate | dict) -> LabResponse:
 )
 async def create_full_lab_topology(topology: Topology | dict) -> UUID4Type:
     """
-    Create a new lab topology with lab details, nodes, links, node configurations, and other resources.
+    Create a new, full lab topology in CML using a Topology object.
 
-    Args:
-        topology (Topology | dict): The topology definition as a Topology object or a dict
-          corresponding to a Topology object.
+    The Topology schema allows you to define all aspects of a lab in a single request, including:
+      - Lab details: title, description, notes, and schema version.
+      - Nodes: each with coordinates, label, node definition, image, RAM, CPU, tags, interfaces, and optional configuration.
+      - Interfaces: type, slot, MAC address, label, and node association.
+      - Links: connections between interfaces/nodes, with optional label and link conditioning (bandwidth, latency, loss, jitter, etc.).
+      - Annotations: visual elements (text, rectangle, ellipse, line) for documentation or highlighting.
+      - Smart annotations: advanced grouped/styled annotation objects.
 
-    Returns:
-        UUID4Type: The new lab topology ID if successful.
+    The Topology object must include at least:
+      - lab: LabTopology (with version, title, description, notes)
+      - nodes: list of NodeTopology objects (each with id, x, y, label, node_definition, interfaces)
+      - links: list of LinkTopology objects (each with id, i1, i2, n1, n2)
+
+    Optional fields:
+      - annotations: list of annotation objects (text, rectangle, ellipse, line)
+      - smart_annotations: list of SmartAnnotationBase objects
     """
     try:
-        # Cursor passes a dict representing the schema of a Topology.
-        # Handle this conversion.
+        # XXX The dict usage is a workaround for some LLMs that pass a JSON string
+        # representation of the argument object.
         if isinstance(topology, dict):
             topology = Topology(**topology)
-        resp = await cml_client.post("/import", data=topology.model_dump(mode="json", exclude_defaults=True))
+        resp = await cml_client.post("/import", data=topology.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
         return UUID4Type(resp["id"])
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -344,15 +334,13 @@ async def create_full_lab_topology(topology: Topology | dict) -> UUID4Type:
 
 
 @server_mcp.tool(annotations={"title": "Start a CML Lab", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
-async def start_cml_lab(lid: UUID4Type) -> None:
+async def start_cml_lab(lid: UUID4Type) -> bool:
     """
     Start a CML lab by its ID.
-
-    Args:
-        lid (UUID4Type): The lab ID.
     """
     try:
         await cml_client.put(f"/labs/{lid}/start")
+        return True
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -381,15 +369,13 @@ async def wipe_lab(lid: UUID4Type) -> None:
 
 
 @server_mcp.tool(annotations={"title": "Stop a CML Lab", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
-async def stop_cml_lab(lid: UUID4Type) -> None:
+async def stop_cml_lab(lid: UUID4Type) -> bool:
     """
     Stop a CML lab by its ID.
-
-    Args:
-        lid (UUID4Type): The lab ID.
     """
     try:
         await stop_lab(lid)
+        return True
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -405,12 +391,12 @@ async def stop_cml_lab(lid: UUID4Type) -> None:
         "idempotentHint": True,
     }
 )
-async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> None:
+async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> bool:
     """
     Wipe a CML lab by its ID.
 
-    Args:
-        lid (UUID4Type): The lab ID.
+    Before running this tool make sure to ask the user if they're sure they want to wipe this lab and wait for a response.
+    Wiping the lab will remove all the data from all the nodes within the lab.
     """
     try:
         elicit_supported = True
@@ -423,6 +409,7 @@ async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> None:
                 raise me
         if not elicit_supported or result.action == "accept":
             await wipe_lab(lid)
+            return True
         else:
             raise Exception("Wipe operation cancelled by user.")
     except httpx.HTTPStatusError as e:
@@ -439,12 +426,12 @@ async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> None:
         "destructiveHint": True,
     }
 )
-async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> None:
+async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> bool:
     """
     Delete a CML lab by its ID. If the lab is running and/or not wiped, it will be stopped and wiped first.
 
-    Args:
-        lid (UUID4Type): The lab ID.
+    Before running this tool make sure to ask the user if they're sure they want to delete this lab and
+    wait for a response.
     """
     try:
 
@@ -460,6 +447,7 @@ async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> None:
             await stop_lab(lid)  # Ensure the lab is stopped before deletion
             await wipe_lab(lid)  # Ensure the lab is wiped before deletion
             await cml_client.delete(f"/labs/{lid}")
+            return True
         else:
             raise Exception("Delete operation cancelled by user.")
     except httpx.HTTPStatusError as e:
@@ -469,7 +457,7 @@ async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> None:
         raise ToolError(e)
 
 
-async def add_interface(lid: UUID4Type, intf: InterfaceCreate) -> InterfaceResponse:
+async def add_interface(lid: UUID4Type, intf: InterfaceCreate) -> SimplifiedInterfaceResponse:
     """
     Add an interface to a CML lab by its lab ID.
 
@@ -480,8 +468,8 @@ async def add_interface(lid: UUID4Type, intf: InterfaceCreate) -> InterfaceRespo
     Returns:
         InterfaceResponse: The added interface details.
     """
-    resp = await cml_client.post(f"/labs/{lid}/interfaces", data=intf.model_dump(mode="json", exclude_defaults=True))
-    return InterfaceResponse(**resp)
+    resp = await cml_client.post(f"/labs/{lid}/interfaces", data=intf.model_dump(mode="json", exclude_none=True))
+    return SimplifiedInterfaceResponse(**resp)
 
 
 @server_mcp.tool(
@@ -493,17 +481,23 @@ async def add_interface(lid: UUID4Type, intf: InterfaceCreate) -> InterfaceRespo
 )
 async def add_node_to_cml_lab(lid: UUID4Type, node: NodeCreate | dict) -> UUID4Type:
     """
-    Add a node to a CML lab by its ID.
+    Adds a node to a CML lab and returns the unique ID of the newly created node.
 
-    Args:
-        lid (UUID4Type): The lab ID.
-        node (NodeCreate | dict): The node definition as a NodeCreate object or a dict
-          corresponding to a NodeCreate object.
+    The node argument must conform to the NodeCreate schema.
 
-    Returns:
-        UUID4Type: The ID of the added node if successful.
+    Upon successful creation, the function also provisions the default number of interfaces for the node,
+    as determined by its node definition.
+
+    NodeCreate schema highlights:
+        - x (int): X coordinate (-15000 to 15000).
+        - y (int): Y coordinate (-15000 to 15000).
+        - label (str): Node label (1-128 characters).
+        - node_definition (str): Node definition ID (1-250 characters).
+        - Optional: image_definition, ram, cpu_limit, data_volume, boot_disk_size, hide_links, tags, cpus, configuration, parameters.
     """
     try:
+        # XXX The dict usage is a workaround for some LLMs that pass a JSON string
+        # representation of the argument object.
         if isinstance(node, dict):
             node = NodeCreate(**node)
         resp = await cml_client.post(f"/labs/{lid}/nodes", data=node.model_dump(mode="json", exclude_defaults=True))
@@ -536,24 +530,67 @@ async def add_node_to_cml_lab(lid: UUID4Type, node: NodeCreate | dict) -> UUID4T
     }
 )
 async def add_annotation_to_cml_lab(
-    lid: UUID4Type, annotation: TextAnnotation | RectangleAnnotation | EllipseAnnotation | LineAnnotation | dict
-) -> TextAnnotation | RectangleAnnotation | EllipseAnnotation | LineAnnotation:
-    """Add an annotation to a CML lab by the lab ID.
+    lid: UUID4Type, annotation: EllipseAnnotation | LineAnnotation | RectangleAnnotation | TextAnnotation | dict
+) -> UUID4Type:
+    """
+    Add a visual annotation to a CML lab topology.
 
-    Args:
-        lid (UUID4Type): The lab ID.
-        annotation (TextAnnotation | RectangleAnnotation | EllipseAnnotation | LineAnnotation | dict): The annotation to add as
-          a TextAnnotation, RectangleAnnotation, EllipseAnnotation, or LineAnnotation object, or a dict representing a
-          TextAnnotation, RectangleAnnotation, EllipseAnnotation, or LineAnnotation.
+    The annotation must be an object that conforms to one of the following schemas:
+            TextAnnotation schema:
+                - type: "text"
+                - x1, y1: Anchor coordinates (-15000 to 15000)
+                - rotation: Degrees (0–360)
+                - border_color: Border color (e.g., "#FF00FF", "rgba(255,0,0,0.5)", "lightgoldenrodyellow")
+                - border_style: Border style ("": solid, "2,2": dotted, "4,2": dashed)
+                - color: Fill color
+                - thickness: Line thickness (1–32)
+                - z_index: Layer (-10240 to 10240)
+                - text_content: Text string (max 8192 chars)
+                - text_font: Font name (max 128 chars)
+                - text_size: Size (1–128)
+                - text_unit: Unit ("pt", "px", "em")
+                - text_bold: Bold (bool)
+                - text_italic: Italic (bool)
 
-    Returns:
-        TextAnnotationResponse | RectangleAnnotationResponse | EllipseAnnotationResponse | LineAnnotationResponse:
-          The added annotation.
+            RectangleAnnotation schema:
+                - type: "rectangle"
+                - x1, y1: Anchor coordinates (-15000 to 15000)
+                - x2, y2: Additional coordinates (width/height)
+                - rotation: Degrees (0–360)
+                - border_color: Border color
+                - border_style: Border style
+                - color: Fill color
+                - thickness: Line thickness (1–32)
+                - z_index: Layer (-10240 to 10240)
+                - border_radius: Border radius (0–128)
+
+            EllipseAnnotation schema:
+                - type: "ellipse"
+                - x1, y1: Anchor coordinates (-15000 to 15000)
+                - x2, y2: Additional coordinates (width/height/radius)
+                - rotation: Degrees (0–360)
+                - border_color: Border color
+                - border_style: Border style
+                - color: Fill color
+                - thickness: Line thickness (1–32)
+                - z_index: Layer (-10240 to 10240)
+
+            LineAnnotation schema:
+                - type: "line"
+                - x1, y1: Start coordinates (-15000 to 15000)
+                - x2, y2: End coordinates (-15000 to 15000)
+                - border_color: Border color
+                - border_style: Border style
+                - color: Fill color
+                - thickness: Line thickness (1–32)
+                - z_index: Layer (-10240 to 10240)
+                - line_start: Line start style ("arrow", "square", "circle", or null)
+                - line_end: Line end style ("arrow", "square", "circle", or null)
     """
     try:
+        # XXX The dict usage is a workaround for some LLMs that pass a JSON string
+        # representation of the argument object.
         if isinstance(annotation, dict):
-            if "type" not in annotation:
-                raise ValueError("Annotation dict must contain a 'type' field.")
             if annotation["type"] == "text":
                 annotation = TextAnnotation(**annotation)
             elif annotation["type"] == "rectangle":
@@ -563,18 +600,11 @@ async def add_annotation_to_cml_lab(
             elif annotation["type"] == "line":
                 annotation = LineAnnotation(**annotation)
             else:
-                raise ValueError(f"Unknown annotation type: {annotation['type']}")
+                raise ValueError(
+                    f"Invalid annotation type: {annotation['type']}. Must be one of 'text', 'rectangle', 'ellipse', or 'line'."
+                )
         resp = await cml_client.post(f"/labs/{lid}/annotations", data=annotation.model_dump(mode="json", exclude_defaults=True))
-        if resp["type"] == "text":
-            return TextAnnotationResponse(**resp)
-        elif resp["type"] == "rectangle":
-            return RectangleAnnotationResponse(**resp)
-        elif resp["type"] == "ellipse":
-            return EllipseAnnotationResponse(**resp)
-        elif resp["type"] == "line":
-            return LineAnnotationResponse(**resp)
-        else:
-            raise ValueError(f"Unknown annotation type created: {resp['type']}")
+        return UUID4Type(resp["id"])
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -589,19 +619,20 @@ async def add_annotation_to_cml_lab(
         "destructiveHint": False,
     }
 )
-async def add_interface_to_node(lid: UUID4Type, intf: InterfaceCreate | dict) -> InterfaceResponse:
+async def add_interface_to_node(lid: UUID4Type, intf: InterfaceCreate | dict) -> SimplifiedInterfaceResponse:
     """
-    Add an interface to a CML node by its lab ID.
+    Adds a network interface to a node within a CML lab.
 
-    Args:
-        lid (UUID4Type): The lab ID.
-        intf (InterfaceCreate | dict): The interface definition as an InterfaceCreate object or a dict
-          corresponding to an InterfaceCreate object.
+    The interface is provided as an `InterfaceCreate` object matching the following schema:
 
-    Returns:
-        InterfaceResponse: The added interface details if successful.
+    InterfaceCreate schema:
+    - node (str, required): UUID4 of the target node. Example: "90f84e38-a71c-4d57-8d90-00fa8a197385"
+    - slot (int, optional): Number of slots (0-128). Default: None.
+    - mac_address (str or None, optional): MAC address in Linux format ("00:11:22:33:44:55"). Default: None.
     """
     try:
+        # XXX The dict usage is a workaround for some LLMs that pass a JSON string
+        # representation of the argument object.
         if isinstance(intf, dict):
             intf = InterfaceCreate(**intf)
         return await add_interface(lid, intf)
@@ -618,20 +649,13 @@ async def add_interface_to_node(lid: UUID4Type, intf: InterfaceCreate | dict) ->
         "readOnlyHint": True,
     }
 )
-async def get_interfaces_for_node(lid: UUID4Type, nid: UUID4Type) -> list[InterfaceResponse]:
+async def get_interfaces_for_node(lid: UUID4Type, nid: UUID4Type) -> list[SimplifiedInterfaceResponse]:
     """
-    Get interfaces for a specific node in a CML lab by its lab ID and node ID.
-
-    Args:
-        lid (UUID4Type): The lab ID.
-        nid (UUID4Type): The node ID.
-
-    Returns:
-        list[NodeResponse]: A list of NodeResponse objects representing the node's interfaces.
+    Get a list of interfaces for a specific node in a CML lab by its lab ID and node ID.
     """
     try:
         resp = await cml_client.get(f"/labs/{lid}/nodes/{nid}/interfaces", params={"data": True, "operational": False})
-        return [InterfaceResponse(**iface) for iface in resp]
+        return [SimplifiedInterfaceResponse(**iface) for iface in resp]
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -648,16 +672,19 @@ async def get_interfaces_for_node(lid: UUID4Type, nid: UUID4Type) -> list[Interf
 )
 async def connect_two_nodes(lid: UUID4Type, link_info: LinkCreate | dict) -> UUID4Type:
     """
-    Create a link between two nodes in a CML lab by their interface IDs.
+    Creates a link between two interfaces in a CML lab.
 
-    Args:
-        link_info (LinkCreate | dict): Details for the link to create as a LinkCreate object or a dict
-          corresponding to a LinkCreate object.
+    This function establishes a connection between two nodes by creating a link using their interface UUIDs within a specified lab.
+    The link is defined by the `link_info` parameter, which must include the source and destination interface UUIDs.
 
-    Returns:
-        UUID4Type: The ID of the link created if successful.
+        lid (UUID4Type): The UUID4 identifier of the CML lab where the link will be created.
+        link_info (LinkCreate): Details of the link to create. Must include:
+            - src_int (str): UUID4 of the source interface.
+            - dst_int (str): UUID4 of the destination interface.
     """
     try:
+        # XXX The dict usage is a workaround for some LLMs that pass a JSON string
+        # representation of the argument object.
         if isinstance(link_info, dict):
             link_info = LinkCreate(**link_info)
         resp = await cml_client.post(f"/labs/{lid}/links", data=link_info.model_dump(mode="json"))
@@ -678,12 +705,6 @@ async def connect_two_nodes(lid: UUID4Type, link_info: LinkCreate | dict) -> UUI
 async def get_all_links_for_lab(lid: UUID4Type) -> list[Link]:
     """
     Get all links for a CML lab by its ID.
-
-    Args:
-        lid (UUID4Type): The lab ID.
-
-    Returns:
-        list[Link]: List of Link objects.
     """
     try:
         resp = await cml_client.get(f"/labs/{lid}/links", params={"data": True})
@@ -696,24 +717,39 @@ async def get_all_links_for_lab(lid: UUID4Type) -> list[Link]:
 
 
 @server_mcp.tool(annotations={"title": "Apply Link Conditioning", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
-async def apply_link_conditioning(lid: UUID4Type, link_id: UUID4Type, condition: LinkConditionConfiguration | dict) -> ConditionResponse:
+async def apply_link_conditioning(lid: UUID4Type, link_id: UUID4Type, condition: LinkConditionConfiguration | dict) -> bool:
     """
-    Apply link conditioning to a link in a CML lab by its lab ID and link ID.
+    Apply link conditioning to a specific link within a CML lab.
 
-    Args:
-        lid (UUID4Type): The lab ID.
-        link_id (UUID4Type): The link ID.
-        condition (LinkConditionConfiguration): The link conditioning config to apply as a LinkConditionConfiguration object or a dict
-          corresponding to a LinkConditionConfiguration object.
+    This function configures network conditions (such as bandwidth, latency, loss, jitter, etc.) on a link identified by its lab ID
+    and link ID.
 
-    Returns:
-        ConditionResponse: If successful.
+        lid (UUID4Type): The unique identifier (UUID4) of the CML lab.
+        link_id (UUID4Type): The unique identifier (UUID4) of the link within the lab.
+        condition (LinkConditionConfiguration): The configuration object specifying link conditioning parameters. Fields include:
+            - bandwidth (int | None): Bandwidth in kbps (0–10,000,000).
+            - latency (int | None): Delay in ms (0–10,000).
+            - delay_corr (float | int | None): Delay correlation in percent (0–100).
+            - limit (int | None): Limit in ms (0–10,000).
+            - loss (float | int | None): Packet loss in percent (0–100).
+            - loss_corr (float | int | None): Loss correlation in percent (0–100).
+            - gap (int | None): Gap between packets in ms (0–10,000).
+            - duplicate (float | int | None): Probability of duplicate packets in percent (0–100).
+            - duplicate_corr (float | int | None): Duplicate correlation in percent (0–100).
+            - jitter (int | None): Jitter in ms (0–10,000).
+            - reorder_prob (float | int | None): Probability of packet reordering in percent (0–100).
+            - reorder_corr (float | int | None): Reorder correlation in percent (0–100).
+            - corrupt_prob (float | int | None): Probability of corrupted frames in percent (0–100).
+            - corrupt_corr (float | int | None): Corruption correlation in percent (0–100).
+            - enabled (bool): Whether conditioning is enabled.
     """
     try:
+        # XXX The dict usage is a workaround for some LLMs that pass a JSON string
+        # representation of the argument object.
         if isinstance(condition, dict):
             condition = LinkConditionConfiguration(**condition)
-        resp = await cml_client.patch(f"/labs/{lid}/links/{link_id}/condition", data=condition.model_dump(mode="json", exclude_none=True))
-        return ConditionResponse(**resp)
+        await cml_client.patch(f"/labs/{lid}/links/{link_id}/condition", data=condition.model_dump(mode="json", exclude_none=True))
+        return True
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -722,22 +758,19 @@ async def apply_link_conditioning(lid: UUID4Type, link_id: UUID4Type, condition:
 
 
 @server_mcp.tool(annotations={"title": "Configure a CML Node", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
-async def configure_cml_node(lid: UUID4Type, nid: UUID4Type, config: NodeConfigurationContent) -> UUID4Type:
+async def configure_cml_node(lid: UUID4Type, nid: UUID4Type, config: NodeConfigurationContent) -> bool:
     """
-    Configure a node in a CML lab by its lab ID and node ID. The node must be in a BOOTED (i.e., wiped) state.
+    Configure a node in a CML lab by its lab ID and node ID. The node must be in a CREATED (i.e., stopped and wiped) state.
 
     Args:
         lid (UUID4Type): The lab ID.
         nid (UUID4Type): The node ID.
-        config (NodeConfigurationContent): The configuration content for the node.
-
-    Returns:
-        UUID4Type: The ID of the node configured if successful.
+        config (NodeConfigurationContent): A string representing the configuration content for the node.
     """
     payload = {"configuration": str(config)}
     try:
-        resp = await cml_client.patch(f"/labs/{lid}/nodes/{nid}", data=payload)
-        return UUID4Type(resp)
+        await cml_client.patch(f"/labs/{lid}/nodes/{nid}", data=payload)
+        return True
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -749,12 +782,6 @@ async def configure_cml_node(lid: UUID4Type, nid: UUID4Type, config: NodeConfigu
 async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node]:
     """
     Get a list of nodes for a CML lab by its ID.
-
-    Args:
-        lid (UUID4Type): The lab ID.
-
-    Returns:
-        list[Node]: List of node objects (without their configurations).
     """
     try:
         resp = await cml_client.get(f"/labs/{lid}/nodes", params={"data": True, "operational": True, "exclude_configurations": True})
@@ -781,12 +808,6 @@ async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node]:
 async def get_cml_lab_by_title(title: LabTitle) -> Lab:
     """
     Get a CML lab by its title.
-
-    Args:
-        title (LabTitle): The lab title.
-
-    Returns:
-        Lab: The lab object if found.
     """
     try:
         labs = await get_all_labs()
@@ -803,16 +824,13 @@ async def get_cml_lab_by_title(title: LabTitle) -> Lab:
 
 
 @server_mcp.tool(annotations={"title": "Stop a CML Node", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
-async def stop_cml_node(lid: UUID4Type, nid: UUID4Type) -> None:
+async def stop_cml_node(lid: UUID4Type, nid: UUID4Type) -> bool:
     """
     Stop a node in a CML lab by its lab ID and node ID.
-
-    Args:
-        lid (UUID4Type): The lab ID.
-        nid (UUID4Type): The node ID.
     """
     try:
         await cml_client.put(f"/labs/{lid}/nodes/{nid}/state/stop")
+        return True
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -821,16 +839,13 @@ async def stop_cml_node(lid: UUID4Type, nid: UUID4Type) -> None:
 
 
 @server_mcp.tool(annotations={"title": "Start a CML Node", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
-async def start_cml_node(lid: UUID4Type, nid: UUID4Type) -> None:
+async def start_cml_node(lid: UUID4Type, nid: UUID4Type) -> bool:
     """
     Start a node in a CML lab by its lab ID and node ID.
-
-    Args:
-        lid (UUID4Type): The lab ID.
-        nid (UUID4Type): The node ID.
     """
     try:
         await cml_client.put(f"/labs/{lid}/nodes/{nid}/state/start")
+        return True
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -839,13 +854,12 @@ async def start_cml_node(lid: UUID4Type, nid: UUID4Type) -> None:
 
 
 @server_mcp.tool(annotations={"title": "Wipe a CML Node", "readOnlyHint": False, "destructiveHint": True, "idempotentHint": True})
-async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> None:
+async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
     """
     Wipe a node in a CML lab by its lab ID and node ID. Node must be stopped first.
 
-    Args:
-        lid (UUID4Type): The lab ID.
-        nid (UUID4Type): The node ID.
+    Before using this tool, make sure to make sure to ask the user if they really
+    want to wipe the node and wait for a response.  Wiping the node will remove all data from the node.
     """
     try:
         elicit_supported = True
@@ -858,6 +872,7 @@ async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> None:
                 raise me
         if not elicit_supported or result.action == "accept":
             await cml_client.put(f"/labs/{lid}/nodes/{nid}/wipe_disks")
+            return True
         else:
             raise Exception("Wipe operation cancelled by user.")
     except httpx.HTTPStatusError as e:
@@ -870,17 +885,14 @@ async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> None:
 @server_mcp.tool(annotations={"title": "Send CLI Command to CML Node", "readOnlyHint": False, "destructiveHint": True})
 def send_cli_command(lid: UUID4Type, label: NodeLabel, commands: str, config_command: bool = False) -> str:
     """
-    Send CLI command(s) to a node in a CML lab by its lab ID and node label.
+    Send CLI command(s) to a node in a CML lab by its lab ID and node label. Nodes must be started
+    (i.e., in a BOOTED state) for this to succeed.
 
-    Args:
-        lid (UUID4Type): The lab ID.
-        label (NodeLabel): The label of the node to send the command to.
-        commands (str): The CLI command(s) to send.  Multiple commands can be specified separated by newlines.
-        config_command (bool, optional): If True, send as a configuration command(s).
-         This will automatically put the device in config mode. Defaults to False, meaning command(s) must be in exec mode.
+    Multiple commands can be sent separated by newlines.
 
-    Returns:
-        str: The command output.
+    When config_command is True, provide only configuration commands—do not include commands to enter or exit configuration
+    mode (e.g., "configure terminal" or "end"). When config_command is False, only operational/exec commands should be sent;
+    configuration commands are not allowed.
     """
     cwd = os.getcwd()  # Save the current working directory
     try:
