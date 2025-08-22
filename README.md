@@ -100,7 +100,8 @@ If your LLM tool supports a system prompt, or you want to provide some richer in
 >- Creating new lab
 >- Adding nodes to a lab
 >- Creating interfaces between nodes
->.
+>- Configuring nodes
+>- Creating annotations
 >
 >You have access to tools to access the CML server.
 
