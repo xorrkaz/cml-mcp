@@ -261,7 +261,7 @@ async def get_node_definition_detail(did: DefinitionID) -> NodeDefinition:
     }
 )
 async def create_empty_lab(lab: LabCreate | dict) -> UUID4Type:
-    """Creates an empty lab topology in CML using the provided LabCreate definition.
+    """Creates an empty lab topology in CML using the provided LabCreate definition and return its ID.
 
     The LabCreate schema supports the following fields:
 
@@ -300,7 +300,7 @@ async def create_empty_lab(lab: LabCreate | dict) -> UUID4Type:
 )
 async def create_full_lab_topology(topology: Topology | dict) -> UUID4Type:
     """
-    Create a new, full lab topology in CML using a Topology object.
+    Create a new, full lab topology in CML using a Topology object and return its ID.
 
     The Topology schema allows you to define all aspects of a lab in a single request, including:
       - Lab details: title, description, notes, and schema version.
@@ -481,7 +481,7 @@ async def add_interface(lid: UUID4Type, intf: InterfaceCreate) -> SimplifiedInte
 )
 async def add_node_to_cml_lab(lid: UUID4Type, node: NodeCreate | dict) -> UUID4Type:
     """
-    Adds a node to a CML lab and returns the unique ID of the newly created node.
+    Adds a node to a CML lab and returns the ID of the newly created node.
 
     The node argument must conform to the NodeCreate schema.
 
@@ -533,7 +533,7 @@ async def add_annotation_to_cml_lab(
     lid: UUID4Type, annotation: EllipseAnnotation | LineAnnotation | RectangleAnnotation | TextAnnotation | dict
 ) -> UUID4Type:
     """
-    Add a visual annotation to a CML lab topology.
+    Add a visual annotation to a CML lab topology and return its ID.
 
     The annotation must be an object that conforms to one of the following schemas:
             TextAnnotation schema:
@@ -621,7 +621,7 @@ async def add_annotation_to_cml_lab(
 )
 async def add_interface_to_node(lid: UUID4Type, intf: InterfaceCreate | dict) -> SimplifiedInterfaceResponse:
     """
-    Adds a network interface to a node within a CML lab.
+    Adds a network interface to a node within a CML lab and returns the interface details.
 
     The interface is provided as an `InterfaceCreate` object matching the following schema:
 
@@ -672,7 +672,7 @@ async def get_interfaces_for_node(lid: UUID4Type, nid: UUID4Type) -> list[Simpli
 )
 async def connect_two_nodes(lid: UUID4Type, link_info: LinkCreate | dict) -> UUID4Type:
     """
-    Creates a link between two interfaces in a CML lab.
+    Creates a link between two interfaces in a CML lab and return the link ID.
 
     This function establishes a connection between two nodes by creating a link using their interface UUIDs within a specified lab.
     The link is defined by the `link_info` parameter, which must include the source and destination interface UUIDs.
