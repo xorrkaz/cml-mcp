@@ -78,9 +78,31 @@ An alternative is to use FastMCP CLI to install the server into your favorite cl
 
 ## Usage
 
-The tools should show up automatically in your MCP client, and you can chat with the LLM to get it to invoke tools as needed.  For example:
+The tools should show up automatically in your MCP client, and you can chat with the LLM to get it to invoke tools as needed.  For example,
+the following sequence of prompts nicely shows off some of the server's capabilities:
+
+- Create a new CML lab called "Joe's MCP Lab".
+- Add two IOL nodes, a unmanaged switch, and an external connector to this lab.
+- Connect the two IOL nodes to the unmanaged switch and the unmanaged switch to the external connector.
+- Configure the routers so that their connected interfaces have IPs in the 192.0.2.0/24 subnet.  Configure OSPF on them.  Then start the lab and validate OSPF is working correctly.
+- Add a box annotation around the two IOL nodes that indicates they speak OSPF.  Make it a green box.
+
+And here is an obligatory demo GIF to show it working in Claude Desktop:
 
 ![Topology Creation Example](img/cml_mcp.gif)
+
+### System Prompt
+
+If your LLM tool supports a system prompt, or you want to provide some richer initial context, here's a good example courtesy of Hank Preston:
+
+>You are a network lab assistant specializing in supporting Cisco Modeling Labs (CML). You provide a natural language interface for many common lab activities such as:
+>
+>- Creating new lab
+>- Adding nodes to a lab
+>- Creating interfaces between nodes
+>.
+>
+>You have access to tools to access the CML server.
 
 ## License
 

@@ -760,7 +760,9 @@ async def apply_link_conditioning(lid: UUID4Type, link_id: UUID4Type, condition:
 @server_mcp.tool(annotations={"title": "Configure a CML Node", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
 async def configure_cml_node(lid: UUID4Type, nid: UUID4Type, config: NodeConfigurationContent) -> bool:
     """
-    Configure a node in a CML lab by its lab ID and node ID. The node must be in a CREATED (i.e., stopped and wiped) state.
+    Configure a node in a CML lab by its lab ID and node ID. The node must either be newly created or wiped (i.e.,
+    in a CREATED state).  For new or wiped nodes, this is more efficient than starting the node and sending CLI
+    commands.
 
     Args:
         lid (UUID4Type): The lab ID.
@@ -885,7 +887,7 @@ async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
 @server_mcp.tool(annotations={"title": "Send CLI Command to CML Node", "readOnlyHint": False, "destructiveHint": True})
 def send_cli_command(lid: UUID4Type, label: NodeLabel, commands: str, config_command: bool = False) -> str:
     """
-    Send CLI command(s) to a node in a CML lab by its lab ID and node label. Nodes must be started
+    Send CLI command(s) to a node in a CML lab by its lab ID and node label. Nodes must be started and ready
     (i.e., in a BOOTED state) for this to succeed.
 
     Multiple commands can be sent separated by newlines.
