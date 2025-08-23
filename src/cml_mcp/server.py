@@ -624,7 +624,7 @@ async def add_annotation_to_cml_lab(
         "destructiveHint": True,
     }
 )
-async def delete_annotation_from_cml_lab(lid: UUID4Type, annotation_id: UUID4Type, ctx: Context) -> bool:
+async def delete_annotation_from_lab(lid: UUID4Type, annotation_id: UUID4Type, ctx: Context) -> bool:
     """
     Deletes a visual annotation from a CML lab topology.
 
