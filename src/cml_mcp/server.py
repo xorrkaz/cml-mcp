@@ -22,6 +22,7 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+import asyncio
 import logging
 import os
 import tempfile
@@ -35,12 +36,7 @@ from mcp.types import METHOD_NOT_FOUND
 from virl2_client.models.cl_pyats import ClPyats
 
 from cml_mcp.cml_client import CMLClient
-from cml_mcp.schemas.annotations import (
-    EllipseAnnotation,
-    LineAnnotation,
-    RectangleAnnotation,
-    TextAnnotation,
-)
+from cml_mcp.schemas.annotations import EllipseAnnotation, LineAnnotation, RectangleAnnotation, TextAnnotation
 from cml_mcp.schemas.common import DefinitionID, UserName, UUID4Type
 from cml_mcp.schemas.interfaces import InterfaceCreate
 from cml_mcp.schemas.labs import Lab, LabCreate, LabTitle
@@ -52,7 +48,7 @@ from cml_mcp.schemas.nodes import Node, NodeConfigurationContent, NodeCreate, No
 from cml_mcp.schemas.system import SystemHealth, SystemInformation, SystemStats
 from cml_mcp.schemas.topologies import Topology
 from cml_mcp.settings import settings
-from cml_mcp.types import SuperSimplifiedNodeDefinitionResponse, SimplifiedInterfaceResponse
+from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse
 
 # Set up logging
 loglevel = logging.DEBUG if os.getenv("DEBUG", "false").lower() == "true" else logging.INFO
@@ -334,12 +330,20 @@ async def create_full_lab_topology(topology: Topology | dict) -> UUID4Type:
 
 
 @server_mcp.tool(annotations={"title": "Start a CML Lab", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
-async def start_cml_lab(lid: UUID4Type) -> bool:
+async def start_cml_lab(lid: UUID4Type, wait_for_convergence: bool = False) -> bool:
     """
     Start a CML lab by its ID.
+
+    If wait_for_convergence is True, the tool will wait for the lab to reach a stable state before returning.
     """
     try:
         await cml_client.put(f"/labs/{lid}/start")
+        if wait_for_convergence:
+            while True:
+                converged = await cml_client.get(f"/labs/{lid}/check_if_converged")
+                if converged:
+                    break
+                await asyncio.sleep(3)
         return True
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -485,8 +489,9 @@ async def add_node_to_cml_lab(lid: UUID4Type, node: NodeCreate | dict) -> UUID4T
 
     The node argument must conform to the NodeCreate schema.
 
-    Upon successful creation, the function also provisions the default number of interfaces for the node,
-    as determined by its node definition.
+    Upon successful creation, the function also creates the default number of interfaces for the node,
+    as determined by its node definition.  Therefore, before adding new interfaces to a node, check
+    if it already has the required interfaces.
 
     NodeCreate schema highlights:
         - x (int): X coordinate (-15000 to 15000).
@@ -609,6 +614,41 @@ async def add_annotation_to_cml_lab(
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
         logger.error(f"Error adding annotation to lab {lid}: {str(e)}", exc_info=True)
+        raise ToolError(e)
+
+
+@server_mcp.tool(
+    annotations={
+        "title": "Delete an Annotation from a CML Lab",
+        "readOnlyHint": False,
+        "destructiveHint": True,
+    }
+)
+async def delete_annotation_from_cml_lab(lid: UUID4Type, annotation_id: UUID4Type, ctx: Context) -> bool:
+    """
+    Deletes a visual annotation from a CML lab topology.
+
+    Before using this tool, make sure to make sure to ask the user if they really
+    want to delete the annotation and wait for a response.
+    """
+    try:
+        elicit_supported = True
+        try:
+            result = await ctx.elicit("Are you sure you want to delete the node?", response_type=None)
+        except McpError as me:
+            if me.error.code == METHOD_NOT_FOUND:
+                elicit_supported = False
+            else:
+                raise me
+        if not elicit_supported or result.action == "accept":
+            await cml_client.delete(f"/labs/{lid}/annotations/{annotation_id}")
+            return True
+        else:
+            raise Exception("Delete operation cancelled by user.")
+    except httpx.HTTPStatusError as e:
+        raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+    except Exception as e:
+        logger.error(f"Error deleting annotation {annotation_id} from lab {lid}: {str(e)}", exc_info=True)
         raise ToolError(e)
 
 
@@ -825,13 +865,35 @@ async def get_cml_lab_by_title(title: LabTitle) -> Lab:
         raise ToolError(e)
 
 
+async def stop_node(lid: UUID4Type, nid: UUID4Type) -> None:
+    """
+    Stop a CML node by its lab ID and node ID.
+
+    Args:
+        lid (UUID4Type): The lab ID.
+        nid (UUID4Type): The node ID.
+    """
+    await cml_client.put(f"/labs/{lid}/nodes/{nid}/stop")
+
+
+async def wipe_node(lid: UUID4Type, nid: UUID4Type) -> None:
+    """
+    Wipe a CML node by its lab ID and node ID.
+
+    Args:
+        lid (UUID4Type): The lab ID.
+        nid (UUID4Type): The node ID.
+    """
+    await cml_client.put(f"/labs/{lid}/nodes/{nid}/wipe_disks")
+
+
 @server_mcp.tool(annotations={"title": "Stop a CML Node", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
 async def stop_cml_node(lid: UUID4Type, nid: UUID4Type) -> bool:
     """
     Stop a node in a CML lab by its lab ID and node ID.
     """
     try:
-        await cml_client.put(f"/labs/{lid}/nodes/{nid}/state/stop")
+        await stop_node(lid, nid)
         return True
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -841,12 +903,20 @@ async def stop_cml_node(lid: UUID4Type, nid: UUID4Type) -> bool:
 
 
 @server_mcp.tool(annotations={"title": "Start a CML Node", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
-async def start_cml_node(lid: UUID4Type, nid: UUID4Type) -> bool:
+async def start_cml_node(lid: UUID4Type, nid: UUID4Type, wait_for_convergence: bool = False) -> bool:
     """
     Start a node in a CML lab by its lab ID and node ID.
+
+    If wait_for_convergence is True, the tool will wait for the node to reach a stable state before returning.
     """
     try:
         await cml_client.put(f"/labs/{lid}/nodes/{nid}/state/start")
+        if wait_for_convergence:
+            while True:
+                converged = await cml_client.get(f"/labs/{lid}/nodes/{nid}/check_if_converged")
+                if converged:
+                    break
+                await asyncio.sleep(3)
         return True
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -873,7 +943,7 @@ async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
             else:
                 raise me
         if not elicit_supported or result.action == "accept":
-            await cml_client.put(f"/labs/{lid}/nodes/{nid}/wipe_disks")
+            await wipe_node(lid, nid)
             return True
         else:
             raise Exception("Wipe operation cancelled by user.")
@@ -881,6 +951,39 @@ async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
         logger.error(f"Error wiping CML node {nid} in lab {lid}: {str(e)}", exc_info=True)
+        raise ToolError(e)
+
+
+@server_mcp.tool(annotations={"title": "Delete a node from a CML lab.", "readOnlyHint": False, "destructiveHint": True})
+async def delete_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
+    """
+    Delete a node from a CML lab by its lab ID and node ID.
+
+    If the node is running or not wiped, this tool will stop and wipe the node first.
+
+    Before running this tool, make sure to ask the user if they really
+    want to delete the node and wait for a response.  Deleting a node will remove all of its data.
+    """
+    try:
+        elicit_supported = True
+        try:
+            result = await ctx.elicit("Are you sure you want to delete the node?", response_type=None)
+        except McpError as me:
+            if me.error.code == METHOD_NOT_FOUND:
+                elicit_supported = False
+            else:
+                raise me
+        if not elicit_supported or result.action == "accept":
+            await stop_node(lid, nid)  # Ensure the node is stopped before deletion
+            await wipe_node(lid, nid)
+            await cml_client.delete(f"/labs/{lid}/nodes/{nid}")
+            return True
+        else:
+            raise Exception("Delete operation cancelled by user.")
+    except httpx.HTTPStatusError as e:
+        raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+    except Exception as e:
+        logger.error(f"Error deleting CML node {nid} in lab {lid}: {str(e)}", exc_info=True)
         raise ToolError(e)
 
 
