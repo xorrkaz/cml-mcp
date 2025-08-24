@@ -634,7 +634,7 @@ async def delete_annotation_from_lab(lid: UUID4Type, annotation_id: UUID4Type, c
     try:
         elicit_supported = True
         try:
-            result = await ctx.elicit("Are you sure you want to delete the node?", response_type=None)
+            result = await ctx.elicit("Are you sure you want to delete the annotation?", response_type=None)
         except McpError as me:
             if me.error.code == METHOD_NOT_FOUND:
                 elicit_supported = False
