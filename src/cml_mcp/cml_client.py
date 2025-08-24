@@ -79,17 +79,21 @@ class CMLClient(object):
             try:
                 resp = await self.client.get(url)
                 resp.raise_for_status()
+                return  # Already authenticated
             except httpx.HTTPStatusError as e:
                 if e.response.status_code == 401:  # Unauthorized, re-authenticate
                     logger.debug("Authentication failed, re-authenticating")
                     self.token = None
+                else:
+                    logger.error(f"Error checking authentication: {e}", exc_info=True)
+                    raise e
             except httpx.RequestError as e:
                 logger.error(f"Error checking authentication: {e}", exc_info=True)
                 raise e
 
         # If token is None or authentication failed, re-authenticate
         if not self.token:
-            logger.debug("Re-authenticating with CML API")
+            logger.debug("[Re-]authenticating with CML API")
             await self.login()
 
     async def is_admin(self) -> bool:
