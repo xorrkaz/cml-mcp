@@ -56,12 +56,7 @@ logging.basicConfig(level=loglevel, format="%(asctime)s %(levelname)s %(threadNa
 logger = logging.getLogger("cml-mcp")
 
 
-server_mcp = FastMCP(
-    "Cisco Modeling Labs (CML)",
-    dependencies=["httpx", "fastmcp", "fastapi", "pydantic_strict_partial", "typer", "virl2_client", "pyats[full]"],
-    log_level=logging.getLevelName(loglevel),
-    debug=loglevel == logging.DEBUG,
-)
+server_mcp = FastMCP("Cisco Modeling Labs (CML)")
 cml_client = CMLClient(host=str(settings.cml_url), username=settings.cml_username, password=settings.cml_password)
 
 
