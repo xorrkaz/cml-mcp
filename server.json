@@ -1,0 +1,66 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "io.github.xorrkaz/cml-mcp",
+  "description": "An MCP server that provides access to common Cisco Modeling Labs (CML) operations.",
+  "status": "active",
+  "repository": {
+    "url": "https://github.com/xorrkaz/cml-mcp",
+    "source": "github"
+  },
+  "version": "0.8.3",
+  "packages": [
+    {
+      "registry_type": "pypi",
+      "registry_base_url": "https://pypi.org",
+      "identifier": "cml-mcp",
+      "version": "0.8.3",
+      "transport": {
+        "type": "stdio"
+      },
+      "environment_variables": [
+        {
+          "description": "URL for the CML Server",
+          "is_required": true,
+          "format": "string",
+          "is_secret": false,
+          "name": "CML_URL"
+        },
+        {
+          "description": "Username for CML authentication",
+          "is_required": true,
+          "format": "string",
+          "is_secret": false,
+          "name": "CML_USERNAME"
+        },
+        {
+          "description": "Password for CML authentication",
+          "is_required": true,
+          "format": "string",
+          "is_secret": true,
+          "name": "CML_PASSWORD"
+        },
+        {
+          "description": "Username for authentication to devices running in CML",
+          "is_required": false,
+          "format": "string",
+          "is_secret": false,
+          "name": "PYATS_USERNAME"
+        },
+        {
+          "description": "Password for authentication to devices running in CML",
+          "is_required": false,
+          "format": "string",
+          "is_secret": true,
+          "name": "PYATS_PASSWORD"
+        },
+        {
+          "description": "Enable password for authentication to devices running in CML",
+          "is_required": false,
+          "format": "string",
+          "is_secret": true,
+          "name": "PYATS_AUTH_PASS"
+        }
+      ]
+    }
+  ]
+}

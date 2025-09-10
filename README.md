@@ -1,5 +1,7 @@
 # Model Context Protocol (MCP) Server for Cisco Modeling Labs (CML)
 
+mcp-name: io.github.xorrkaz/cml-mcp
+
 ## Overview
 
 `cml-mcp` is a server implementation of the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/docs/getting-started/intro) designed
