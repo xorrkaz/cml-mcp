@@ -22,7 +22,8 @@ dependencies = [
     "pydantic_strict_partial",
     "typer",
     "virl2_client",
-    "pyats[full]",
+    "pyats",
+    "genie",
 ]
 
 [project.scripts]
