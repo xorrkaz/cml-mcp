@@ -30,6 +30,7 @@ publish: build
     echo ; \
     echo "Publishing package to PyPi..." ; \
     uv publish --token "$token"
+    mcp-publisher publish
 
 # Remove temporary files
 [group('lifecycle')]

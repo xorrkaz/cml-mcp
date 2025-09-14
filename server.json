@@ -7,13 +7,13 @@
     "url": "https://github.com/xorrkaz/cml-mcp",
     "source": "github"
   },
-  "version": "0.8.3",
+  "version": "0.8.4",
   "packages": [
     {
       "registry_type": "pypi",
       "registry_base_url": "https://pypi.org",
       "identifier": "cml-mcp",
-      "version": "0.8.3",
+      "version": "0.8.4",
       "transport": {
         "type": "stdio"
       },
