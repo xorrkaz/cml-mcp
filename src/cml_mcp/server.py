@@ -284,6 +284,45 @@ async def create_empty_lab(lab: LabCreate | dict) -> UUID4Type:
 
 @server_mcp.tool(
     annotations={
+        "title": "Modify CML Lab Properties",
+        "readOnlyHint": False,
+        "destructiveHint": False,
+    }
+)
+async def modify_cml_lab(lid: UUID4Type, lab: LabCreate | dict) -> bool:
+    """
+    Modify an existing CML lab's details using the provided LabCreate definition.
+
+    The LabCreate schema supports the following fields:
+
+    - title (str, optional): Title of the lab (1-64 characters).
+    - owner (str, optional): UUID of the lab owner.
+    - description (str, optional): Free-form textual description of the lab (max 4096 characters).
+    - notes (str, optional): Additional notes for the lab (max 32768 characters).
+    - associations (LabAssociations, optional): Object specifying lab/group and lab/user associations:
+        - groups (list[LabGroupAssociation], optional): Each with:
+            - id (str): UUID of the group.
+            - permissions (list[str]): Permissions for the group ("lab_admin", "lab_edit", "lab_exec", "lab_view").
+        - users (list[LabUserAssociation], optional): Each with:
+            - id (str): UUID of the user.
+            - permissions (list[str]): Permissions for the user ("lab_admin", "lab_edit", "lab_exec", "lab_view").
+    """
+    try:
+        # XXX The dict usage is a workaround for some LLMs that pass a JSON string
+        # representation of the argument object.
+        if isinstance(lab, dict):
+            lab = LabCreate(**lab)
+        await cml_client.patch(f"/labs/{lid}", data=lab.model_dump(mode="json", exclude_none=True))
+        return True
+    except httpx.HTTPStatusError as e:
+        raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+    except Exception as e:
+        logger.error(f"Error modifying lab {lid}: {str(e)}", exc_info=True)
+        raise ToolError(e)
+
+
+@server_mcp.tool(
+    annotations={
         "title": "Create a Full Lab Topology",
         "readOnlyHint": False,
         "destructiveHint": False,
