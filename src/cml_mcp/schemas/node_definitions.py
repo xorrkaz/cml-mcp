@@ -105,7 +105,7 @@ class LinuxNative(BaseModel, extra="forbid"):
     libvirt_domain_driver: LibvirtDomainDrivers = Field(..., description="Domain Driver.")
     driver: DriverTypes = Field(..., description="Simulation Driver.")
     disk_driver: DiskDrivers = Field(default=None, description="Disk Driver.")
-    efi_boot: bool = Field(default=None, description="If set, use EFI boot for the VM.")
+    efi_boot: bool | None = Field(default=None, description="If set, use EFI boot for the VM.")
     efi_code: FilePath = Field(default=None, description="EFI code file path; if unset, use default.")
     efi_vars: FilePath = Field(
         default=None,
@@ -224,7 +224,7 @@ class Boot(BaseModel, extra="forbid"):
         description='A list of strings which should be matched to determine when the node is "ready".',
         examples=[[CompletedNode("string")]],
     )
-    uses_regex: bool = Field(
+    uses_regex: bool | None = Field(
         default=None,
         description="Whether the strings in `completed` should be treated as regular expressions or not.",
     )
