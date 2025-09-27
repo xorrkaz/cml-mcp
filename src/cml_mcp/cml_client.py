@@ -131,14 +131,14 @@ class CMLClient(object):
             logger.error(f"Error making GET request to {url}: {e}", exc_info=True)
             raise e
 
-    async def post(self, endpoint: str, data: dict | None = None) -> Any | None:
+    async def post(self, endpoint: str, data: dict | None = None, params: dict | None = None) -> Any | None:
         """
         Make a POST request to the CML API.
         """
         await self.check_authentication()
         url = f"{self.api_base}{endpoint}"
         try:
-            resp = await self.client.post(url, json=data)
+            resp = await self.client.post(url, json=data, params=params)
             resp.raise_for_status()
             if resp.status_code == 204:  # No content
                 return None

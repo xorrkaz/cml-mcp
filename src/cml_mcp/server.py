@@ -287,6 +287,7 @@ async def create_empty_lab(lab: LabCreate | dict) -> UUID4Type:
         "title": "Modify CML Lab Properties",
         "readOnlyHint": False,
         "destructiveHint": False,
+        "idempotentHint": True,
     }
 )
 async def modify_cml_lab(lid: UUID4Type, lab: LabCreate | dict) -> bool:
@@ -539,20 +540,9 @@ async def add_node_to_cml_lab(lid: UUID4Type, node: NodeCreate | dict) -> UUID4T
         # representation of the argument object.
         if isinstance(node, dict):
             node = NodeCreate(**node)
-        resp = await cml_client.post(f"/labs/{lid}/nodes", data=node.model_dump(mode="json", exclude_defaults=True))
-        # Create the default number of interfaces for the node def.  This is modeled after what happens in the UI.
-        try:
-            nd = await get_node_def_details(node.node_definition)
-            defcount = nd.device.interfaces.default_count
-            if not defcount:
-                defcount = nd.device.interfaces.min_count
-                if not defcount:
-                    defcount = 1
-            for _ in range(defcount):
-                ic = {"node": resp["id"]}
-                await add_interface(lid, InterfaceCreate(**ic))
-        except Exception as ie:
-            logger.error(f"Error adding interfaces for node {resp['id']} in lab {lid}: {str(ie)}", exc_info=True)
+        resp = await cml_client.post(
+            f"/labs/{lid}/nodes", params={"populate_interfaces": True}, data=node.model_dump(mode="json", exclude_defaults=True)
+        )
         return UUID4Type(resp["id"])
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
