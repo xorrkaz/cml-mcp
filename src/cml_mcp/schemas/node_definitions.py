@@ -104,16 +104,16 @@ class LinuxNative(BaseModel, extra="forbid"):
 
     libvirt_domain_driver: LibvirtDomainDrivers = Field(..., description="Domain Driver.")
     driver: DriverTypes = Field(..., description="Simulation Driver.")
-    disk_driver: DiskDrivers = Field(default=None, description="Disk Driver.")
+    disk_driver: DiskDrivers | None = Field(default=None, description="Disk Driver.")
     efi_boot: bool | None = Field(default=None, description="If set, use EFI boot for the VM.")
-    efi_code: FilePath = Field(default=None, description="EFI code file path; if unset, use default.")
-    efi_vars: FilePath = Field(
+    efi_code: FilePath | None = Field(default=None, description="EFI code file path; if unset, use default.")
+    efi_vars: FilePath | None = Field(
         default=None,
         description="EFI NVRAM var template path; if unset, the code file "
         "is made writable; if set to constant 'stateless', "
         "the code file is marked stateless.",
     )
-    machine_type: str = Field(
+    machine_type: str | None = Field(
         default=None,
         description="QEMU machine type, defaults to pc; q35 is more modern.",
         min_length=1,
@@ -128,13 +128,13 @@ class LinuxNative(BaseModel, extra="forbid"):
         max_length=64,
         pattern=re.compile(r"^[a-zA-Z\d-]{1,32}(,[+!?^-][a-z\d._]{1,16})*(?![\n\r])$"),
     )
-    nic_driver: NicDrivers = Field(
+    nic_driver: NicDrivers | None = Field(
         default=None,
         description="Network Driver.",
     )
-    data_volume: int = Field(default=None, description="Data Disk Size in GiB.", ge=0, le=4096)
-    boot_disk_size: int = Field(default=None, description="Boot Disk Size in GiB.", ge=0, le=4096)
-    video: VideoDevice = Field(default=None, description="If present, then VNC can be used with the node VM.")
+    data_volume: int | None = Field(default=None, description="Data Disk Size in GiB.", ge=0, le=4096)
+    boot_disk_size: int | None = Field(default=None, description="Boot Disk Size in GiB.", ge=0, le=4096)
+    video: VideoDevice | None = Field(default=None, description="If present, then VNC can be used with the node VM.")
     enable_rng: bool = Field(
         default=True,
         description="If set, use a random number generator.",
@@ -264,8 +264,8 @@ class Simulation(BaseModel, extra="forbid"):
     """
 
     linux_native: LinuxNative = Field(..., description="Linux native simulation configuration.")
-    parameters: NodeParameters = Field(default=None, description="Node-specific parameters.")
-    usage_estimations: UsageEstimations = Field(default=None, description="Estimated resource usage parameters.")
+    parameters: NodeParameters | None = Field(default=None, description="Node-specific parameters.")
+    usage_estimations: UsageEstimations | None = Field(default=None, description="Estimated resource usage parameters.")
 
 
 class General(BaseModel, extra="forbid"):
@@ -391,18 +391,18 @@ class Ui(BaseModel, extra="forbid"):
     label: str = Field(..., description="The node type label.", min_length=1, max_length=32)
     visible: bool = Field(..., description="Determines visibility in the UI for this node type.")
     group: Literal["Cisco", "Others"] | None = Field(default=None, description="Intended to group similar node types (unused).")
-    description: str = Field(
+    description: str | None = Field(
         default=None,
         description="The description of the node type (can be Markdown).",
         max_length=4096,
     )
-    has_configuration: bool = Field(default=None)
-    show_ram: bool = Field(default=None)
-    show_cpus: bool = Field(default=None)
-    show_cpu_limit: bool = Field(default=None)
-    show_data_volume: bool = Field(default=None)
-    show_boot_disk_size: bool = Field(default=None)
-    has_config_extraction: bool = Field(default=None)
+    has_configuration: bool | None = Field(default=None)
+    show_ram: bool | None = Field(default=None)
+    show_cpus: bool | None = Field(default=None)
+    show_cpu_limit: bool | None = Field(default=None)
+    show_data_volume: bool | None = Field(default=None)
+    show_boot_disk_size: bool | None = Field(default=None)
+    has_config_extraction: bool | None = Field(default=None)
 
 
 class Inherited(BaseModel, extra="forbid"):
@@ -423,13 +423,13 @@ class Pyats(BaseModel, extra="forbid"):
         min_length=1,
         max_length=32,
     )
-    model: str = Field(
+    model: str | None = Field(
         default=None,
         description="The device model as defined by pyATS / Unicon.",
         min_length=1,
         max_length=32,
     )
-    use_in_testbed: bool = Field(default=None, description="Use this device in an exported testbed?")
+    use_in_testbed: bool | None = Field(default=None, description="Use this device in an exported testbed?")
     username: str | None = Field(
         default=None,
         description="Use this username with pyATS / Unicon when interacting with this node type.",
