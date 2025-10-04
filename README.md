@@ -12,6 +12,7 @@ for [Cisco Modeling Labs (CML)](https://www.cisco.com/c/en/us/products/cloud-sys
 - **Create Lab Topologies:** Tool for create new labs and define network topologies.
 - **Query Status:** Tools to retrieve status information for labs, nodes, and the CML server itself.
 - **Control Labs and Nodes:** Tools to start and stop labs or individual nodes as needed.
+- **Manage CML Users and Groups** Tools to list, create, and delete local users and groups.
 - **Run Commands on Devices:** Using [PyATS](https://developer.cisco.com/pyats/), MCP clients can execute commands on virtual devices within CML labs.
 
 ## Requirements
