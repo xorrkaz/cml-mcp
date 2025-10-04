@@ -34,20 +34,20 @@ GroupNamePathParameter = Annotated[
 class GroupUpdateBase(BaseModel, extra="forbid"):
     """Information needed to create or update a group."""
 
-    name: GroupName = Field(default=None)
-    description: GenericDescription = Field(
+    name: GroupName | None = Field(default=None)
+    description: GenericDescription | None = Field(
         default=None,
         description="Additional, textual free-form detail of the group.",
         examples=["CCNA study group"],
     )
-    members: UUID4ArrayType = Field(
+    members: UUID4ArrayType | None = Field(
         default=None,
         description="Members of the group as a list of user IDs.",
     )
 
 
 class GroupUpdateOld(GroupUpdateBase):
-    labs: list[GroupLab] = Field(
+    labs: list[GroupLab] | None = Field(
         default=None,
         deprecated=True,
         description="Labs of the group as a object of lab IDs and permission.",
@@ -55,7 +55,7 @@ class GroupUpdateOld(GroupUpdateBase):
 
 
 class GroupUpdate(GroupUpdateBase):
-    associations: list[LabGroupAssociation] = Field(default=None, description="Array of lab/group associations.")
+    associations: list[LabGroupAssociation] | None = Field(default=None, description="Array of lab/group associations.")
 
 
 class GroupCreateOld(GroupUpdateOld):
@@ -74,7 +74,7 @@ GroupUpdateBodyParameter = Annotated[GroupUpdate | GroupUpdateOld, Body(...)]
 class GroupInfoResponse(BaseDBModel, GroupCreate, GroupCreateOld, extra="forbid"):
     """Information about a group."""
 
-    directory_dn: str = Field(
+    directory_dn: str | None = Field(
         default=None,
         description="Group distinguished name from LDAP",
         max_length=255,

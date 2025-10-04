@@ -47,6 +47,8 @@ from cml_mcp.schemas.node_definitions import NodeDefinition
 from cml_mcp.schemas.nodes import Node, NodeConfigurationContent, NodeCreate, NodeLabel
 from cml_mcp.schemas.system import SystemHealth, SystemInformation, SystemStats
 from cml_mcp.schemas.topologies import Topology
+from cml_mcp.schemas.users import UserResponse, UserCreate
+from cml_mcp.schemas.groups import GroupInfoResponse, GroupCreate
 from cml_mcp.settings import settings
 from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse
 
@@ -105,6 +107,194 @@ async def get_cml_labs(user: UserName = settings.cml_username) -> list[Lab]:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
         logger.error(f"Error getting CML labs: {str(e)}", exc_info=True)
+        raise ToolError(e)
+
+
+@server_mcp.tool(
+    annotations={
+        "title": "Get List of CML Users",
+        "readOnlyHint": True,
+    }
+)
+async def get_cml_users() -> list[UserResponse]:
+    """
+    Get the list of users from the CML server.
+    """
+    try:
+        users = await cml_client.get("/users")
+        return [UserResponse(**user) for user in users]
+    except httpx.HTTPStatusError as e:
+        raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+    except Exception as e:
+        logger.error(f"Error getting CML user information: {str(e)}", exc_info=True)
+        raise ToolError(e)
+
+
+@server_mcp.tool(
+    annotations={
+        "title": "Create CML User",
+        "readOnlyHint": False,
+        "destructiveHint": False,
+    }
+)
+async def create_cml_user(user: UserCreate | dict) -> UUID4Type:
+    """
+    Create a new user on the CML server and return their ID.
+
+    The UserCreate schema supports the following fields:
+    - username (str): The username of the new user.
+    - password (str): The password of the new user.
+    - fullname (str, optional): The full name of the new user.
+    - description (str, optional): A description of the new user.
+    - email (str, optional): The email address of the new user.
+    - groups (list[str], optional): A list of group IDs to which the new user should be added.
+    - admin (bool, optional): Whether the new user should have admin privileges.
+    - resource_pool (str, optional): The resource pool ID to which the new user should be assigned.
+    - opt_in (bool, optional): Whether the new user has opted in to receive communications.
+    - tour_version (str, optional): The version of the introduction tour that the new user has seen.
+
+    Only admin users can create new users.
+    """
+    try:
+        if not await cml_client.is_admin():
+            raise ValueError("Only admin users can create new users.")
+        # XXX The dict usage is a workaround for some LLMs that pass a JSON string
+        # representation of the argument object.
+        if isinstance(user, dict):
+            user = UserCreate(**user)
+        resp = await cml_client.post("/users", data=user.model_dump(mode="json", exclude_none=True))
+        return UUID4Type(resp["id"])
+    except httpx.HTTPStatusError as e:
+        raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+    except Exception as e:
+        logger.error(f"Error creating CML user: {str(e)}", exc_info=True)
+        raise ToolError(e)
+
+
+@server_mcp.tool(
+    annotations={
+        "title": "Delete CML User",
+        "readOnlyHint": False,
+        "destructiveHint": True,
+    }
+)
+async def delete_cml_user(user_id: UUID4Type, ctx: Context) -> bool:
+    """
+    Delete a user from the CML server.
+
+    Before running this tool make sure to ask the user if they're sure they want to delete this user and wait for a response.
+    """
+    try:
+        if not await cml_client.is_admin():
+            raise ValueError("Only admin users can delete users.")
+        elicit_supported = True
+        try:
+            result = await ctx.elicit("Are you sure you want to delete this user?", response_type=None)
+        except McpError as me:
+            if me.error.code == METHOD_NOT_FOUND:
+                elicit_supported = False
+            else:
+                raise me
+        if not elicit_supported or result.action == "accept":
+            await cml_client.delete(f"/users/{user_id}")
+            return True
+        else:
+            raise Exception("Delete operation cancelled by user.")
+    except httpx.HTTPStatusError as e:
+        raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+    except Exception as e:
+        logger.error(f"Error deleting CML user: {str(e)}", exc_info=True)
+        raise ToolError(e)
+
+
+@server_mcp.tool(
+    annotations={
+        "title": "Get List of CML Groups",
+        "readOnlyHint": True,
+    }
+)
+async def get_cml_groups() -> list[GroupInfoResponse]:
+    """
+    Get the list of groups from the CML server.
+    """
+    try:
+        groups = await cml_client.get("/groups")
+        return [GroupInfoResponse(**group) for group in groups]
+    except httpx.HTTPStatusError as e:
+        raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+    except Exception as e:
+        logger.error(f"Error getting CML group information: {str(e)}", exc_info=True)
+        raise ToolError(e)
+
+
+@server_mcp.tool(
+    annotations={
+        "title": "Create CML Group",
+        "readOnlyHint": False,
+        "destructiveHint": False,
+    }
+)
+async def create_cml_group(group: GroupCreate | dict) -> UUID4Type:
+    """
+    Create a new group on the CML server and return its ID.
+
+    The GroupCreate schema supports the following fields:
+    - name (str): The name of the new group.
+    - description (str, optional): A description of the new group.
+    - members (list[str], optional): A list of user IDs to be added to the new group.
+    - associations (list[LabGroupAssociation], optional): A list of lab/group associations.
+
+    Only admin users can create new groups.
+    """
+    try:
+        if not await cml_client.is_admin():
+            raise ValueError("Only admin users can create new groups.")
+        # XXX The dict usage is a workaround for some LLMs that pass a JSON string
+        # representation of the argument object.
+        if isinstance(group, dict):
+            group = GroupCreate(**group)
+        resp = await cml_client.post("/groups", data=group.model_dump(mode="json", exclude_none=True))
+        return UUID4Type(resp["id"])
+    except httpx.HTTPStatusError as e:
+        raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+    except Exception as e:
+        logger.error(f"Error creating CML group: {str(e)}", exc_info=True)
+        raise ToolError(e)
+
+
+@server_mcp.tool(
+    annotations={
+        "title": "Delete CML Group",
+        "readOnlyHint": False,
+        "destructiveHint": True,
+    }
+)
+async def delete_cml_group(group_id: UUID4Type, ctx: Context) -> bool:
+    """
+    Delete a group from the CML server.
+
+    Before running this tool make sure to ask the user if they're sure they want to delete this group and wait for a response.
+    """
+    try:
+        if not await cml_client.is_admin():
+            raise ValueError("Only admin users can delete groups.")
+        elicit_supported = True
+        try:
+            result = await ctx.elicit("Are you sure you want to delete this group?", response_type=None)
+        except McpError as me:
+            if me.error.code == METHOD_NOT_FOUND:
+                elicit_supported = False
+            else:
+                raise me
+        if not elicit_supported or result.action == "accept":
+            await cml_client.delete(f"/groups/{group_id}")
+            return True
+        else:
+            raise Exception("Delete operation cancelled by user.")
+    except httpx.HTTPStatusError as e:
+        raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+    except Exception as e:
+        logger.error(f"Error deleting CML group: {str(e)}", exc_info=True)
         raise ToolError(e)
 
 
