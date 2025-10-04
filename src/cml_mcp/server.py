@@ -38,6 +38,7 @@ from virl2_client.models.cl_pyats import ClPyats
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.schemas.annotations import EllipseAnnotation, LineAnnotation, RectangleAnnotation, TextAnnotation
 from cml_mcp.schemas.common import DefinitionID, UserName, UUID4Type
+from cml_mcp.schemas.groups import GroupCreate, GroupInfoResponse
 from cml_mcp.schemas.interfaces import InterfaceCreate
 from cml_mcp.schemas.labs import Lab, LabCreate, LabTitle
 
@@ -47,8 +48,7 @@ from cml_mcp.schemas.node_definitions import NodeDefinition
 from cml_mcp.schemas.nodes import Node, NodeConfigurationContent, NodeCreate, NodeLabel
 from cml_mcp.schemas.system import SystemHealth, SystemInformation, SystemStats
 from cml_mcp.schemas.topologies import Topology
-from cml_mcp.schemas.users import UserResponse, UserCreate
-from cml_mcp.schemas.groups import GroupInfoResponse, GroupCreate
+from cml_mcp.schemas.users import UserCreate, UserResponse
 from cml_mcp.settings import settings
 from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse
 
