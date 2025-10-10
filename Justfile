@@ -12,6 +12,7 @@ test:
 [group('build')]
 build:
     uv build
+    docker buildx build --platform linux/amd64,linux/arm64 -t xorrkaz/cml-mcp:latest -t xorrkaz/cml-mcp:$(uv version --short) .
 
 # Update dependencies
 [group('lifecycle')]
@@ -32,6 +33,7 @@ publish: build
     uv publish --token "$token"
     mcp-publisher login github
     mcp-publisher publish
+    docker buildx build --platform linux/amd64,linux/arm64 -t xorrkaz/cml-mcp:latest -t xorrkaz/cml-mcp:$(uv version --short) --push .
 
 # Remove temporary files
 [group('lifecycle')]
