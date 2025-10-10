@@ -1,0 +1,12 @@
+__pycache__
+.coverage
+.venv
+.env
+dist/
+.vscode
+.mcpregistry_*
+Justfile
+Dockerfile
+img
+server.json
+CONTRIBUTING.md
