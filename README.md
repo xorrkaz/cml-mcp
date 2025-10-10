@@ -93,7 +93,8 @@ Windows users that want CLI command support and are using Windows Subsystem for 
         "CML_PASSWORD": "<PASSWORD_ON_CML_SERVER>",
         "PYATS_USERNAME": "<DEVICE_USERNAME>",
         "PYATS_PASSWORD": "<DEVICE_PASSWORD>",
-        "PYATS_AUTH_PASS": "<DEVICE_ENABLE_PASSWORD>"
+        "PYATS_AUTH_PASS": "<DEVICE_ENABLE_PASSWORD>",
+        "WSLENV": "CML_URL/u:CML_USERNAME/u:CML_PASSWORD/u:PYATS_USERNAME/u:PYATS_PASSWORD/u:PYATS_AUTH_PASS/u:PYATS_AUTH_PASS/u"
       }
     }
   }
