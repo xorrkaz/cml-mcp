@@ -33,7 +33,7 @@ from fastmcp import Context, FastMCP
 from fastmcp.exceptions import ToolError
 from mcp.shared.exceptions import McpError
 from mcp.types import METHOD_NOT_FOUND
-from virl2_client.models.cl_pyats import ClPyats
+from virl2_client.models.cl_pyats import ClPyats, PyatsNotInstalled
 
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.schemas.annotations import EllipseAnnotation, LineAnnotation, RectangleAnnotation, TextAnnotation
@@ -1202,7 +1202,7 @@ async def delete_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
 
 
 @server_mcp.tool(annotations={"title": "Send CLI Command to CML Node", "readOnlyHint": False, "destructiveHint": True})
-def send_cli_command(lid: UUID4Type, label: NodeLabel, commands: str, config_command: bool = False) -> str:
+async def send_cli_command(lid: UUID4Type, label: NodeLabel, commands: str, config_command: bool = False) -> str:
     """
     Send CLI command(s) to a node in a CML lab by its lab ID and node label. Nodes must be started and ready
     (i.e., in a BOOTED state) for this to succeed.
@@ -1217,7 +1217,12 @@ def send_cli_command(lid: UUID4Type, label: NodeLabel, commands: str, config_com
     try:
         os.chdir(tempfile.gettempdir())  # Change to a writable directory (required by pyATS/ClPyats)
         lab = cml_client.vclient.join_existing_lab(str(lid))  # Join the existing lab using the provided lab ID
-        pylab = ClPyats(lab)  # Create a ClPyats object for interacting with the lab
+        try:
+            pylab = ClPyats(lab)  # Create a ClPyats object for interacting with the lab
+        except PyatsNotInstalled:
+            raise ImportError(
+                "PyATS and Genie are required to send commands to running devices.  See the documentation on how to install them."
+            )
         pylab.sync_testbed(settings.cml_username, settings.cml_password)  # Sync the testbed with CML credentials
         if config_command:
             # Send the command as a configuration command

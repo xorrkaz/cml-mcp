@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "cml-mcp"
-version = "0.10.0"
+version = "0.11.0"
 license = "BSD-2-Clause AND LicenseRef-Proprietary"
 license-files = ["LICENSE"]
 authors = [{ name = "Joe Clarke", email = "jclarke@cisco.com" }]
@@ -22,9 +22,11 @@ dependencies = [
     "pydantic_strict_partial",
     "typer",
     "virl2_client",
+]
+optional-dependencies = { "pyats" = [
     "pyats",
     "genie",
-]
+] }
 
 [project.scripts]
 cml-mcp = "cml_mcp.__main__:main"
@@ -35,6 +37,9 @@ Issues = "https://github.com/xorrkaz/cml-mcp/issues"
 
 [tool.black]
 line-length = 140
+
+[tool.uv.sources]
+cml-mcp = { workspace = true }
 
 [dependency-groups]
 dev = ["pytest"]

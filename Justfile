@@ -16,12 +16,12 @@ build:
 # Update dependencies
 [group('lifecycle')]
 update:
-    uv sync --upgrade
+    uv sync --upgrade --all-extras
 
 # Ensure project virtualenv is up to date
 [group('lifecycle')]
 install:
-    uv sync
+    uv sync --all-extras
 
 [group('lifecycle')]
 publish: build

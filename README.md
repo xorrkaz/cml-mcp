@@ -19,17 +19,22 @@ for [Cisco Modeling Labs (CML)](https://www.cisco.com/c/en/us/products/cloud-sys
 
 - Python 3.12+
 - Cisco Modeling Labs (CML) instance
-- PyATS (for device command execution)
+- PyATS (optional; used for device CLI command execution)
 - The [uv](https://docs.astral.sh/uv/) Python package/project manager
+
+## Windows Requirements
+
+If you do not want to run CLI commands on devices running in CML, you don't need to do anything else other than install the base `cml-mcp` package.  However,
+if you want full support, Windows users also require either Windows Subsystem for Linux (WSL) with Python and `uv` installed within WSL or a Docker environment running on the Windows machine.
 
 ## Getting Started
 
-You have a couple of choices to hook this server up to your favorite MCP client.  Probably the easiest way is to use `uvx`, which downloads the server from PyPi and runs it in a standalone environment.  For that, you need to edit your client's config and add something like the following.  This example is for Claude Desktop:
+You have a couple of choices to hook this server up to your favorite MCP client.  Probably the easiest way is to use `uvx`, which downloads the server from PyPi and runs it in a standalone environment.  This works for Linux, Mac, and Windows users but does **not** provide CLI command support.  Edit your client's config and add something like the following.  This example is for Claude Desktop:
 
 ```json
 {
   "mcpServers": {
-    "Cisco Modeling Labs MCP Server": {
+    "Cisco Modeling Labs (CML)": {
       "command": "uvx",
       "args": [
         "cml-mcp"
@@ -47,7 +52,78 @@ You have a couple of choices to hook this server up to your favorite MCP client.
 }
 ```
 
-The `PYATS` environment variables are optional but will be required if you want to run commands on the devices running within CML.
+The `PYATS` environment variables are optional but will be required if you want to run commands on the devices running within CML.  In addition to the `PYATS`
+variables, Linux and Mac users will need to change the "args" to `cml-mcp[pyats]`.  For example:
+
+```json
+{
+  "mcpServers": {
+    "Cisco Modeling Labs (CML)": {
+      "command": "uvx",
+      "args": [
+        "cml-mcp[pyats]"
+      ],
+      "env": {
+        "CML_URL": "<URL_OF_CML_SERVER>",
+        "CML_USERNAME": "<USERNAME_ON_CML_SERVER>",
+        "CML_PASSWORD": "<PASSWORD_ON_CML_SERVER>",
+        "PYATS_USERNAME": "<DEVICE_USERNAME>",
+        "PYATS_PASSWORD": "<DEVICE_PASSWORD>",
+        "PYATS_AUTH_PASS": "<DEVICE_ENABLE_PASSWORD>"
+      }
+    }
+  }
+}
+```
+
+Windows users that want CLI command support and are using Windows Subsystem for Linux (WSL) should configure:
+
+```json
+{
+  "mcpServers": {
+    "Cisco Modeling Labs (CML)": {
+      "command": "wsl",
+      "args": [
+        "uvx",
+        "cml-mcp[pyats]"
+      ],
+      "env": {
+        "CML_URL": "<URL_OF_CML_SERVER>",
+        "CML_USERNAME": "<USERNAME_ON_CML_SERVER>",
+        "CML_PASSWORD": "<PASSWORD_ON_CML_SERVER>",
+        "PYATS_USERNAME": "<DEVICE_USERNAME>",
+        "PYATS_PASSWORD": "<DEVICE_PASSWORD>",
+        "PYATS_AUTH_PASS": "<DEVICE_ENABLE_PASSWORD>"
+      }
+    }
+  }
+}
+```
+
+Windows (and really Mac and Linux users, too) that want CLI command support and are using Docker should configure:
+
+```json
+{
+  "mcpServers": {
+    "Cisco Modeling Labs (CML)": {
+      "command": "docker",
+      "args": [
+        "run",
+        "-it",
+        "xorrkaz/cml-mcp"
+      ],
+      "env": {
+        "CML_URL": "<URL_OF_CML_SERVER>",
+        "CML_USERNAME": "<USERNAME_ON_CML_SERVER>",
+        "CML_PASSWORD": "<PASSWORD_ON_CML_SERVER>",
+        "PYATS_USERNAME": "<DEVICE_USERNAME>",
+        "PYATS_PASSWORD": "<DEVICE_PASSWORD>",
+        "PYATS_AUTH_PASS": "<DEVICE_ENABLE_PASSWORD>"
+      }
+    }
+  }
+}
+```
 
 An alternative is to use FastMCP CLI to install the server into your favorite client.  FastMCP CLI supports Claude Desktop, Claude Code, Cursor, and manual JSON generation.  To use FastMCP, do the following:
 
@@ -59,7 +135,7 @@ An alternative is to use FastMCP CLI to install the server into your favorite cl
 
 1. Change directory to the cloned repository.
 
-1. Run `uv sync` to install all the correct dependencies, including FastMCP 2.0.
+1. Run `uv sync` to install all the correct dependencies, including FastMCP 2.0.  **Note:** this also installed pyATS, which will not work on Windows.
 
 1. Create a `.env` file with the following variables set:
 
