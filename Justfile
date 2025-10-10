@@ -25,15 +25,25 @@ install:
     uv sync --all-extras
 
 [group('lifecycle')]
-publish: build
+publish_pypi:
     @echo -n PyPi Token: ; \
     read -s token ; \
     echo ; \
     echo "Publishing package to PyPi..." ; \
     uv publish --token "$token"
+
+[group('lifecycle')]
+publish_mcp:
     mcp-publisher login github
     mcp-publisher publish
+
+[group('lifecycle')]
+publish_docker:
+    docker login
     docker buildx build --platform linux/amd64,linux/arm64 -t xorrkaz/cml-mcp:latest -t xorrkaz/cml-mcp:$(uv version --short) --push .
+
+[group('lifecycle')]
+publish: build publish_pypi publish_mcp publish_docker
 
 # Remove temporary files
 [group('lifecycle')]

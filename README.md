@@ -109,8 +109,23 @@ Windows (and really Mac and Linux users, too) that want CLI command support and 
       "command": "docker",
       "args": [
         "run",
-        "-it",
-        "xorrkaz/cml-mcp"
+        "-i",
+        "--rm",
+        "--pull",
+        "always",
+        "-e",
+        "CML_URL",
+        "-e",
+        "CML_USERNAME",
+        "-e",
+        "CML_PASSWORD",
+        "-e",
+        "PYATS_USERNAME",
+        "-e",
+        "PYATS_PASSWORD",
+        "-e",
+        "PYATS_AUTH_PASS",
+        "xorrkaz/cml-mcp:latest"
       ],
       "env": {
         "CML_URL": "<URL_OF_CML_SERVER>",
