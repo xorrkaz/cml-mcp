@@ -42,18 +42,14 @@ You have a couple of choices to hook this server up to your favorite MCP client.
       "env": {
         "CML_URL": "<URL_OF_CML_SERVER>",
         "CML_USERNAME": "<USERNAME_ON_CML_SERVER>",
-        "CML_PASSWORD": "<PASSWORD_ON_CML_SERVER>",
-        "PYATS_USERNAME": "<DEVICE_USERNAME>",
-        "PYATS_PASSWORD": "<DEVICE_PASSWORD>",
-        "PYATS_AUTH_PASS": "<DEVICE_ENABLE_PASSWORD>"
+        "CML_PASSWORD": "<PASSWORD_ON_CML_SERVER>"
       }
     }
   }
 }
 ```
 
-The `PYATS` environment variables are optional but will be required if you want to run commands on the devices running within CML.  In addition to the `PYATS`
-variables, Linux and Mac users will need to change the "args" to `cml-mcp[pyats]`.  For example:
+In order to execute CLI commands on devices running within CML, Linux and Mac users will need to change the "args" to `cml-mcp[pyats]`.  For example:
 
 ```json
 {
@@ -75,6 +71,8 @@ variables, Linux and Mac users will need to change the "args" to `cml-mcp[pyats]
   }
 }
 ```
+
+The additional `PYATS` environment variables are needed to let the MCP server know how to login to those running devices.
 
 Windows users that want CLI command support and are using Windows Subsystem for Linux (WSL) should configure:
 
@@ -151,7 +149,7 @@ An alternative is to use FastMCP CLI to install the server into your favorite cl
 
 1. Change directory to the cloned repository.
 
-1. Run `uv sync` to install all the correct dependencies, including FastMCP 2.0.  **Note:** this also installed pyATS, which will not work on Windows.
+1. Run `uv sync` to install all the correct dependencies, including FastMCP 2.0.  **Note:** on Linux and Mac, run `uv sync --all-extras` to get CLI command support.
 
 1. Create a `.env` file with the following variables set:
 
