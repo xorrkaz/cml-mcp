@@ -10,3 +10,7 @@ Dockerfile
 img
 server.json
 CONTRIBUTING.md
+.dockerignore
+.envrc
+.flake8
+.gitignore
