@@ -1219,11 +1219,11 @@ async def send_cli_command(lid: UUID4Type, label: NodeLabel, commands: str, conf
         lab = cml_client.vclient.join_existing_lab(str(lid))  # Join the existing lab using the provided lab ID
         try:
             pylab = ClPyats(lab)  # Create a ClPyats object for interacting with the lab
+            pylab.sync_testbed(settings.cml_username, settings.cml_password)  # Sync the testbed with CML credentials
         except PyatsNotInstalled:
             raise ImportError(
                 "PyATS and Genie are required to send commands to running devices.  See the documentation on how to install them."
             )
-        pylab.sync_testbed(settings.cml_username, settings.cml_password)  # Sync the testbed with CML credentials
         if config_command:
             # Send the command as a configuration command
             return pylab.run_config_command(str(label), commands)
