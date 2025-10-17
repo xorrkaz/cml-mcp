@@ -1,8 +1,8 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-10-17/server.schema.json",
   "name": "io.github.xorrkaz/cml-mcp",
+  "title": "Cisco Modeling Labs (CML)",
   "description": "An MCP server that provides access to common Cisco Modeling Labs (CML) operations.",
-  "status": "active",
   "repository": {
     "url": "https://github.com/xorrkaz/cml-mcp",
     "source": "github"
@@ -14,6 +14,7 @@
       "registryBaseUrl": "https://pypi.org",
       "identifier": "cml-mcp",
       "version": "0.11.3",
+      "runtimeHint": "uvx",
       "transport": {
         "type": "stdio"
       },
