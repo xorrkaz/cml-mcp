@@ -1087,7 +1087,7 @@ async def stop_node(lid: UUID4Type, nid: UUID4Type) -> None:
         lid (UUID4Type): The lab ID.
         nid (UUID4Type): The node ID.
     """
-    await cml_client.put(f"/labs/{lid}/nodes/{nid}/stop")
+    await cml_client.put(f"/labs/{lid}/nodes/{nid}/state/stop")
 
 
 async def wipe_node(lid: UUID4Type, nid: UUID4Type) -> None:
@@ -1198,6 +1198,50 @@ async def delete_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
         logger.error(f"Error deleting CML node {nid} in lab {lid}: {str(e)}", exc_info=True)
+        raise ToolError(e)
+
+
+@server_mcp.tool(
+    annotations={
+        "title": "Start a CML Link",
+        "readOnlyHint": False,
+        "destructiveHint": False,
+        "idempotentHint": True,
+    }
+)
+async def start_cml_link(lid: UUID4Type, link_id: UUID4Type) -> bool:
+    """
+    Start a link in a CML lab by its lab ID and link ID.
+    """
+    try:
+        await cml_client.put(f"/labs/{lid}/links/{link_id}/state/start")
+        return True
+    except httpx.HTTPStatusError as e:
+        raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+    except Exception as e:
+        logger.error(f"Error starting CML link {link_id} in lab {lid}: {str(e)}", exc_info=True)
+        raise ToolError(e)
+
+
+@server_mcp.tool(
+    annotations={
+        "title": "Stop a CML Link",
+        "readOnlyHint": False,
+        "destructiveHint": False,
+        "idempotentHint": True,
+    }
+)
+async def stop_cml_link(lid: UUID4Type, link_id: UUID4Type) -> bool:
+    """
+    Stop a link in a CML lab by its lab ID and link ID.
+    """
+    try:
+        await cml_client.put(f"/labs/{lid}/links/{link_id}/state/stop")
+        return True
+    except httpx.HTTPStatusError as e:
+        raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+    except Exception as e:
+        logger.error(f"Error stopping CML link {link_id} in lab {lid}: {str(e)}", exc_info=True)
         raise ToolError(e)
 
 
