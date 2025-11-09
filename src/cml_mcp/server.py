@@ -25,6 +25,7 @@
 import asyncio
 import logging
 import os
+import re
 import tempfile
 from typing import Any
 
@@ -50,7 +51,7 @@ from cml_mcp.schemas.system import SystemHealth, SystemInformation, SystemStats
 from cml_mcp.schemas.topologies import Topology
 from cml_mcp.schemas.users import UserCreate, UserResponse
 from cml_mcp.settings import settings
-from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse
+from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse, ConsoleLogLine
 
 # Set up logging
 loglevel = logging.DEBUG if os.getenv("DEBUG", "false").lower() == "true" else logging.INFO
@@ -1243,6 +1244,43 @@ async def stop_cml_link(lid: UUID4Type, link_id: UUID4Type) -> bool:
     except Exception as e:
         logger.error(f"Error stopping CML link {link_id} in lab {lid}: {str(e)}", exc_info=True)
         raise ToolError(e)
+
+
+@server_mcp.tool(annotations={"title": "Get Console Logs for a CML Node", "readOnlyHint": True})
+async def get_console_log(lid: UUID4Type, nid: UUID4Type) -> list[ConsoleLogLine]:
+    """
+    Get the console log for a CML node by its lab ID and node ID.  For nodes with multiple consoles,
+    logs from all consoles are returned.  To use this tool, the node must be started.  The console log
+    provides a history of console output from the node which can be useful for troubleshooting and monitoring,
+    as well as assessing work done via CLI commands.
+
+    The returned list contains ConsoleLogLine objects with the following fields:
+        - time (int): The number of milliseconds since the node started when the log line was generated.
+        - message (str): The console log message.
+    """
+    return_lines = []
+    for i in range(0, 2):  # Assume a maximum of 2 consoles per node
+        try:
+            resp = await cml_client.get(f"/labs/{lid}/nodes/{nid}/consoles/{i}/log")
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 400:
+                continue  # Console index does not exist, try the next one
+            else:
+                raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+        except Exception as e:
+            logger.error(f"Error getting console log for node {nid} in lab {lid}: {str(e)}", exc_info=True)
+            raise ToolError(e)
+        lines = re.split(r"\r?\n", resp)
+        for line in lines:
+            if not line.startswith("|"):
+                if len(return_lines) > 0:
+                    # Append to the last message if the line does not start with a timestamp
+                    return_lines[-1].message += "\n" + line
+                continue
+            _, log_time, msg = line.split("|", 2)
+            return_lines.append(ConsoleLogLine(time=int(log_time), message=msg))
+
+    return return_lines
 
 
 @server_mcp.tool(annotations={"title": "Send CLI Command to CML Node", "readOnlyHint": False, "destructiveHint": True})

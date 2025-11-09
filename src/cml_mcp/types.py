@@ -89,3 +89,10 @@ class SimplifiedInterfaceResponse(SimplifiedInterfaceBase, extra="ignore"):
     id: UUID4Type = Field(..., description="ID of the interface.")
     label: InterfaceLabel = Field(...)
     device_name: LinuxInterfaceName | None = Field(default=None, max_length=64, description="Device name (operational).")
+
+
+class ConsoleLogLine(BaseModel, extra="forbid"):
+    """A single line from a console log."""
+
+    time: int = Field(..., description="The number of milliseconds since the node booted when this log line was recorded.")
+    message: str = Field(..., description="The log message content.")
