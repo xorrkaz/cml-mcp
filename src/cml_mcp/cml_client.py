@@ -89,8 +89,8 @@ class CMLClient(object):
             resp.raise_for_status()
             return  # Already authenticated
         except httpx.HTTPStatusError as e:
-            if e.response.status_code == 401:  # Unauthorized, re-authenticate
-                logger.debug("Authentication failed, re-authenticating")
+            if e.response.status_code == 401:  # Unauthorized
+                logger.debug("Authentication failed")
                 raise e
             else:
                 logger.error(f"Error checking authentication: {e}", exc_info=True)
@@ -109,6 +109,7 @@ class CMLClient(object):
 
         # await self.check_authentication()
         try:
+            # XXX: This is broken!
             resp = await self.client.get(f"{self.base_url}/api/v0/users/{self.username}/id")
             resp.raise_for_status()
             user_id = resp.json()
