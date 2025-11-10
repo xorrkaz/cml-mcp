@@ -107,7 +107,7 @@ class CMLClient(object):
         if self.admin is not None:
             return self.admin
 
-        await self.check_authentication()
+        # await self.check_authentication()
         try:
             resp = await self.client.get(f"{self.base_url}/api/v0/users/{self.username}/id")
             resp.raise_for_status()
@@ -124,7 +124,7 @@ class CMLClient(object):
         """
         Make a GET request to the CML API.
         """
-        await self.check_authentication()
+        # await self.check_authentication()
         url = f"{self.api_base}{endpoint}"
         try:
             resp = await self.client.get(url, params=params)
@@ -138,7 +138,7 @@ class CMLClient(object):
         """
         Make a POST request to the CML API.
         """
-        await self.check_authentication()
+        # await self.check_authentication()
         url = f"{self.api_base}{endpoint}"
         try:
             resp = await self.client.post(url, json=data, params=params)
@@ -154,7 +154,7 @@ class CMLClient(object):
         """
         Make a PUT request to the CML API.
         """
-        await self.check_authentication()
+        # await self.check_authentication()
         url = f"{self.api_base}{endpoint}"
         try:
             resp = await self.client.put(url, json=data)
@@ -170,7 +170,7 @@ class CMLClient(object):
         """
         Make a DELETE request to the CML API.
         """
-        await self.check_authentication()
+        # await self.check_authentication()
         url = f"{self.api_base}{endpoint}"
         try:
             resp = await self.client.delete(url)
@@ -186,7 +186,7 @@ class CMLClient(object):
         """
         Make a PATCH request to the CML API.
         """
-        await self.check_authentication()
+        # await self.check_authentication()
         url = f"{self.api_base}{endpoint}"
         try:
             resp = await self.client.patch(url, json=data)
