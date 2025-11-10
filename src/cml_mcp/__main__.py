@@ -26,7 +26,11 @@ from cml_mcp.server import server_mcp
 
 
 def main():
-    server_mcp.run()
+    server_mcp.run(
+        transport="http",
+        port=9000,
+        host="0.0.0.0",
+    )
 
 
 if __name__ == "__main__":

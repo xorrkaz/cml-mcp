@@ -41,60 +41,63 @@ class CMLClient(object):
     Handles authentication and provides methods to fetch system and lab information.
     """
 
-    def __init__(self, host: str, username: str, password: str):
-        self.base_url = host.rstrip("/")
+    def __init__(self):
+        self.base_url = "https://cml.host.internal"
         self.api_base = f"{self.base_url}/api/v0"
         self.client = httpx.AsyncClient(verify=False, timeout=API_TIMEOUT)
-        self.vclient = virl2_client.ClientLibrary(host, username, password, ssl_verify=False)
-        self.token = None
+        self.vclient = virl2_client.ClientLibrary(
+            self.base_url, username="bogus", password="bogus", ssl_verify=False, raise_for_auth_failure=False
+        )
         self.admin = None
-        self.username = username
-        self.password = password
+        self._token = None
 
-    async def login(self) -> None:
-        """
-        Authenticate with the CML API and store the token for future requests.
-        """
-        url = f"{self.base_url}/api/v0/authenticate"
-        try:
-            resp = await self.client.post(
-                url,
-                json={"username": self.username, "password": self.password},
-            )
-            resp.raise_for_status()
-            self.token = resp.json()
-            self.client.headers.update({"Authorization": f"Bearer {self.token}"})
-            logger.info("Authenticated with CML API")
-        except Exception as e:
-            logger.exception(f"Failed to authenticate with CML API: {e}", exc_info=True)
-            raise e
+    # async def login(self) -> None:
+    #     """
+    #     Authenticate with the CML API and store the token for future requests.
+    #     """
+    #     url = f"{self.base_url}/api/v0/authenticate"
+    #     try:
+    #         resp = await self.client.post(
+    #             url,
+    #             json={"username": self.username, "password": self.password},
+    #         )
+    #         resp.raise_for_status()
+    #         self.token = resp.json()
+    #         self.client.headers.update({"Authorization": f"Bearer {self.token}"})
+    #         logger.info("Authenticated with CML API")
+    #     except Exception as e:
+    #         logger.exception(f"Failed to authenticate with CML API: {e}", exc_info=True)
+    #         raise e
+
+    @property
+    def token(self) -> str | None:
+        return self._token
+
+    @token.setter
+    def token(self, value: str) -> None:
+        self._token = value
+        self.client.headers.update({"Authorization": f"Bearer {value}"})
 
     async def check_authentication(self) -> None:
         """
         Check if the current session is authenticated.
         If not, re-authenticate.
         """
-        if self.token:
-            url = f"{self.base_url}/api/v0/authok"
-            try:
-                resp = await self.client.get(url)
-                resp.raise_for_status()
-                return  # Already authenticated
-            except httpx.HTTPStatusError as e:
-                if e.response.status_code == 401:  # Unauthorized, re-authenticate
-                    logger.debug("Authentication failed, re-authenticating")
-                    self.token = None
-                else:
-                    logger.error(f"Error checking authentication: {e}", exc_info=True)
-                    raise e
-            except httpx.RequestError as e:
+        url = f"{self.base_url}/api/v0/authok"
+        try:
+            resp = await self.client.get(url)
+            resp.raise_for_status()
+            return  # Already authenticated
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 401:  # Unauthorized, re-authenticate
+                logger.debug("Authentication failed, re-authenticating")
+                raise e
+            else:
                 logger.error(f"Error checking authentication: {e}", exc_info=True)
                 raise e
-
-        # If token is None or authentication failed, re-authenticate
-        if not self.token:
-            logger.debug("[Re-]authenticating with CML API")
-            await self.login()
+        except httpx.RequestError as e:
+            logger.error(f"Error checking authentication: {e}", exc_info=True)
+            raise e
 
     async def is_admin(self) -> bool:
         """

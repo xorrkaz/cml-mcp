@@ -23,6 +23,7 @@
 # SUCH DAMAGE.
 
 import asyncio
+import base64
 import logging
 import os
 import re
@@ -32,8 +33,10 @@ from typing import Any
 import httpx
 from fastmcp import Context, FastMCP
 from fastmcp.exceptions import ToolError
+from fastmcp.server.dependencies import get_http_headers
+from fastmcp.server.middleware import Middleware, MiddlewareContext
 from mcp.shared.exceptions import McpError
-from mcp.types import METHOD_NOT_FOUND
+from mcp.types import METHOD_NOT_FOUND, ErrorData
 from virl2_client.models.cl_pyats import ClPyats, PyatsNotInstalled
 
 from cml_mcp.cml_client import CMLClient
@@ -50,17 +53,76 @@ from cml_mcp.schemas.nodes import Node, NodeConfigurationContent, NodeCreate, No
 from cml_mcp.schemas.system import SystemHealth, SystemInformation, SystemStats
 from cml_mcp.schemas.topologies import Topology
 from cml_mcp.schemas.users import UserCreate, UserResponse
-from cml_mcp.settings import settings
-from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse, ConsoleLogOutput
+from cml_mcp.types import ConsoleLogOutput, SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse
 
 # Set up logging
 loglevel = logging.DEBUG if os.getenv("DEBUG", "false").lower() == "true" else logging.INFO
 logging.basicConfig(level=loglevel, format="%(asctime)s %(levelname)s %(threadName)s %(name)s: %(message)s")
 logger = logging.getLogger("cml-mcp")
 
+cml_client = CMLClient()
+
+
+# Provide a custom token validation function.
+class CustomRequestMiddleware(Middleware):
+    async def on_request(self, context: MiddlewareContext, call_next) -> Any:
+        headers = get_http_headers()
+        logger.debug(f"XXX: Request headers: {headers}")
+        auth_header = headers.get("authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            raise McpError(ErrorData(message="Unauthorized: Missing or invalid Authorization header", code=-31002))
+        token = auth_header.split(" ", 1)[1]
+        cml_client.token = token
+        try:
+            await cml_client.check_authentication()
+        except Exception as e:
+            raise McpError(ErrorData(message=f"Unauthorized: {str(e)}", code=-31002))
+        auth_header = headers.get("x-cli-authorization")
+        if auth_header and auth_header.startswith("Basic "):
+            parts = auth_header.split(" ", 1)
+            if len(parts) != 2 or parts[0].lower() != "basic":
+                raise McpError(ErrorData(message="Invalid X-CLI-Authorization header format. Expected 'Basic <credentials>'", code=-31001))
+            try:
+                decoded = base64.b64decode(parts[1]).decode("utf-8")
+                username, password = decoded.split(":", 1)
+                cml_client.vclient.username = username
+                cml_client.vclient.password = password
+                pyats_header = headers.get("x-pyats-authorization")
+                if pyats_header and pyats_header.startswith("Basic "):
+                    pyats_parts = pyats_header.split(" ", 1)
+                    if len(pyats_parts) != 2 or pyats_parts[0].lower() != "basic":
+                        raise McpError(
+                            ErrorData(message="Invalid X-PyATS-Authorization header format. Expected 'Basic <credentials>'", code=-31001)
+                        )
+                    try:
+                        pyats_decoded = base64.b64decode(pyats_parts[1]).decode("utf-8")
+                        pyats_username, pyats_password = pyats_decoded.split(":", 1)
+                        os.environ["PYATS_USERNAME"] = pyats_username
+                        os.environ["PYATS_PASSWORD"] = pyats_password
+                        pyats_enable_header = headers.get("x-pyats-enable")
+                        if pyats_enable_header and pyats_enable_header.startswith("Basic "):
+                            pyats_enable_parts = pyats_enable_header.split(" ", 1)
+                            if len(pyats_enable_parts) != 2 or pyats_enable_parts[0].lower() != "basic":
+                                raise McpError(
+                                    ErrorData(message="Invalid X-PyATS-Enable header format. Expected 'Basic <credentials>'", code=-31001)
+                                )
+                            try:
+                                pyats_enable_decoded = base64.b64decode(pyats_enable_parts[1]).decode("utf-8")
+                                pyats_enable_password = pyats_enable_decoded
+                                os.environ["PYATS_AUTH_PASSWORD"] = pyats_enable_password
+                            except Exception:
+                                raise McpError(
+                                    ErrorData(message="Failed to decode Basic authentication credentials for PyATS Enable", code=-31002)
+                                )
+                    except Exception:
+                        raise McpError(ErrorData(message="Failed to decode Basic authentication credentials for PyATS Enable", code=-31002))
+            except Exception:
+                raise McpError(ErrorData(message="Failed to decode Basic authentication credentials for PyATS", code=-31002))
+        return await call_next(context)
+
 
 server_mcp = FastMCP("Cisco Modeling Labs (CML)")
-cml_client = CMLClient(host=str(settings.cml_url), username=settings.cml_username, password=settings.cml_password)
+server_mcp.add_middleware(CustomRequestMiddleware())
 
 
 async def get_all_labs() -> list[UUID4Type]:
@@ -80,7 +142,7 @@ async def get_all_labs() -> list[UUID4Type]:
         "readOnlyHint": True,
     }
 )
-async def get_cml_labs(user: UserName = settings.cml_username) -> list[Lab]:
+async def get_cml_labs(user: UserName = None) -> list[Lab]:
     """
     Get the list of labs for a specific user or all labs if the user is an admin.
     To get labs for the current user, leave the "user" argument blank.
@@ -92,7 +154,7 @@ async def get_cml_labs(user: UserName = settings.cml_username) -> list[Lab]:
 
     try:
         # If the requested user is not the configured user and is not an admin, deny access
-        if str(user) != settings.cml_username and not await cml_client.is_admin():
+        if user and not await cml_client.is_admin():
             raise ValueError("User is not an admin and cannot view all labs.")
         ulabs = []
         # Get all labs from the CML server
@@ -101,7 +163,7 @@ async def get_cml_labs(user: UserName = settings.cml_username) -> list[Lab]:
             # For each lab, get its details
             lab_details = await cml_client.get(f"/labs/{lab}")
             # Only include labs owned by the specified user
-            if lab_details.get("owner_username") == str(user):
+            if not user or lab_details.get("owner_username") == str(user):
                 ulabs.append(Lab(**lab_details))
         return ulabs
     except httpx.HTTPStatusError as e:
@@ -1301,7 +1363,7 @@ async def send_cli_command(lid: UUID4Type, label: NodeLabel, commands: str, conf
         lab = cml_client.vclient.join_existing_lab(str(lid))  # Join the existing lab using the provided lab ID
         try:
             pylab = ClPyats(lab)  # Create a ClPyats object for interacting with the lab
-            pylab.sync_testbed(settings.cml_username, settings.cml_password)  # Sync the testbed with CML credentials
+            pylab.sync_testbed(cml_client.vclient.username, cml_client.vclient.password)  # Sync the testbed with CML credentials
         except PyatsNotInstalled:
             raise ImportError(
                 "PyATS and Genie are required to send commands to running devices.  See the documentation on how to install them."
