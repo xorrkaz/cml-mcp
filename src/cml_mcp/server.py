@@ -51,7 +51,7 @@ from cml_mcp.schemas.system import SystemHealth, SystemInformation, SystemStats
 from cml_mcp.schemas.topologies import Topology
 from cml_mcp.schemas.users import UserCreate, UserResponse
 from cml_mcp.settings import settings
-from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse, ConsoleLogLine
+from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse, ConsoleLogOutput
 
 # Set up logging
 loglevel = logging.DEBUG if os.getenv("DEBUG", "false").lower() == "true" else logging.INFO
@@ -1247,7 +1247,7 @@ async def stop_cml_link(lid: UUID4Type, link_id: UUID4Type) -> bool:
 
 
 @server_mcp.tool(annotations={"title": "Get Console Logs for a CML Node", "readOnlyHint": True})
-async def get_console_log(lid: UUID4Type, nid: UUID4Type) -> list[ConsoleLogLine]:
+async def get_console_log(lid: UUID4Type, nid: UUID4Type) -> list[ConsoleLogOutput]:
     """
     Get the console log for a CML node by its lab ID and node ID.  For nodes with multiple consoles,
     logs from all consoles are returned.  To use this tool, the node must be started.  The console log
@@ -1278,7 +1278,7 @@ async def get_console_log(lid: UUID4Type, nid: UUID4Type) -> list[ConsoleLogLine
                     return_lines[-1].message += "\n" + line
                 continue
             _, log_time, msg = line.split("|", 2)
-            return_lines.append(ConsoleLogLine(time=int(log_time), message=msg))
+            return_lines.append(ConsoleLogOutput(time=int(log_time), message=msg))
 
     return return_lines
 
