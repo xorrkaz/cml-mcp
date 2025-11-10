@@ -67,7 +67,6 @@ cml_client = CMLClient()
 class CustomRequestMiddleware(Middleware):
     async def on_request(self, context: MiddlewareContext, call_next) -> Any:
         headers = get_http_headers()
-        logger.debug(f"XXX: Request headers: {headers}")
         auth_header = headers.get("authorization")
         if not auth_header or not auth_header.startswith("Bearer "):
             raise McpError(ErrorData(message="Unauthorized: Missing or invalid Authorization header", code=-31002))
