@@ -29,7 +29,15 @@ if you want full support, Windows users also require either Windows Subsystem fo
 
 ## Getting Started
 
-You have a couple of choices to hook this server up to your favorite MCP client.  Probably the easiest way is to use `uvx`, which downloads the server from PyPi and runs it in a standalone environment.  This works for Linux, Mac, and Windows users but does **not** provide CLI command support.  Edit your client's config and add something like the following.  This example is for Claude Desktop:
+You have several options to run this server, depending on your needs and platform:
+
+### Option 1: Standard I/O (stdio) Transport
+
+This is the traditional way to run the server, where it communicates directly with the MCP client via standard input/output streams.
+
+#### Using uvx (Easiest - No CLI Support)
+
+The easiest way is to use `uvx`, which downloads the server from PyPi and runs it in a standalone environment.  This works for Linux, Mac, and Windows users but does **not** provide CLI command support.  Edit your client's config and add something like the following.  This example is for Claude Desktop:
 
 ```json
 {
@@ -139,6 +147,8 @@ Windows (and really Mac and Linux users, too) that want CLI command support and 
 }
 ```
 
+#### Using FastMCP CLI
+
 An alternative is to use FastMCP CLI to install the server into your favorite client.  FastMCP CLI supports Claude Desktop, Claude Code, Cursor, and manual JSON generation.  To use FastMCP, do the following:
 
 1. Clone this repository:
@@ -168,6 +178,200 @@ An alternative is to use FastMCP CLI to install the server into your favorite cl
     ```sh
     fastmcp install claude-desktop src/cml_mcp/server.py:server_mcp --project `realpath .` --env-file .env
     ```
+
+### Option 2: HTTP Transport (Streaming)
+
+The server now supports HTTP streaming transport, which is useful for running the MCP server as a standalone service that can be accessed by multiple clients or when you want to run it in a containerized or remote environment. This mode uses HTTP Server-Sent Events (SSE) for real-time communication.
+
+#### Running the HTTP Server
+
+To run the server in HTTP mode, set the `CML_MCP_TRANSPORT` environment variable to `http`. You can also configure the bind address and port.
+
+First, install the package:
+
+```sh
+uv pip install cml-mcp
+```
+
+Or for development, clone the repository and sync dependencies:
+
+```sh
+git clone https://github.com/xorrkaz/cml-mcp.git
+cd cml-mcp
+uv sync
+```
+
+Then run the server using `uvicorn`:
+
+```sh
+# Set environment variables
+export CML_URL=<URL_OF_CML_SERVER>
+export CML_MCP_TRANSPORT=http
+export CML_MCP_BIND=0.0.0.0  # Optional, defaults to 0.0.0.0
+export CML_MCP_PORT=9000     # Optional, defaults to 9000
+
+# Run the server with uvicorn
+uvicorn cml_mcp.server:app --host 0.0.0.0 --port 9000
+```
+
+Or create a `.env` file with these settings:
+
+```sh
+CML_URL=<URL_OF_CML_SERVER>
+CML_MCP_TRANSPORT=http
+CML_MCP_BIND=0.0.0.0
+CML_MCP_PORT=9000
+```
+
+Then run:
+
+```sh
+cml-mcp
+```
+
+The server will start and listen for HTTP connections at `http://0.0.0.0:9000`.
+
+#### Authentication in HTTP Mode
+
+When using HTTP transport, authentication is handled differently than stdio mode:
+
+- **CML Credentials**: Instead of being set via environment variables, CML credentials are provided via the `X-Authorization` HTTP header using Basic authentication format
+- **PyATS Credentials**: For CLI command execution, PyATS credentials can be provided via the `X-PyATS-Authorization` header (Basic auth) and the enable password via the `X-PyATS-Enable` header
+
+Example headers:
+
+```http
+X-Authorization: Basic <base64_encoded_cml_username:cml_password>
+X-PyATS-Authorization: Basic <base64_encoded_device_username:device_password>
+X-PyATS-Enable: Basic <base64_encoded_enable_password>
+```
+
+#### Configuring MCP Clients for HTTP
+
+To use the HTTP server with an MCP client, you'll need to use the `mcp-remote` tool to connect to the HTTP endpoint. Most MCP clients like Claude Desktop don't natively support HTTP streaming, so `mcp-remote` acts as a bridge between the client (which expects stdio) and the HTTP server.
+
+Add the following configuration to your MCP client config (e.g., Claude Desktop's `claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "Cisco Modeling Labs (CML) - HTTP": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "http://<server_host>:9000/mcp",
+        "--header",
+        "X-Authorization: Basic <base64_encoded_cml_credentials>",
+        "--header",
+        "X-PyATS-Authorization: Basic <base64_encoded_device_credentials>"
+      ]
+    }
+  }
+}
+```
+
+Replace the placeholders with your actual values:
+
+- `<server_host>`: The hostname or IP address where your HTTP server is running
+- `<base64_encoded_cml_credentials>`: Base64-encoded `username:password` for CML
+- `<base64_encoded_device_credentials>`: Base64-encoded `username:password` for device access
+
+Example:
+
+```json
+{
+  "mcpServers": {
+    "Cisco Modeling Labs (CML) - HTTP": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://192.168.10.210:8443/mcp",
+        "--header",
+        "X-Authorization: Basic <base64_encoded_cml_credentials>",
+        "--header",
+        "X-PyATS-Authorization: Basic <base64_encoded_device_credentials>"
+      ]
+    }
+  }
+}
+```
+
+**Note**: When using HTTPS with a self-signed certificate, you'll need to disable TLS certificate validation by adding an `env` section:
+
+```json
+{
+  "mcpServers": {
+    "Cisco Modeling Labs (CML) - HTTP": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://192.168.10.210:8443/mcp",
+        "--header",
+        "X-Authorization: Basic <base64_encoded_cml_credentials>",
+        "--header",
+        "X-PyATS-Authorization: Basic <base64_encoded_device_credentials>"
+      ],
+      "env": {
+        "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+      }
+    }
+  }
+}
+```
+
+To encode your credentials in Base64:
+
+**Linux/Mac:**
+
+```sh
+# For CML credentials
+echo -n "username:password" | base64
+
+# For device credentials  
+echo -n "device_username:device_password" | base64
+
+# For enable password (if needed)
+echo -n "enable_password" | base64
+```
+
+**Windows (use WSL):**
+
+```sh
+wsl bash -c 'echo -n "username:password" | base64'
+wsl bash -c 'echo -n "device_username:device_password" | base64'
+wsl bash -c 'echo -n "enable_password" | base64'
+```
+
+Alternatively, you can use online Base64 encoders or PowerShell:
+
+```powershell
+[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("username:password"))
+```
+
+If you need to specify an enable password, add another header:
+
+```json
+"--header",
+"X-PyATS-Enable: Basic <base64_encoded_enable_password>"
+```
+
+#### Docker with HTTP Transport
+
+You can also run the server in HTTP mode using Docker:
+
+```sh
+docker run -d \
+  --name cml-mcp \
+  -p 9000:9000 \
+  -e CML_URL=<URL_OF_CML_SERVER> \
+  -e CML_MCP_TRANSPORT=http \
+  xorrkaz/cml-mcp:latest
+```
+
+This exposes the HTTP server on port 9000, allowing external MCP clients to connect.
 
 ## Usage
 
