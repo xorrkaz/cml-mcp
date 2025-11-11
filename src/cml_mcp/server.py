@@ -31,7 +31,7 @@ import tempfile
 from typing import Any
 
 import httpx
-from fastmcp import Context, FastMCP
+from fastmcp import Context, FastMCP, settings as fastmcp_settings
 from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
 from fastmcp.server.middleware import Middleware, MiddlewareContext
@@ -61,69 +61,76 @@ loglevel = logging.DEBUG if os.getenv("DEBUG", "false").lower() == "true" else l
 logging.basicConfig(level=loglevel, format="%(asctime)s %(levelname)s %(threadName)s %(name)s: %(message)s")
 logger = logging.getLogger("cml-mcp")
 
-cml_client = CMLClient()
+cml_client = CMLClient(str(settings.cml_url), settings.cml_username, settings.cml_password, transport=str(settings.cml_mcp_transport))
 
 
 # Provide a custom token validation function.
 class CustomRequestMiddleware(Middleware):
     async def on_request(self, context: MiddlewareContext, call_next) -> Any:
+        # Reset client state
+        cml_client.token = None
+        cml_client.admin = None
+        os.environ.pop("PYATS_USERNAME", None)
+        os.environ.pop("PYATS_PASSWORD", None)
+        os.environ.pop("PYATS_AUTH_PASS", None)
+
         headers = get_http_headers()
-        auth_header = headers.get("authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            raise McpError(ErrorData(message="Unauthorized: Missing or invalid Authorization header", code=-31002))
-        token = auth_header.split(" ", 1)[1]
-        cml_client.token = token
+        auth_header = headers.get("x-authorization")
+        if not auth_header or not auth_header.startswith("Basic "):
+            raise McpError(ErrorData(message="Unauthorized: Missing or invalid X-Authorization header", code=-31002))
+        parts = auth_header.split(" ", 1)
+        if len(parts) != 2 or parts[0].lower() != "basic":
+            raise McpError(ErrorData(message="Invalid X-Authorization header format. Expected 'Basic <credentials>'", code=-31001))
+        try:
+            decoded = base64.b64decode(parts[1]).decode("utf-8")
+            username, password = decoded.split(":", 1)
+            cml_client.username = username
+            cml_client.password = password
+            cml_client.vclient.username = username
+            cml_client.vclient.password = password
+        except Exception:
+            raise McpError(ErrorData(message="Failed to decode Basic authentication credentials", code=-31002))
         try:
             await cml_client.check_authentication()
         except Exception as e:
             raise McpError(ErrorData(message=f"Unauthorized: {str(e)}", code=-31002))
-        auth_header = headers.get("x-cli-authorization")
-        if auth_header and auth_header.startswith("Basic "):
-            parts = auth_header.split(" ", 1)
-            if len(parts) != 2 or parts[0].lower() != "basic":
-                raise McpError(ErrorData(message="Invalid X-CLI-Authorization header format. Expected 'Basic <credentials>'", code=-31001))
+        pyats_header = headers.get("x-pyats-authorization")
+        if pyats_header and pyats_header.startswith("Basic "):
+            pyats_parts = pyats_header.split(" ", 1)
+            if len(pyats_parts) != 2 or pyats_parts[0].lower() != "basic":
+                raise McpError(
+                    ErrorData(message="Invalid X-PyATS-Authorization header format. Expected 'Basic <credentials>'", code=-31001)
+                )
             try:
-                decoded = base64.b64decode(parts[1]).decode("utf-8")
-                username, password = decoded.split(":", 1)
-                cml_client.vclient.username = username
-                cml_client.vclient.password = password
-                pyats_header = headers.get("x-pyats-authorization")
-                if pyats_header and pyats_header.startswith("Basic "):
-                    pyats_parts = pyats_header.split(" ", 1)
-                    if len(pyats_parts) != 2 or pyats_parts[0].lower() != "basic":
-                        raise McpError(
-                            ErrorData(message="Invalid X-PyATS-Authorization header format. Expected 'Basic <credentials>'", code=-31001)
-                        )
-                    try:
-                        pyats_decoded = base64.b64decode(pyats_parts[1]).decode("utf-8")
-                        pyats_username, pyats_password = pyats_decoded.split(":", 1)
-                        os.environ["PYATS_USERNAME"] = pyats_username
-                        os.environ["PYATS_PASSWORD"] = pyats_password
-                        pyats_enable_header = headers.get("x-pyats-enable")
-                        if pyats_enable_header and pyats_enable_header.startswith("Basic "):
-                            pyats_enable_parts = pyats_enable_header.split(" ", 1)
-                            if len(pyats_enable_parts) != 2 or pyats_enable_parts[0].lower() != "basic":
-                                raise McpError(
-                                    ErrorData(message="Invalid X-PyATS-Enable header format. Expected 'Basic <credentials>'", code=-31001)
-                                )
-                            try:
-                                pyats_enable_decoded = base64.b64decode(pyats_enable_parts[1]).decode("utf-8")
-                                pyats_enable_password = pyats_enable_decoded
-                                os.environ["PYATS_AUTH_PASSWORD"] = pyats_enable_password
-                            except Exception:
-                                raise McpError(
-                                    ErrorData(message="Failed to decode Basic authentication credentials for PyATS Enable", code=-31002)
-                                )
-                    except Exception:
-                        raise McpError(ErrorData(message="Failed to decode Basic authentication credentials for PyATS Enable", code=-31002))
+                pyats_decoded = base64.b64decode(pyats_parts[1]).decode("utf-8")
+                pyats_username, pyats_password = pyats_decoded.split(":", 1)
+                os.environ["PYATS_USERNAME"] = pyats_username
+                os.environ["PYATS_PASSWORD"] = pyats_password
             except Exception:
                 raise McpError(ErrorData(message="Failed to decode Basic authentication credentials for PyATS", code=-31002))
+            pyats_enable_header = headers.get("x-pyats-enable")
+            if pyats_enable_header and pyats_enable_header.startswith("Basic "):
+                pyats_enable_parts = pyats_enable_header.split(" ", 1)
+                if len(pyats_enable_parts) != 2 or pyats_enable_parts[0].lower() != "basic":
+                    raise McpError(ErrorData(message="Invalid X-PyATS-Enable header format. Expected 'Basic <credentials>'", code=-31001))
+                try:
+                    pyats_enable_decoded = base64.b64decode(pyats_enable_parts[1]).decode("utf-8")
+                    pyats_enable_password = pyats_enable_decoded
+                    os.environ["PYATS_AUTH_PASS"] = pyats_enable_password
+                except Exception:
+                    raise McpError(ErrorData(message="Failed to decode Basic authentication credentials for PyATS Enable", code=-31002))
+
         return await call_next(context)
 
 
+if settings.cml_mcp_transport == "http":
+    fastmcp_settings.stateless_http = True
+
 server_mcp = FastMCP("Cisco Modeling Labs (CML)")
+app = None
 if settings.cml_mcp_transport == "http":
     server_mcp.add_middleware(CustomRequestMiddleware())
+    app = server_mcp.http_app()
 
 
 async def get_all_labs() -> list[UUID4Type]:
@@ -1371,9 +1378,19 @@ async def send_cli_command(lid: UUID4Type, label: NodeLabel, commands: str, conf
             )
         if config_command:
             # Send the command as a configuration command
-            return pylab.run_config_command(str(label), commands)
+            results = pylab.run_config_command(str(label), commands)
         # Send the command as an exec/operational command
-        return pylab.run_command(str(label), commands)
+        results = pylab.run_command(str(label), commands)
+
+        # Genie may return dict output where the key is the command and the value is its output.
+        if isinstance(results, dict):
+            output = ""
+            for cmd, cmd_output in results.items():
+                output += f"Command: {cmd}\nOutput:\n{cmd_output}\n"
+        else:
+            output = str(results)
+
+        return output
     except Exception as e:
         logger.error(f"Error sending CLI command '{commands}' to node {label} in lab {lid}: {str(e)}", exc_info=True)
         raise ToolError(e)

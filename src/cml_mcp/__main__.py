@@ -24,20 +24,26 @@
 
 import asyncio
 
-from cml_mcp.server import server_mcp
+import uvicorn
+
+from cml_mcp.server import app, server_mcp
 from cml_mcp.settings import settings
 
 
-async def main():
+async def run():
+    await server_mcp.run_async()
+
+
+def main():
     if settings.cml_mcp_transport == "stdio":
-        await server_mcp.run_async()
+        asyncio.run(run())
     else:
-        await server_mcp.run_async(
-            transport="http",
+        uvicorn.run(
+            app,
+            host=str(settings.cml_mcp_bind),
             port=settings.cml_mcp_port,
-            host=settings.cml_mcp_bind,
         )
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    main()

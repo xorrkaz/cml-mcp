@@ -45,8 +45,8 @@ class Settings(BaseSettings):
     )
 
     cml_url: AnyHttpUrl = Field(..., description="URL of the Cisco Modeling Labs server")
-    cml_username: str = Field(..., description="Username for CML server authentication")
-    cml_password: str = Field(..., description="Password for CML server authentication")
+    cml_username: str | None = Field(default=None, description="Username for CML server authentication")
+    cml_password: str | None = Field(default=None, description="Password for CML server authentication")
     cml_mcp_transport: TransportEnum = Field(
         default=TransportEnum.STDIO,
         description="Transport type for the MCP server",
@@ -62,3 +62,11 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+if settings.cml_mcp_transport == TransportEnum.STDIO:
+    if not settings.cml_username or not settings.cml_password:
+        raise ValueError("CML_USERNAME and CML_PASSWORD must be set when using stdio transport")
+else:
+    # Use '__bogus__' as the default for http to have some initial credentials.  The real
+    # values will be provided through Basic Auth.
+    settings.cml_username = "__bogus__"
+    settings.cml_password = "__bogus__"
