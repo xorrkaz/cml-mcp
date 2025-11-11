@@ -22,8 +22,17 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-from pydantic import AnyHttpUrl, Field
+from enum import StrEnum
+
+from pydantic import AnyHttpUrl, Field, IPvAnyAddress
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class TransportEnum(StrEnum):
+    """Transport types supported by the MCP server."""
+
+    HTTP = "http"
+    STDIO = "stdio"
 
 
 class Settings(BaseSettings):
@@ -36,8 +45,28 @@ class Settings(BaseSettings):
     )
 
     cml_url: AnyHttpUrl = Field(..., description="URL of the Cisco Modeling Labs server")
-    cml_username: str = Field(..., description="Username for CML server authentication")
-    cml_password: str = Field(..., description="Password for CML server authentication")
+    cml_username: str | None = Field(default=None, description="Username for CML server authentication")
+    cml_password: str | None = Field(default=None, description="Password for CML server authentication")
+    cml_mcp_transport: TransportEnum = Field(
+        default=TransportEnum.STDIO,
+        description="Transport type for the MCP server",
+    )
+    cml_mcp_bind: IPvAnyAddress = Field(
+        default="0.0.0.0",
+        description="IP address to bind the MCP server when transport is HTTP",
+    )
+    cml_mcp_port: int = Field(
+        default=9000,
+        description="Port to bind the MCP server when transport is HTTP",
+    )
 
 
 settings = Settings()
+if settings.cml_mcp_transport == TransportEnum.STDIO:
+    if not settings.cml_username or not settings.cml_password:
+        raise ValueError("CML_USERNAME and CML_PASSWORD must be set when using stdio transport")
+else:
+    # Use '__bogus__' as the default for http to have some initial credentials.  The real
+    # values will be provided through Basic Auth.
+    settings.cml_username = "__bogus__"
+    settings.cml_password = "__bogus__"

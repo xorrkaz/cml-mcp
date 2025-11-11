@@ -22,11 +22,27 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-from cml_mcp.server import server_mcp
+import asyncio
+
+import uvicorn
+
+from cml_mcp.server import app, server_mcp
+from cml_mcp.settings import settings
+
+
+async def run():
+    await server_mcp.run_async()
 
 
 def main():
-    server_mcp.run()
+    if settings.cml_mcp_transport == "stdio":
+        asyncio.run(run())
+    else:
+        uvicorn.run(
+            app,
+            host=str(settings.cml_mcp_bind),
+            port=settings.cml_mcp_port,
+        )
 
 
 if __name__ == "__main__":
