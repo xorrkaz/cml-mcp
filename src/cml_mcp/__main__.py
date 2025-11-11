@@ -22,16 +22,22 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+import asyncio
+
 from cml_mcp.server import server_mcp
+from cml_mcp.settings import settings
 
 
-def main():
-    server_mcp.run(
-        transport="http",
-        port=9000,
-        host="0.0.0.0",
-    )
+async def main():
+    if settings.cml_mcp_transport == "stdio":
+        await server_mcp.run_async()
+    else:
+        await server_mcp.run_async(
+            transport="http",
+            port=settings.cml_mcp_port,
+            host=settings.cml_mcp_bind,
+        )
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

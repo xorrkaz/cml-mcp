@@ -53,7 +53,7 @@ from cml_mcp.schemas.nodes import Node, NodeConfigurationContent, NodeCreate, No
 from cml_mcp.schemas.system import SystemHealth, SystemInformation, SystemStats
 from cml_mcp.schemas.topologies import Topology
 from cml_mcp.schemas.users import UserCreate, UserResponse
-from cml_mcp.settings import Settings
+from cml_mcp.settings import settings
 from cml_mcp.types import ConsoleLogOutput, SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse
 
 # Set up logging
@@ -122,7 +122,8 @@ class CustomRequestMiddleware(Middleware):
 
 
 server_mcp = FastMCP("Cisco Modeling Labs (CML)")
-server_mcp.add_middleware(CustomRequestMiddleware())
+if settings.cml_mcp_transport == "http":
+    server_mcp.add_middleware(CustomRequestMiddleware())
 
 
 async def get_all_labs() -> list[UUID4Type]:
