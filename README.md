@@ -1,5 +1,7 @@
 # Model Context Protocol (MCP) Server for Cisco Modeling Labs (CML)
 
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/xorrkaz/cml-mcp)
+
 mcp-name: io.github.xorrkaz/cml-mcp
 
 ## Overview
@@ -391,7 +393,7 @@ the following sequence of prompts nicely shows off some of the server's capabili
 
 And here is an obligatory demo GIF to show it working in Claude Desktop:
 
-![Topology Creation Example](img/cml_mcp.gif)
+![Animated demonstration showing Claude Desktop creating a network topology in Cisco Modeling Labs through natural language commands. The sequence shows a user typing prompts to create a lab, add network devices including two IOL routers, an unmanaged switch, and an external connector, then configure OSPF routing between the devices. The interface displays both the chat conversation on the left and the resulting network diagram on the right, with nodes being added and connected in real-time as the AI processes each command.](img/cml_mcp.gif)
 
 ### System Prompt
 
