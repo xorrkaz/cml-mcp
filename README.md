@@ -190,7 +190,9 @@ To run the server in HTTP mode, set the `CML_MCP_TRANSPORT` environment variable
 First, install the package:
 
 ```sh
-uv pip install cml-mcp
+uv venv
+source .venv/bin/activate
+uv pip install cml-mcp # or cml-mcp\[pyats] to get CLI command support
 ```
 
 Or for development, clone the repository and sync dependencies:
@@ -198,7 +200,7 @@ Or for development, clone the repository and sync dependencies:
 ```sh
 git clone https://github.com/xorrkaz/cml-mcp.git
 cd cml-mcp
-uv sync
+uv sync # add --all-extras to get CLI command support
 ```
 
 Then run the server using `uvicorn`:
@@ -235,7 +237,7 @@ The server will start and listen for HTTP connections at `http://0.0.0.0:9000`.
 
 When using HTTP transport, authentication is handled differently than stdio mode:
 
-- **CML Credentials**: Instead of being set via environment variables, CML credentials are provided via the `X-Authorization` HTTP header using Basic authentication format
+- **CML Credentials**: Instead of being set via environment variables, CML credentials are provided via the `X-Authorization` HTTP header using Basic authentication format.
 - **PyATS Credentials**: For CLI command execution, PyATS credentials can be provided via the `X-PyATS-Authorization` header (Basic auth) and the enable password via the `X-PyATS-Enable` header
 
 Example headers:
@@ -248,14 +250,16 @@ X-PyATS-Enable: Basic <base64_encoded_enable_password>
 
 #### Configuring MCP Clients for HTTP
 
-To use the HTTP server with an MCP client, you'll need to use the `mcp-remote` tool to connect to the HTTP endpoint. Most MCP clients like Claude Desktop don't natively support HTTP streaming, so `mcp-remote` acts as a bridge between the client (which expects stdio) and the HTTP server.
+To use the HTTP server with an MCP client, you'll need to use the `mcp-remote` tool to connect to the HTTP endpoint. Most MCP clients like Claude Desktop don't natively support HTTP streaming, so `mcp-remote` acts as a bridge between the client (which expects stdio) and the HTTP server.  This bridge requires [Node.js](https://nodejs.org/en/download/) to be installed
+on your client machine.  Node.js includes the `npx` utility that allows you to run Javascript/Typescript applications in
+a dedicated environment.
 
 Add the following configuration to your MCP client config (e.g., Claude Desktop's `claude_desktop_config.json`):
 
 ```json
 {
   "mcpServers": {
-    "Cisco Modeling Labs (CML) - HTTP": {
+    "Cisco Modeling Labs (CML)": {
       "command": "npx",
       "args": [
         "-y",
@@ -282,7 +286,7 @@ Example:
 ```json
 {
   "mcpServers": {
-    "Cisco Modeling Labs (CML) - HTTP": {
+    "Cisco Modeling Labs (CML)": {
       "command": "npx",
       "args": [
         "-y",
@@ -303,7 +307,7 @@ Example:
 ```json
 {
   "mcpServers": {
-    "Cisco Modeling Labs (CML) - HTTP": {
+    "Cisco Modeling Labs (CML)": {
       "command": "npx",
       "args": [
         "-y",
@@ -364,6 +368,7 @@ You can also run the server in HTTP mode using Docker:
 
 ```sh
 docker run -d \
+  --rm \
   --name cml-mcp \
   -p 9000:9000 \
   -e CML_URL=<URL_OF_CML_SERVER> \
