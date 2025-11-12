@@ -74,6 +74,10 @@ class CustomRequestMiddleware(Middleware):
         os.environ.pop("PYATS_PASSWORD", None)
         os.environ.pop("PYATS_AUTH_PASS", None)
 
+        # XXX: The "initialize" method is broken currently with providing the HTTP context.
+        if context.method == "initialize":
+            return await call_next(context)
+
         headers = get_http_headers()
         auth_header = headers.get("x-authorization")
         if not auth_header or not auth_header.startswith("Basic "):
@@ -150,7 +154,7 @@ async def get_all_labs() -> list[UUID4Type]:
         "readOnlyHint": True,
     }
 )
-async def get_cml_labs(user: UserName = None) -> list[Lab]:
+async def get_cml_labs(user: UserName | None = None) -> list[Lab]:
     """
     Get the list of labs for a specific user or all labs if the user is an admin.
     To get labs for the current user, leave the "user" argument blank.

@@ -4,7 +4,7 @@ build-backend = "uv_build"
 
 [project]
 name = "cml-mcp"
-version = "0.14.0"
+version = "0.14.1"
 license = "BSD-2-Clause AND LicenseRef-Proprietary"
 license-files = ["LICENSE"]
 authors = [{ name = "Joe Clarke", email = "jclarke@cisco.com" }]
