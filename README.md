@@ -20,7 +20,7 @@ for [Cisco Modeling Labs (CML)](https://www.cisco.com/c/en/us/products/cloud-sys
 ## Requirements
 
 - Python 3.12+
-- Cisco Modeling Labs (CML) instance
+- Cisco Modeling Labs (CML) 2.9 or later
 - PyATS (optional; used for device CLI command execution)
 - The [uv](https://docs.astral.sh/uv/) Python package/project manager
 
