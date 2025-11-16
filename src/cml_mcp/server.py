@@ -74,10 +74,6 @@ class CustomRequestMiddleware(Middleware):
         os.environ.pop("PYATS_PASSWORD", None)
         os.environ.pop("PYATS_AUTH_PASS", None)
 
-        # XXX: The "initialize" method is broken currently with providing the HTTP context.
-        if context.method == "initialize":
-            return await call_next(context)
-
         headers = get_http_headers()
         auth_header = headers.get("x-authorization")
         if not auth_header or not auth_header.startswith("Basic "):
