@@ -1376,6 +1376,15 @@ async def send_cli_command(lid: UUID4Type, label: NodeLabel, commands: str, conf
         try:
             pylab = ClPyats(lab)  # Create a ClPyats object for interacting with the lab
             pylab.sync_testbed(cml_client.vclient.username, cml_client.vclient.password)  # Sync the testbed with CML credentials
+
+            # Set the credentials for all devices other than the Terminal Server from ENVs, default to cisco
+            for device in pylab._testbed.devices.values():
+                if device.name != "terminal_server":
+                    device.credentials.default.username = os.getenv("PYATS_USERNAME", "cisco")
+                    device.credentials.default.password = os.getenv("PYATS_PASSWORD", "cisco")
+                    device.credentials.enable.password = os.getenv("PYATS_AUTH_PASS", "cisco")
+
+            logger.info(pylab._testbed.__str__())
         except PyatsNotInstalled:
             raise ImportError(
                 "PyATS and Genie are required to send commands to running devices.  See the documentation on how to install them."
