@@ -1384,7 +1384,6 @@ async def send_cli_command(lid: UUID4Type, label: NodeLabel, commands: str, conf
                     device.credentials.default.password = os.getenv("PYATS_PASSWORD", "cisco")
                     device.credentials.enable.password = os.getenv("PYATS_AUTH_PASS", "cisco")
 
-            logger.debug(pylab._testbed.__str__())
         except PyatsNotInstalled:
             raise ImportError(
                 "PyATS and Genie are required to send commands to running devices.  See the documentation on how to install them."
