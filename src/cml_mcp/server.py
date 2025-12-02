@@ -36,7 +36,7 @@ from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
 from fastmcp.server.middleware import Middleware, MiddlewareContext
 from mcp.shared.exceptions import McpError
-from mcp.types import METHOD_NOT_FOUND, ErrorData
+from mcp.types import METHOD_NOT_FOUND, ErrorData, INVALID_REQUEST
 from virl2_client.models.cl_pyats import ClPyats, PyatsNotInstalled
 
 from cml_mcp.cml_client import CMLClient
@@ -65,7 +65,7 @@ cml_client = CMLClient(str(settings.cml_url), settings.cml_username, settings.cm
 
 
 # Provide a custom token validation function.
-class CustomRequestMiddleware(Middleware):
+class CustomHttpRequestMiddleware(Middleware):
     async def on_request(self, context: MiddlewareContext, call_next) -> Any:
         # Reset client state
         cml_client.token = None
@@ -129,7 +129,7 @@ if settings.cml_mcp_transport == "http":
 server_mcp = FastMCP("Cisco Modeling Labs (CML)")
 app = None
 if settings.cml_mcp_transport == "http":
-    server_mcp.add_middleware(CustomRequestMiddleware())
+    server_mcp.add_middleware(CustomHttpRequestMiddleware())
     app = server_mcp.http_app()
 
 
@@ -262,7 +262,7 @@ async def delete_cml_user(user_id: UUID4Type, ctx: Context) -> bool:
         try:
             result = await ctx.elicit("Are you sure you want to delete this user?", response_type=None)
         except McpError as me:
-            if me.error.code == METHOD_NOT_FOUND:
+            if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
                 elicit_supported = False
             else:
                 raise me
@@ -353,7 +353,7 @@ async def delete_cml_group(group_id: UUID4Type, ctx: Context) -> bool:
         try:
             result = await ctx.elicit("Are you sure you want to delete this group?", response_type=None)
         except McpError as me:
-            if me.error.code == METHOD_NOT_FOUND:
+            if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
                 elicit_supported = False
             else:
                 raise me
@@ -703,7 +703,7 @@ async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> bool:
         try:
             result = await ctx.elicit("Are you sure you want to wipe the lab?", response_type=None)
         except McpError as me:
-            if me.error.code == METHOD_NOT_FOUND:
+            if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
                 elicit_supported = False
             else:
                 raise me
@@ -739,7 +739,7 @@ async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> bool:
         try:
             result = await ctx.elicit("Are you sure you want to delete the lab?", response_type=None)
         except McpError as me:
-            if me.error.code == METHOD_NOT_FOUND:
+            if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
                 elicit_supported = False
             else:
                 raise me
@@ -921,7 +921,7 @@ async def delete_annotation_from_lab(lid: UUID4Type, annotation_id: UUID4Type, c
         try:
             result = await ctx.elicit("Are you sure you want to delete the annotation?", response_type=None)
         except McpError as me:
-            if me.error.code == METHOD_NOT_FOUND:
+            if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
                 elicit_supported = False
             else:
                 raise me
@@ -1223,7 +1223,7 @@ async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
         try:
             result = await ctx.elicit("Are you sure you want to wipe the node?", response_type=None)
         except McpError as me:
-            if me.error.code == METHOD_NOT_FOUND:
+            if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
                 elicit_supported = False
             else:
                 raise me
@@ -1254,7 +1254,7 @@ async def delete_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
         try:
             result = await ctx.elicit("Are you sure you want to delete the node?", response_type=None)
         except McpError as me:
-            if me.error.code == METHOD_NOT_FOUND:
+            if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
                 elicit_supported = False
             else:
                 raise me
