@@ -1,0 +1,29 @@
+[
+  {
+    "name": "Worker Bees",
+    "description": "",
+    "members": [
+      "f02a2009-714c-402c-b4c1-192f0e3a243c",
+      "437a0a68-7429-4d97-b76d-d754faa973c3"
+    ],
+    "labs": [
+      {
+        "id": "24000793-2450-45b6-bba3-4326d2f70891",
+        "permission": "read_only"
+      }
+    ],
+    "associations": [
+      {
+        "id": "24000793-2450-45b6-bba3-4326d2f70891",
+        "permissions": [
+          "lab_view"
+        ]
+      }
+    ],
+    "id": "723612e1-3362-491b-b7c8-b5598503f1ea",
+    "created": "2021-03-15T14:02:35+00:00",
+    "modified": "2022-02-28T15:20:33+00:00",
+    "directory_dn": null,
+    "directory_exists": null
+  }
+]
