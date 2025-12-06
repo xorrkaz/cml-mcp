@@ -6,8 +6,8 @@ set shell := ['bash', '-c']
 
 # Run tests
 [group('qa')]
-test:
-    uv run -m pytest
+test args='':
+    uv run -m pytest {{args}}
 
 [group('build')]
 build:

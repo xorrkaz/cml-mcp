@@ -1,0 +1,21 @@
+{
+  "id": "a6a334de-b497-47ae-bbff-44a83f890114",
+  "created": "2025-12-06T11:11:28+00:00",
+  "modified": "2025-12-06T11:11:28+00:00",
+  "lab_description": "This is a test lab created by MCP tests",
+  "lab_notes": "Some _markdown_ notes for the lab.",
+  "lab_title": "MCP Test Lab",
+  "owner": "4cfc3696-4df0-49a3-a0dd-7bbd9271fe67",
+  "owner_username": "admin",
+  "owner_fullname": "",
+  "state": "DEFINED_ON_CORE",
+  "node_count": 0,
+  "link_count": 0,
+  "groups": [],
+  "effective_permissions": [
+    "lab_view",
+    "lab_admin",
+    "lab_exec",
+    "lab_edit"
+  ]
+}

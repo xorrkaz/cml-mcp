@@ -198,7 +198,7 @@ class Node(NodeDefinedBase, extra="forbid"):
     )
     cpus: AllocatedCpus = Field(...)
     iol_app_id: IOLAppId = Field(default=None)
-    operational: NodeOperationalData = Field(
+    operational: NodeOperationalData | None = Field(
         default=None,
         description="Additional operational data associated with the node.",
     )

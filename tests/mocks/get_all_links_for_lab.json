@@ -1,0 +1,13 @@
+[
+  {
+    "interface_a": "ca98fa49-8d49-45af-85f5-d883389c4b99",
+    "interface_b": "39a53565-6ca5-433c-9c5b-5e1b901e2f8b",
+    "node_a": "b2e1a94a-8ce2-4e49-aff4-bedaf5784d69",
+    "node_b": "489d53c1-8aa1-4652-a437-5959f2789809",
+    "id": "527ea2bc-4ae8-45c0-8639-7ccf6f307ad9",
+    "label": "MCP Test Node 1-Ethernet0/0<->MCP Test Node 2-Ethernet0/0",
+    "lab_id": "e744eb7d-3099-4ee6-8880-ab2617ecfbff",
+    "link_capture_key": "",
+    "state": "DEFINED_ON_CORE"
+  }
+]

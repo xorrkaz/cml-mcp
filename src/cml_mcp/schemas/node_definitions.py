@@ -96,7 +96,7 @@ class DeviceNature(StrEnum):
 
 class VideoDevice(BaseModel, extra="forbid"):
     memory: int = Field(..., description="Video Memory.", ge=1, le=128)
-    model: VideoModels = Field(default=None, description="Video Model.")
+    model: VideoModels | None = Field(default=None, description="Video Model.")
 
 
 class LinuxNative(BaseModel, extra="forbid"):
@@ -219,7 +219,7 @@ CompletedNode = Annotated[str, Field(max_length=128)]
 
 class Boot(BaseModel, extra="forbid"):
     timeout: int = Field(..., description="Timeout (seconds).", examples=[60], le=86400)
-    completed: list[CompletedNode] = Field(
+    completed: list[CompletedNode] | None = Field(
         default=None,
         description='A list of strings which should be matched to determine when the node is "ready".',
         examples=[[CompletedNode("string")]],
@@ -358,7 +358,7 @@ class Configuration(BaseModel, extra="forbid"):
     """
 
     generator: ConfigurationGenerator = Field(..., description="Generator configuration details.")
-    provisioning: ConfigurationProvisioning = Field(default=None, description="Provisioning configuration details.")
+    provisioning: ConfigurationProvisioning | None = Field(default=None, description="Provisioning configuration details.")
 
 
 class Device(BaseModel, extra="forbid"):
@@ -475,7 +475,7 @@ class NodeDefinition(BaseModel, extra="forbid"):
     device: Device = Field(...)
     ui: Ui = Field(...)
     inherited: Inherited = Field(default=None)
-    pyats: Pyats = Field(default=None)
+    pyats: Pyats | None = Field(default=None)
     schema_version: Schema = Field(default=None)
 
 

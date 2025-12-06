@@ -1,0 +1,63 @@
+{
+  "computes": {
+    "17e91b4e-865a-4627-a6bb-50e3dfa988ab": {
+      "hostname": "cml-controller",
+      "is_controller": true,
+      "stats": {
+        "cpu": {
+          "count": 6,
+          "percent": 4.166666666666667,
+          "model": "Intel(R) Core(TM) i7-5960X CPU @ 3.00GHz",
+          "hyperthreading": false,
+          "predicted": 43,
+          "load": [
+            0.1875,
+            0.21728515625,
+            0.18359375
+          ]
+        },
+        "memory": {
+          "used": 2791538688.0,
+          "free": 13624754176.0,
+          "total": 16748994560.0
+        },
+        "disk": {
+          "used": 82798108672.0,
+          "free": 37041123328.0,
+          "total": 119839232000.0
+        },
+        "dominfo": {
+          "total_nodes": 182,
+          "total_orphans": 50,
+          "running_nodes": 8,
+          "running_orphans": 0,
+          "allocated_cpus": 7,
+          "allocated_memory": 6291456
+        }
+      }
+    }
+  },
+  "all": {
+    "cpu": {
+      "count": 6,
+      "percent": 4.166666666666667
+    },
+    "memory": {
+      "used": 2791538688.0,
+      "free": 13624754176.0,
+      "total": 16748994560.0
+    },
+    "disk": {
+      "used": 82798108672.0,
+      "free": 37041123328.0,
+      "total": 119839232000.0
+    }
+  },
+  "controller": {
+    "disk": {
+      "used": 77848326144.0,
+      "free": 37041123328.0,
+      "total": 119839232000.0
+    }
+  }
+}

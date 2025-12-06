@@ -1116,12 +1116,13 @@ async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node]:
         for node in list(resp):
             # XXX: Fixup known issues with bad data coming from
             # certain node types.
-            if node["operational"].get("vnc_key") == "":
-                node["operational"]["vnc_key"] = None
-            if node["operational"].get("image_definition") == "":
-                node["operational"]["image_definition"] = None
-            if node["operational"].get("serial_consoles") is None:
-                node["operational"]["serial_consoles"] = []
+            if "operational" in node:
+                if node["operational"].get("vnc_key") == "":
+                    node["operational"]["vnc_key"] = None
+                if node["operational"].get("image_definition") == "":
+                    node["operational"]["image_definition"] = None
+                if node["operational"].get("serial_consoles") is None:
+                    node["operational"]["serial_consoles"] = []
             rnodes.append(Node(**node))
         return rnodes
     except httpx.HTTPStatusError as e:
