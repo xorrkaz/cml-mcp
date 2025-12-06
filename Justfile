@@ -9,6 +9,10 @@ set shell := ['bash', '-c']
 test args='':
     uv run -m pytest {{args}}
 
+[group('qa')]
+test-live args='':
+    USE_MOCKS=false uv run -m pytest {{args}}
+
 [group('build')]
 build:
     uv build
