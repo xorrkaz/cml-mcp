@@ -40,19 +40,19 @@ from mcp.types import METHOD_NOT_FOUND, ErrorData, INVALID_REQUEST
 from virl2_client.models.cl_pyats import ClPyats, PyatsNotInstalled
 
 from cml_mcp.cml_client import CMLClient
-from cml_mcp.schemas.annotations import EllipseAnnotation, LineAnnotation, RectangleAnnotation, TextAnnotation
-from cml_mcp.schemas.common import DefinitionID, UserName, UUID4Type
-from cml_mcp.schemas.groups import GroupCreate, GroupInfoResponse
-from cml_mcp.schemas.interfaces import InterfaceCreate
-from cml_mcp.schemas.labs import Lab, LabCreate, LabTitle
+from cml_mcp.cml.simple_webserver.schemas.annotations import EllipseAnnotation, LineAnnotation, RectangleAnnotation, TextAnnotation
+from cml_mcp.cml.simple_webserver.schemas.common import DefinitionID, UserName, UUID4Type
+from cml_mcp.cml.simple_webserver.schemas.groups import GroupCreate, GroupInfoResponse
+from cml_mcp.cml.simple_webserver.schemas.interfaces import InterfaceCreate
+from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabCreate, LabTitle
 
-# from cml_mcp.schemas.licensing import LicensingStatus
-from cml_mcp.schemas.links import Link, LinkConditionConfiguration, LinkCreate
-from cml_mcp.schemas.node_definitions import NodeDefinition
-from cml_mcp.schemas.nodes import Node, NodeConfigurationContent, NodeCreate, NodeLabel
-from cml_mcp.schemas.system import SystemHealth, SystemInformation, SystemStats
-from cml_mcp.schemas.topologies import Topology
-from cml_mcp.schemas.users import UserCreate, UserResponse
+# from cml_mcp.cml.simple_webserver.schemas.licensing import LicensingStatus
+from cml_mcp.cml.simple_webserver.schemas.links import Link, LinkConditionConfiguration, LinkCreate
+from cml_mcp.cml.simple_webserver.schemas.node_definitions import NodeDefinition
+from cml_mcp.cml.simple_webserver.schemas.nodes import Node, NodeConfigurationContent, NodeCreate
+from cml_mcp.cml.simple_webserver.schemas.system import SystemHealth, SystemInformation, SystemStats
+from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
+from cml_mcp.cml.simple_webserver.schemas.users import UserCreate, UserResponse
 from cml_mcp.settings import settings
 from cml_mcp.types import ConsoleLogOutput, SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse
 
@@ -1355,7 +1355,7 @@ async def get_console_log(lid: UUID4Type, nid: UUID4Type) -> list[ConsoleLogOutp
 
 
 @server_mcp.tool(annotations={"title": "Send CLI Command to CML Node", "readOnlyHint": False, "destructiveHint": True})
-async def send_cli_command(lid: UUID4Type, label: NodeLabel, commands: str, config_command: bool = False) -> str:
+async def send_cli_command(lid: UUID4Type, label: str, commands: str, config_command: bool = False) -> str:
     """
     Send CLI command(s) to a node in a CML lab by its lab ID and node label. Nodes must be started and ready
     (i.e., in a BOOTED state) for this to succeed.

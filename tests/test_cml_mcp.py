@@ -34,17 +34,17 @@ from fastmcp.client.transports import FastMCPTransport
 from inline_snapshot import snapshot  # , outsource
 from mcp.types import TextContent
 
-from cml_mcp.schemas.annotations import EllipseAnnotation, LineAnnotation, RectangleAnnotation, TextAnnotation
-from cml_mcp.schemas.common import DefinitionID, UserName, UUID4Type
-from cml_mcp.schemas.groups import GroupCreate, GroupInfoResponse
-from cml_mcp.schemas.interfaces import InterfaceCreate
-from cml_mcp.schemas.labs import Lab, LabCreate, LabTitle
-from cml_mcp.schemas.links import Link, LinkConditionConfiguration, LinkCreate
-from cml_mcp.schemas.node_definitions import NodeDefinition
-from cml_mcp.schemas.nodes import Node, NodeCreate
-from cml_mcp.schemas.system import SystemHealth, SystemInformation, SystemStats
-from cml_mcp.schemas.topologies import Topology
-from cml_mcp.schemas.users import UserCreate, UserResponse
+from cml_mcp.cml.simple_webserver.schemas.annotations import EllipseAnnotation, LineAnnotation, RectangleAnnotation, TextAnnotation
+from cml_mcp.cml.simple_webserver.schemas.common import DefinitionID, UserName, UUID4Type
+from cml_mcp.cml.simple_webserver.schemas.groups import GroupCreate, GroupInfoResponse
+from cml_mcp.cml.simple_webserver.schemas.interfaces import InterfaceCreate
+from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabCreate, LabTitle
+from cml_mcp.cml.simple_webserver.schemas.links import Link, LinkConditionConfiguration, LinkCreate
+from cml_mcp.cml.simple_webserver.schemas.node_definitions import NodeDefinition
+from cml_mcp.cml.simple_webserver.schemas.nodes import Node, NodeCreate
+from cml_mcp.cml.simple_webserver.schemas.system import SystemHealth, SystemInformation, SystemStats
+from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
+from cml_mcp.cml.simple_webserver.schemas.users import UserCreate, UserResponse
 from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse
 
 

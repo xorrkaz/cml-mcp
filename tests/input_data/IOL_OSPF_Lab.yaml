@@ -17,7 +17,7 @@ nodes:
     cpu_limit: null
     cpus: null
     data_volume: null
-    hide_links: null
+    hide_links: false
     id: n0
     image_definition: null
     label: R1
@@ -58,7 +58,7 @@ nodes:
     cpu_limit: null
     cpus: null
     data_volume: null
-    hide_links: null
+    hide_links: false
     id: n1
     image_definition: null
     label: R2
@@ -88,7 +88,7 @@ nodes:
     cpu_limit: null
     cpus: null
     data_volume: null
-    hide_links: null
+    hide_links: false
     id: n2
     image_definition: null
     label: Switch1
@@ -119,7 +119,7 @@ nodes:
     cpu_limit: null
     cpus: null
     data_volume: null
-    hide_links: null
+    hide_links: false
     id: n3
     image_definition: null
     label: External-Connector

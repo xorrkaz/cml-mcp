@@ -22,6 +22,14 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+import sys
+from pathlib import Path
+
 from cml_mcp.settings import settings
+
+# Add the cml directory to sys.path to allow relative imports within the CML schemas
+_cml_path = Path(__file__).parent / "cml"
+if str(_cml_path) not in sys.path:
+    sys.path.insert(0, str(_cml_path))
 
 __all__ = ["settings"]
