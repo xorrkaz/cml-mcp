@@ -49,7 +49,7 @@ from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabCreate, LabTitle
 # from cml_mcp.cml.simple_webserver.schemas.licensing import LicensingStatus
 from cml_mcp.cml.simple_webserver.schemas.links import Link, LinkConditionConfiguration, LinkCreate
 from cml_mcp.cml.simple_webserver.schemas.node_definitions import NodeDefinition
-from cml_mcp.cml.simple_webserver.schemas.nodes import Node, NodeConfigurationContent, NodeCreate
+from cml_mcp.cml.simple_webserver.schemas.nodes import Node, NodeConfigurationContent, NodeCreate, NodeLabel
 from cml_mcp.cml.simple_webserver.schemas.system import SystemHealth, SystemInformation, SystemStats
 from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
 from cml_mcp.cml.simple_webserver.schemas.users import UserCreate, UserResponse
@@ -1355,7 +1355,9 @@ async def get_console_log(lid: UUID4Type, nid: UUID4Type) -> list[ConsoleLogOutp
 
 
 @server_mcp.tool(annotations={"title": "Send CLI Command to CML Node", "readOnlyHint": False, "destructiveHint": True})
-async def send_cli_command(lid: UUID4Type, label: str, commands: str, config_command: bool = False) -> str:
+async def send_cli_command(
+    lid: UUID4Type, label: NodeLabel, commands: str, config_command: bool = False
+) -> str:  # pyright: ignore[reportInvalidTypeForm]
     """
     Send CLI command(s) to a node in a CML lab by its lab ID and node label. Nodes must be started and ready
     (i.e., in a BOOTED state) for this to succeed.
