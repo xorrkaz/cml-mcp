@@ -42,12 +42,12 @@ from virl2_client.models.cl_pyats import ClPyats, PyatsNotInstalled
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.cml.simple_webserver.schemas.annotations import EllipseAnnotation, LineAnnotation, RectangleAnnotation, TextAnnotation
 from cml_mcp.cml.simple_webserver.schemas.common import DefinitionID, UserName, UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.groups import GroupCreate, GroupInfoResponse
+from cml_mcp.cml.simple_webserver.schemas.groups import GroupCreate, GroupResponse
 from cml_mcp.cml.simple_webserver.schemas.interfaces import InterfaceCreate
-from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabCreate, LabTitle
+from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabRequest, LabTitle
 
 # from cml_mcp.cml.simple_webserver.schemas.licensing import LicensingStatus
-from cml_mcp.cml.simple_webserver.schemas.links import Link, LinkConditionConfiguration, LinkCreate
+from cml_mcp.cml.simple_webserver.schemas.links import LinkResponse, LinkConditionConfiguration, LinkCreate
 from cml_mcp.cml.simple_webserver.schemas.node_definitions import NodeDefinition
 from cml_mcp.cml.simple_webserver.schemas.nodes import Node, NodeConfigurationContent, NodeCreate, NodeLabel
 from cml_mcp.cml.simple_webserver.schemas.system import SystemHealth, SystemInformation, SystemStats
@@ -172,7 +172,7 @@ async def get_cml_labs(user: UserName | None = None) -> list[Lab]:
             lab_details = await cml_client.get(f"/labs/{lab}")
             # Only include labs owned by the specified user
             if not user or lab_details.get("owner_username") == str(user):
-                ulabs.append(Lab(**lab_details))
+                ulabs.append(Lab(**lab_details).model_dump(exclude_unset=True))
         return ulabs
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -193,7 +193,7 @@ async def get_cml_users() -> list[UserResponse]:
     """
     try:
         users = await cml_client.get("/users")
-        return [UserResponse(**user) for user in users]
+        return [UserResponse(**user).model_dump(exclude_unset=True) for user in users]
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -284,13 +284,13 @@ async def delete_cml_user(user_id: UUID4Type, ctx: Context) -> bool:
         "readOnlyHint": True,
     }
 )
-async def get_cml_groups() -> list[GroupInfoResponse]:
+async def get_cml_groups() -> list[GroupResponse]:
     """
     Get the list of groups from the CML server.
     """
     try:
         groups = await cml_client.get("/groups")
-        return [GroupInfoResponse(**group) for group in groups]
+        return [GroupResponse(**group).model_dump(exclude_unset=True) for group in groups]
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -381,7 +381,7 @@ async def get_cml_information() -> SystemInformation:
     """
     try:
         info = await cml_client.get("/system_information")
-        return SystemInformation(**info)
+        return SystemInformation(**info).model_dump(exclude_unset=True)
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -401,7 +401,7 @@ async def get_cml_status() -> SystemHealth:
     """
     try:
         status = await cml_client.get("/system_health")
-        return SystemHealth(**status)
+        return SystemHealth(**status).model_dump(exclude_unset=True)
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -421,7 +421,7 @@ async def get_cml_statistics() -> SystemStats:
     """
     try:
         stats = await cml_client.get("/system_stats")
-        return SystemStats(**stats)
+        return SystemStats(**stats).model_dump(exclude_unset=True)
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -464,7 +464,7 @@ async def get_cml_node_definitions() -> list[SuperSimplifiedNodeDefinitionRespon
     """
     try:
         node_definitions = await cml_client.get("/simplified_node_definitions")
-        return [SuperSimplifiedNodeDefinitionResponse(**nd) for nd in node_definitions]
+        return [SuperSimplifiedNodeDefinitionResponse(**nd).model_dump(exclude_unset=True) for nd in node_definitions]
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -483,7 +483,7 @@ async def get_node_def_details(did: DefinitionID) -> NodeDefinition:
         NodeDefinition: The node definition details.
     """
     node_definition = await cml_client.get(f"/node_definitions/{did}", params={"json": True})
-    return NodeDefinition(**node_definition)
+    return NodeDefinition(**node_definition).model_dump(exclude_unset=True)
 
 
 @server_mcp.tool(
@@ -512,10 +512,10 @@ async def get_node_definition_detail(did: DefinitionID) -> NodeDefinition:
         "destructiveHint": False,
     }
 )
-async def create_empty_lab(lab: LabCreate | dict) -> UUID4Type:
-    """Creates an empty lab topology in CML using the provided LabCreate definition and return its ID.
+async def create_empty_lab(lab: LabRequest | dict) -> UUID4Type:
+    """Creates an empty lab topology in CML using the provided LabRequest definition and return its ID.
 
-    The LabCreate schema supports the following fields:
+    The LabRequest schema supports the following fields:
 
     - title (str, optional): Title of the lab (1-64 characters).
     - owner (str, optional): UUID of the lab owner.
@@ -533,7 +533,7 @@ async def create_empty_lab(lab: LabCreate | dict) -> UUID4Type:
         # XXX The dict usage is a workaround for some LLMs that pass a JSON string
         # representation of the argument object.
         if isinstance(lab, dict):
-            lab = LabCreate(**lab)
+            lab = LabRequest(**lab)
         resp = await cml_client.post("/labs", data=lab.model_dump(mode="json", exclude_none=True))
         return UUID4Type(resp["id"])
     except httpx.HTTPStatusError as e:
@@ -551,12 +551,11 @@ async def create_empty_lab(lab: LabCreate | dict) -> UUID4Type:
         "idempotentHint": True,
     }
 )
-async def modify_cml_lab(lid: UUID4Type, lab: LabCreate | dict) -> bool:
+async def modify_cml_lab(lid: UUID4Type, lab: LabRequest | dict) -> bool:
     """
-    Modify an existing CML lab's details using the provided LabCreate definition.
+    Modify an existing CML lab's details using the provided LabRequest definition.
 
-    The LabCreate schema supports the following fields:
-
+    The LabRequest schema supports the following fields:
     - title (str, optional): Title of the lab (1-64 characters).
     - owner (str, optional): UUID of the lab owner.
     - description (str, optional): Free-form textual description of the lab (max 4096 characters).
@@ -573,7 +572,7 @@ async def modify_cml_lab(lid: UUID4Type, lab: LabCreate | dict) -> bool:
         # XXX The dict usage is a workaround for some LLMs that pass a JSON string
         # representation of the argument object.
         if isinstance(lab, dict):
-            lab = LabCreate(**lab)
+            lab = LabRequest(**lab)
         await cml_client.patch(f"/labs/{lid}", data=lab.model_dump(mode="json", exclude_none=True))
         return True
     except httpx.HTTPStatusError as e:
@@ -769,7 +768,7 @@ async def add_interface(lid: UUID4Type, intf: InterfaceCreate) -> SimplifiedInte
         InterfaceResponse: The added interface details.
     """
     resp = await cml_client.post(f"/labs/{lid}/interfaces", data=intf.model_dump(mode="json", exclude_none=True))
-    return SimplifiedInterfaceResponse(**resp)
+    return SimplifiedInterfaceResponse(**resp).model_dump(exclude_unset=True)
 
 
 @server_mcp.tool(
@@ -980,7 +979,7 @@ async def get_interfaces_for_node(lid: UUID4Type, nid: UUID4Type) -> list[Simpli
     """
     try:
         resp = await cml_client.get(f"/labs/{lid}/nodes/{nid}/interfaces", params={"data": True, "operational": False})
-        return [SimplifiedInterfaceResponse(**iface) for iface in resp]
+        return [SimplifiedInterfaceResponse(**iface).model_dump(exclude_unset=True) for iface in resp]
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -1027,13 +1026,13 @@ async def connect_two_nodes(lid: UUID4Type, link_info: LinkCreate | dict) -> UUI
         "readOnlyHint": True,
     }
 )
-async def get_all_links_for_lab(lid: UUID4Type) -> list[Link]:
+async def get_all_links_for_lab(lid: UUID4Type) -> list[LinkResponse]:
     """
     Get all links for a CML lab by its ID.
     """
     try:
         resp = await cml_client.get(f"/labs/{lid}/links", params={"data": True})
-        return [Link(**link) for link in resp]
+        return [LinkResponse(**link).model_dump(exclude_unset=True) for link in resp]
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
@@ -1123,7 +1122,7 @@ async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node]:
                     node["operational"]["image_definition"] = None
                 if node["operational"].get("serial_consoles") is None:
                     node["operational"]["serial_consoles"] = []
-            rnodes.append(Node(**node))
+            rnodes.append(Node(**node).model_dump(exclude_unset=True))
         return rnodes
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -1142,7 +1141,7 @@ async def get_cml_lab_by_title(title: LabTitle) -> Lab:
         for lid in labs:
             lab = await cml_client.get(f"/labs/{lid}")
             if lab["lab_title"] == str(title):
-                return Lab(**lab)
+                return Lab(**lab).model_dump(exclude_unset=True)
         raise ValueError(f"Lab with title '{title}' not found.")
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -1356,8 +1355,8 @@ async def get_console_log(lid: UUID4Type, nid: UUID4Type) -> list[ConsoleLogOutp
 
 @server_mcp.tool(annotations={"title": "Send CLI Command to CML Node", "readOnlyHint": False, "destructiveHint": True})
 async def send_cli_command(
-    lid: UUID4Type, label: NodeLabel, commands: str, config_command: bool = False
-) -> str:  # pyright: ignore[reportInvalidTypeForm]
+    lid: UUID4Type, label: NodeLabel, commands: str, config_command: bool = False  # pyright: ignore[reportInvalidTypeForm]
+) -> str:
     """
     Send CLI command(s) to a node in a CML lab by its lab ID and node label. Nodes must be started and ready
     (i.e., in a BOOTED state) for this to succeed.

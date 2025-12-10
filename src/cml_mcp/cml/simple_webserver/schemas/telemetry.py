@@ -4,11 +4,28 @@
 # All rights reserved.
 #
 from datetime import datetime
+from enum import StrEnum, auto
 from typing import Any
 
 from pydantic import BaseModel, Field
 
 from simple_common.schemas import OptInStatus, TelemetryEventCategory
+
+
+class FeedbackScope(StrEnum):
+    PRODUCT = auto()
+    PAGE = auto()
+
+
+class FeedbackSchema(BaseModel, extra="forbid"):
+    """A freeform JSON object for feedback submission."""
+
+    email: str = Field(..., description="The user's email address.")
+    feedback: str = Field(..., description="The feedback content.")
+    path: str = Field(..., description="The path where feedback was submitted.")
+    place: str = Field(..., description="The place where feedback was submitted.")
+    scope: FeedbackScope = Field(..., description="The feedback scope.")
+    score: int = Field(..., description="The feedback score.", ge=1, le=10)
 
 
 class OptInBase(BaseModel):

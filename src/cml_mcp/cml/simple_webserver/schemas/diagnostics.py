@@ -202,7 +202,7 @@ class NodeLaunchQueueDiagnostics(BaseModel, extra="forbid"):
     node_definition: DefinitionID = Field(
         ..., description="Node Definition ID for the specified node."
     )
-    parameters: NodeParameters = Field(default=None)
+    parameters: NodeParameters
     pinned_compute_id: PinnedComputeID = Field(default=None)
     ram: Ram = Field(default=None)
     tags: TagArray = Field(default=None)

@@ -48,9 +48,6 @@ class SimplifiedLinkResponse(BaseModel, extra="forbid"):
     state: LabStateModel = Field(..., description="The status of the link in the lab.")
 
 
-Link = LinkResponse
-
-
 class LinkCondition(BaseModel):
     bandwidth: int | None = Field(
         default=None, description="Bandwidth of the link in kbps.", ge=0, le=10000000

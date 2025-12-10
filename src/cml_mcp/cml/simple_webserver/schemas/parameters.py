@@ -122,6 +122,17 @@ DataQueryParameter = Annotated[
 ]
 
 
+ShowAllQueryParameter = Annotated[
+    bool,
+    Query(
+        description="""
+        Specify `true` if the service should include items
+        which belong to all accessible labs or just owned labs.
+        """
+    ),
+]
+
+
 OperationalQueryParameter = Annotated[
     bool,
     Query(

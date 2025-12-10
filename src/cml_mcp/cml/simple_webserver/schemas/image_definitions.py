@@ -5,7 +5,7 @@
 #
 import re
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 from simple_webserver.schemas.common import DefinitionID, FilePath
 from simple_webserver.schemas.nodes import NodeConfigurationContent
@@ -86,20 +86,3 @@ class ImageDefinition(BaseModel, extra="forbid"):
         if self.disk_image or self.docker_tag:
             return self
         raise ValueError("Either disk_image or docker_tag must be provided")
-
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "id": "alpine-3-10-base",
-                "node_definition_id": "alpine",
-                "description": "Alpine Linux and network tools",
-                "label": "Alpine 3.10",
-                "disk_image": "alpine-3-10-base.qcow2",
-                "read_only": True,
-                "ram": None,
-                "cpus": None,
-                "data_volume": None,
-                "boot_disk_size": None,
-            }
-        }
-    )

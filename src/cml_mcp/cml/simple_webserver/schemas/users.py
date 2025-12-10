@@ -74,6 +74,7 @@ class UserBase(BaseModel):
         description="Additional, textual free-form detail of the user.",
         examples=["Rules the network simulation world, location: unknown"],
     )
+    # XXX: Allow email to be None for backward compatibility with existing users.
     email: str | None = Field(
         default=None,
         description="The optional e-mail address of the user.",
@@ -96,10 +97,12 @@ class UserBase(BaseModel):
         default=None,
         description="Limit node launches by this user to the given resource pool.",
     )
-    opt_in: bool | None = Field(
+    # XXX: Allow bool and None types for backward compatibility with CML 2.9.
+    # XXX: Also set default to False for 2.9 compatibility.
+    opt_in: OptInStatus | bool | None = Field(
         default=False,
         description="Telemetry opt-in state for user.",
-        examples=[True, False],
+        examples=[status.value for status in OptInStatus],
     )
     tour_version: str = Field(
         default=None,
@@ -128,6 +131,7 @@ class UserCreate(UserBase, extra="forbid"):
 class UserResponse(BaseDBModel, UserBase, extra="forbid"):
     """User info"""
 
+    # XXX: Allow this to be None for backward compatibility with existing users.
     directory_dn: DirectoryDn | None = Field(default=None)
     labs: UUID4ArrayType = Field(default=None, description="Labs owned by the user.")
     pubkey_info: str | None = Field(

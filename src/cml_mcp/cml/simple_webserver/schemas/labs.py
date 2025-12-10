@@ -128,14 +128,13 @@ class LabRequest(BaseModel, extra="forbid"):
     notes: LabNotes = Field(default=None)
     groups: list[LabGroup] = Field(
         default=None,
-        deprecated=True,
         description="Array of LabGroup objects - mapping from group ID to permissions.",
     )
     associations: LabAssociations = Field(
         default=None,
         description="Object of lab/group and lab/user associations.",
     )
-    # XXX: This None is only required to make the model validate to CML 2.9.
+    # XXX: This is only done for CML 2.9 compatibility.
     autostart: LabAutostart | None = Field(
         default=None,
         description="The lab's autostart configuration. None if disabled.",
@@ -162,9 +161,9 @@ class Lab(BaseDBModel, extra="forbid"):
         description="Number of connections between nodes in the lab.",
         ge=0,
     )
+
     groups: list[LabGroup] = Field(
         default=None,
-        deprecated=True,
         description="Array of LabGroup objects - mapping from group ID to permissions.",
     )
     effective_permissions: EffectivePermissions = Field(...)
@@ -188,9 +187,6 @@ class LabResponse(Lab, extra="forbid"):
     """The response body is a JSON lab object."""
 
     pass
-
-
-LabCreate = LabRequest
 
 
 class LabElementStateResponse(BaseModel, extra="forbid"):

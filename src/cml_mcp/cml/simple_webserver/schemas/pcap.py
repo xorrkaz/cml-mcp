@@ -39,6 +39,7 @@ class LinkEncaps(StrEnum):
     c_hdlc = "c_hdlc"
     slip = "slip"
     ax25 = "ax25"
+    ieee802_11 = "ieee802_11"
 
 
 class PCAPStart(BaseModel, extra="forbid"):
@@ -77,7 +78,7 @@ PCAPStartBody = Annotated[
 ]
 
 
-class PCAPBaseConfigStatus(BaseModel, extra="forbid"):
+class PCAPConfigStatus(BaseModel, extra="forbid"):
     maxpackets: int = Field(
         default=None,
         description="Maximum amount of packets to be captured.",
@@ -100,9 +101,6 @@ class PCAPBaseConfigStatus(BaseModel, extra="forbid"):
         examples=["src 0.0.0.0"],
     )
     encap: LinkEncaps | None = Field(default=None, description=LINK_ENCAP_DESCRIPTION)
-
-
-class PCAPConfigStatus(PCAPBaseConfigStatus, extra="forbid"):
     link_capture_key: UUID4Type | None = Field(
         ...,
         description="Key or ID for the packet capture running on the specified link.",

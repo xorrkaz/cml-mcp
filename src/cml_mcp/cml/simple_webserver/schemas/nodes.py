@@ -7,7 +7,7 @@ from enum import StrEnum
 from typing import Annotated
 
 from fastapi import Body
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, Field
 
 from simple_webserver.schemas.common import (
     Coordinate,
@@ -87,6 +87,7 @@ NodeConfigurationFiles = Annotated[
     Field(description="List of node configuration file objects."),
 ]
 
+
 NodeConfiguration = Annotated[
     NodeConfigurationContent | NodeConfigurationFiles | NodeConfigurationFile,
     Field(
@@ -98,23 +99,14 @@ NodeConfiguration = Annotated[
 ]
 
 
-class NodeParameters(BaseModel):
-    model_config = ConfigDict(
-        json_schema_extra={
-            "description": "Key-value pairs of a custom node SMBIOS parameters.",
-            "example": {"smbios.bios.vendor": "Lenovo"},
-        }
-    )
-
-    @model_validator(mode="after")
-    def check_types(self):
-        for field_name, value in self.__dict__.items():
-            if value is not None and not isinstance(value, str):
-                raise TypeError(
-                    f"Value for '{field_name}' must be a string or None,"
-                    f"but got {type(value).__name__}."
-                )
-        return self
+NodeParameters = Annotated[
+    dict[str, str | None],
+    Field(
+        default_factory=dict,
+        description="Node-specific parameters.",
+        examples=[{"smbios.bios.vendor": "Lenovo"}],
+    ),
+]
 
 
 class NodeBase(BaseModel):
@@ -131,7 +123,7 @@ class NodeBase(BaseModel):
 
 class NodeBaseExtended(NodeBase):
     configuration: NodeConfiguration = Field(default=None)
-    parameters: NodeParameters = Field(default=None)
+    parameters: NodeParameters
     ram: Ram = Field(default=None)
     cpu_limit: CpuLimit = Field(default=None)
     data_volume: DiskSpace = Field(default=None)

@@ -225,9 +225,7 @@ class ComputeHostBase(BaseModel, extra="forbid"):
     admission_state: ComputeState = Field(
         ..., description="The admission state of the compute host."
     )
-    nodes: UUID4ArrayType = Field(
-        ..., description="List of node ID's deployed on the host.", deprecated=True
-    )
+    nodes: UUID4ArrayType = Field(..., description="List of node ID's deployed on the host.")
     node_counts: NodeCounts = Field(
         ..., description="Count of nodes and orphans deployed and running on the host."
     )
@@ -454,6 +452,10 @@ class SystemInformation(BaseModel, extra="forbid"):
     )
     oui: MACAddress = Field(
         ..., description="The OUI prefix used for all assigned interface MAC addresses."
+    )
+    features: dict[str, bool] = Field(
+        default_factory=dict,
+        description="Feature flags available on this system.",
     )
 
 

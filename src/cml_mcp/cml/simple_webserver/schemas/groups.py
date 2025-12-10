@@ -68,7 +68,6 @@ class GroupAssocNew(BaseModel):
 class GroupAssocOld(BaseModel):
     labs: list[GroupLab] = Field(
         default=None,
-        deprecated=True,
         description="Labs of the group as a object of lab IDs and permission.",
     )
 
@@ -99,6 +98,7 @@ class GroupResponse(
 ):
     """Information about a group."""
 
+    # XXX: Allow this to be None for backward compatibility with existing groups.
     directory_dn: str | None = Field(
         default=None,
         description="Group distinguished name from LDAP",
@@ -113,6 +113,3 @@ class GroupResponse(
 class GroupBriefResponse(BaseModel, extra="forbid"):
     id: UUID4Type = Field(...)
     name: GroupName = Field(...)
-
-
-GroupInfoResponse = GroupResponse

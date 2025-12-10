@@ -67,7 +67,7 @@ class VideoModel(StrEnum):
 
 class VideoDevice(BaseModel, extra="forbid"):
     memory: int = Field(..., description="Video Memory.", ge=1, le=128)
-    model: VideoModel | None = Field(default=None, description="Video Model.")
+    model: VideoModel = Field(default=None, description="Video Model.")
 
 
 class LinuxNative(BaseModel, extra="forbid"):
@@ -77,45 +77,37 @@ class LinuxNative(BaseModel, extra="forbid"):
         ..., description="Domain Driver."
     )
     driver: DriverType = Field(..., description="Simulation Driver.")
-    disk_driver: DiskDriver | None = Field(default=None, description="Disk Driver.")
-    efi_boot: bool | None = Field(default=None, description="If set, use EFI boot for the VM.")
-    efi_code: FilePath | None = Field(
-        default=None, description="EFI code file path; if unset, use default."
-    )
-    efi_vars: FilePath | None = Field(
+    disk_driver: DiskDriver = Field(default=None, description="Disk Driver.")
+    efi_boot: bool = Field(default=None, description="If set, use EFI boot for the VM.")
+    efi_code: FilePath = Field(default=None, description="EFI code file path; if unset, use default.")
+    efi_vars: FilePath = Field(
         default=None,
         description="EFI NVRAM var template path; if unset, the code file "
         "is made writable; if set to constant 'stateless', "
         "the code file is marked stateless.",
     )
-    machine_type: str | None = Field(
+    machine_type: str = Field(
         default=None,
         description="QEMU machine type, defaults to pc; q35 is more modern.",
         min_length=1,
         max_length=32,
     )
-    ram: int | None = Field(default=None, description="Memory in MiB.", ge=1, le=1048576)
-    cpus: int | None = Field(default=None, description="CPUs.", ge=1, le=128)
-    cpu_limit: int | None = Field(default=None, description="CPU Limit.", ge=20, le=100)
-    cpu_model: str | None = Field(
+    ram: int = Field(default=None, description="Memory in MiB.", ge=1, le=1048576)
+    cpus: int = Field(default=None, description="CPUs.", ge=1, le=128)
+    cpu_limit: int = Field(default=None, description="CPU Limit.", ge=20, le=100)
+    cpu_model: str = Field(
         default=None,
         min_length=1,
         max_length=64,
         pattern=re.compile(r"^[a-zA-Z\d-]{1,32}(,[+!?^-][a-z\d._]{1,16})*(?![\n\r])$"),
     )
-    nic_driver: NicDriver | None = Field(
+    nic_driver: NicDriver = Field(
         default=None,
         description="Network Driver.",
     )
-    data_volume: int | None = Field(
-        default=None, description="Data Disk Size in GiB.", ge=0, le=4096
-    )
-    boot_disk_size: int | None = Field(
-        default=None, description="Boot Disk Size in GiB.", ge=0, le=4096
-    )
-    video: VideoDevice | None = Field(
-        default=None, description="If present, then VNC can be used with the node VM."
-    )
+    data_volume: int = Field(default=None, description="Data Disk Size in GiB.", ge=0, le=4096)
+    boot_disk_size: int = Field(default=None, description="Boot Disk Size in GiB.", ge=0, le=4096)
+    video: VideoDevice = Field(default=None, description="If present, then VNC can be used with the node VM.")
     enable_rng: bool = Field(
         default=True,
         description="If set, use a random number generator.",
@@ -169,7 +161,7 @@ class Interfaces(BaseModel, extra="forbid"):
         ge=0,
         le=4,
     )
-    default_console: int | None = Field(
+    default_console: int = Field(
         default=None,
         description="Default serial port for console connections.",
         ge=0,
@@ -181,27 +173,21 @@ class Interfaces(BaseModel, extra="forbid"):
     has_loopback_zero: bool = Field(
         ..., description="Has `loopback0` interface (used with ANK)."
     )
-    min_count: int | None = Field(
+    min_count: int = Field(
         default=None,
         description="Minimal number of physical interfaces needed to start a node.",
         ge=0,
         le=64,
     )
-    default_count: int | None = Field(
-        default=None, description="Default number of physical interfaces.", ge=1, le=64
-    )
-    iol_static_ethernets: Literal[0, 4, 8, 12, 16] | None = Field(
+    default_count: int = Field(default=None, description="Default number of physical interfaces.", ge=1, le=64)
+    iol_static_ethernets: Literal[0, 4, 8, 12, 16] = Field(
         default=None,
         description="Only for IOL nodes, the number of static Ethernet interfaces"
         " preceding any serial interface; default 0 means "
         "all interfaces are Ethernet.",
     )
-    loopback: conlist(LoopBackField, min_length=1) | None = Field(
-        default=None, description="List of loopback interfaces."
-    )
-    management: conlist(ManagementField, min_length=1) | None = Field(
-        default=None, description="List of management interfaces."
-    )
+    loopback: conlist(LoopBackField, min_length=1) = Field(default=None, description="List of loopback interfaces.")
+    management: conlist(ManagementField, min_length=1) = Field(default=None, description="List of management interfaces.")
 
     @model_validator(mode="after")
     def validate_one_of(self):
@@ -225,12 +211,12 @@ CompletedNode = Annotated[str, Field(max_length=128)]
 
 class Boot(BaseModel, extra="forbid"):
     timeout: int = Field(..., description="Timeout (seconds).", examples=[60], le=86400)
-    completed: conlist(CompletedNode, min_length=1) | None = Field(
+    completed: conlist(CompletedNode, min_length=1) = Field(
         default=None,
         description='A list of strings which should be matched to determine when the node is "ready".',
         examples=[[CompletedNode("string")]],
     )
-    uses_regex: bool | None = Field(
+    uses_regex: bool = Field(
         default=None,
         description="Whether the strings in `completed` should be treated as regular expressions or not.",
     )
@@ -275,12 +261,8 @@ class Simulation(BaseModel, extra="forbid"):
     linux_native: LinuxNative = Field(
         ..., description="Linux native simulation configuration."
     )
-    parameters: NodeParameters | None = Field(
-        default=None, description="Node-specific parameters."
-    )
-    usage_estimations: UsageEstimations | None = Field(
-        default=None, description="Estimated resource usage parameters."
-    )
+    parameters: NodeParameters
+    usage_estimations: UsageEstimations = Field(default=None, description="Estimated resource usage parameters.")
 
 
 class General(BaseModel, extra="forbid"):
@@ -382,9 +364,7 @@ class Configuration(BaseModel, extra="forbid"):
     generator: ConfigurationGenerator = Field(
         ..., description="Generator configuration details."
     )
-    provisioning: ConfigurationProvisioning | None = Field(
-        default=None, description="Provisioning configuration details."
-    )
+    provisioning: ConfigurationProvisioning = Field(default=None, description="Provisioning configuration details.")
 
 
 class Device(BaseModel, extra="forbid"):
@@ -446,9 +426,7 @@ class Ui(BaseModel, extra="forbid"):
     visible: bool = Field(
         ..., description="Determines visibility in the UI for this node type."
     )
-    group: Literal["Cisco", "Others"] | None = Field(
-        default=None, description="Intended to group similar node types (unused)."
-    )
+    group: Literal["Cisco", "Others"] = Field(default=None, description="Intended to group similar node types (unused).")
     description: str = Field(
         default=None,
         description="The description of the node type (can be Markdown).",
@@ -473,13 +451,13 @@ class Inherited(BaseModel, extra="forbid"):
 
 class PyAts(PyAtsCredentials, extra="forbid"):
     os: PyAtsOs = Field(...)
-    series: str | None = Field(
+    series: str = Field(
         default=None,
         description="The device series as defined by pyATS / Unicon.",
         min_length=1,
         max_length=32,
     )
-    model: PyAtsModel | None = Field(default=None)
+    model: PyAtsModel = Field(default=None)
     use_in_testbed: bool = Field(
         default=True, description="Use this device in an exported testbed?"
     )
@@ -517,7 +495,7 @@ class NodeDefinition(BaseModel, extra="forbid"):
     device: Device = Field(...)
     ui: Ui = Field(...)
     inherited: Inherited = Field(default=None)
-    pyats: PyAts | None = Field(default=None)
+    pyats: PyAts = Field(default=None)
     schema_version: Schema = Field(default=None)
     image_definitions: list[DefinitionID] = Field(
         default_factory=list,
@@ -547,9 +525,7 @@ class SimulationUiSimplified(BaseModel, extra="forbid"):
     Simplified simulation parameters.
     """
 
-    parameters: NodeParameters = Field(
-        default=None, description="Node-specific parameters."
-    )
+    parameters: NodeParameters
     ram: int = Field(default=None, ge=0)
     cpus: int = Field(default=None, ge=0)
     cpu_limit: int = Field(default=100, ge=20, le=100)

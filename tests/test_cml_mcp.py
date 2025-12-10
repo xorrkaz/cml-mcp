@@ -36,10 +36,10 @@ from mcp.types import TextContent
 
 from cml_mcp.cml.simple_webserver.schemas.annotations import EllipseAnnotation, LineAnnotation, RectangleAnnotation, TextAnnotation
 from cml_mcp.cml.simple_webserver.schemas.common import DefinitionID, UserName, UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.groups import GroupCreate, GroupInfoResponse
+from cml_mcp.cml.simple_webserver.schemas.groups import GroupCreate, GroupResponse
 from cml_mcp.cml.simple_webserver.schemas.interfaces import InterfaceCreate
-from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabCreate, LabTitle
-from cml_mcp.cml.simple_webserver.schemas.links import Link, LinkConditionConfiguration, LinkCreate
+from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabRequest, LabTitle
+from cml_mcp.cml.simple_webserver.schemas.links import LinkResponse, LinkConditionConfiguration, LinkCreate
 from cml_mcp.cml.simple_webserver.schemas.node_definitions import NodeDefinition
 from cml_mcp.cml.simple_webserver.schemas.nodes import Node, NodeCreate
 from cml_mcp.cml.simple_webserver.schemas.system import SystemHealth, SystemInformation, SystemStats
@@ -110,8 +110,8 @@ async def test_get_cml_groups(main_mcp_client: Client[FastMCPTransport]):
     assert len(result.data) > 0
     for group in result.data:
         if isinstance(group, dict):
-            group = GroupInfoResponse(**group)
-        assert isinstance(group, GroupInfoResponse)
+            group = GroupResponse(**group)
+        assert isinstance(group, GroupResponse)
 
 
 @pytest.mark.live_only
@@ -194,7 +194,7 @@ async def test_node_defs(main_mcp_client: Client[FastMCPTransport]):
 @pytest.mark.live_only
 async def test_empty_lab_mgmt(main_mcp_client: Client[FastMCPTransport]):
     title = LabTitle("MCP Test Lab")
-    lab_create = LabCreate(
+    lab_create = LabRequest(
         title=title,
         description="This is a test lab created by MCP tests",
         notes="Some _markdown_ notes for the lab.",
@@ -222,7 +222,7 @@ async def test_empty_lab_mgmt(main_mcp_client: Client[FastMCPTransport]):
 @pytest.mark.live_only
 async def test_modify_cml_lab(main_mcp_client: Client[FastMCPTransport]):
     title = LabTitle("MCP Modify Lab")
-    lab_create = LabCreate(
+    lab_create = LabRequest(
         title=title,
         description="This is a test lab created by MCP tests for modification",
         notes="Some _markdown_ notes for the lab.",
@@ -261,7 +261,7 @@ async def test_full_cml_topology(main_mcp_client: Client[FastMCPTransport]):
 @pytest.mark.live_only
 async def test_intf_management(main_mcp_client: Client[FastMCPTransport]):
     title = LabTitle("MCP Interface Add Lab")
-    lab_create = LabCreate(
+    lab_create = LabRequest(
         title=title,
         description="This is a test lab created by MCP tests for interface addition",
         notes="Some _markdown_ notes for the lab.",
@@ -317,7 +317,7 @@ async def test_intf_management(main_mcp_client: Client[FastMCPTransport]):
 @pytest.mark.live_only
 async def test_add_annotation_to_cml_lab(main_mcp_client: Client[FastMCPTransport]):
     title = LabTitle("MCP Annotation Lab")
-    lab_create = LabCreate(
+    lab_create = LabRequest(
         title=title,
         description="This is a test lab created by MCP tests for annotation addition",
         notes="Some _markdown_ notes for the lab.",
@@ -430,7 +430,7 @@ async def test_add_annotation_to_cml_lab(main_mcp_client: Client[FastMCPTranspor
 @pytest.mark.live_only
 async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport]):
     title = LabTitle("MCP Connect Nodes Lab")
-    lab_create = LabCreate(
+    lab_create = LabRequest(
         title=title,
         description="This is a test lab created by MCP tests for connecting two nodes",
         notes="Some _markdown_ notes for the lab.",
@@ -494,14 +494,14 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport]):
     # outsource(link_result.data, ".json")
     for link in link_result.data:
         if isinstance(link, dict):
-            link = Link(**link)
-        assert isinstance(link, Link)
+            link = LinkResponse(**link)
+        assert isinstance(link, LinkResponse)
 
     cond_result = await main_mcp_client.call_tool(
         name="apply_link_conditioning",
         arguments={
             "lid": lab_id,
-            "link_id": Link(**link_result.data[0]).id,
+            "link_id": LinkResponse(**link_result.data[0]).id,
             "condition": LinkConditionConfiguration(
                 enabled=True,
                 bandwidth=1000,
@@ -519,7 +519,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport]):
 
 @pytest.mark.live_only
 async def test_get_nodes_for_cml_lab(main_mcp_client: Client[FastMCPTransport]):
-    lab_create = LabCreate(
+    lab_create = LabRequest(
         title=LabTitle("MCP Get Nodes Lab"),
         description="This is a test lab created by MCP tests for getting nodes",
         notes="Some _markdown_ notes for the lab.",
