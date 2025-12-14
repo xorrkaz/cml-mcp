@@ -43,3 +43,39 @@ cml-mcp = { workspace = true }
 
 [dependency-groups]
 dev = ["pytest"]
+docs = [
+    "mkdocs>=1.6",
+    "mkdocs-material>=9.5",
+    "mkdocs-mermaid2-plugin>=1.1",
+    "pymdown-extensions>=10.0",
+]
+
+[tool.poetry]
+name = "cml-mcp"
+version = "0.14.3"
+description = "Cisco Modeling Labs (CML) MCP Server"
+authors = ["Joe Clarke <jclarke@cisco.com>"]
+license = "BSD-2-Clause"
+readme = "README.md"
+packages = [{include = "cml_mcp", from = "src"}]
+
+[tool.poetry.dependencies]
+python = ">=3.12,<4.0"
+httpx = "*"
+fastmcp = ">=2.13.1"
+fastapi = "*"
+pydantic_strict_partial = "*"
+typer = "*"
+virl2_client = "*"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "*"
+
+[tool.poetry.group.docs.dependencies]
+mkdocs = ">=1.6"
+mkdocs-material = ">=9.5"
+mkdocs-mermaid2-plugin = ">=1.1"
+pymdown-extensions = ">=10.0"
+
+[tool.poetry.extras]
+pyats = ["pyats", "genie"]
