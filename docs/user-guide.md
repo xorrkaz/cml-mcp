@@ -16,7 +16,7 @@ cml-mcp enables natural language interaction with CML. Instead of using the web 
 
 ### Method 1: uvx (Recommended)
 
-The simplest way to use cml-mcp. No installation required:
+The simplest way to use cml-mcp. No local installation required—`uvx` fetches the package from [PyPI](https://pypi.org/project/cml-mcp/) and runs it on-demand:
 
 ```json
 {
@@ -33,6 +33,9 @@ The simplest way to use cml-mcp. No installation required:
   }
 }
 ```
+
+!!! info "How does this work without installation?"
+    The `uvx` command (from [Astral's uv](https://docs.astral.sh/uv/)) automatically downloads `cml-mcp` from PyPI, caches it locally, and executes it. This is similar to `npx` for Node.js packages.
 
 ### Method 2: pip Install
 
@@ -87,6 +90,151 @@ Use the pre-built Docker image:
   }
 }
 ```
+
+## Client Configuration
+
+### Claude Desktop
+
+Add the configuration to your Claude Desktop config file:
+
+=== "macOS"
+
+    ```bash
+    # Edit the config file
+    code ~/Library/Application\ Support/Claude/claude_desktop_config.json
+    ```
+
+=== "Windows"
+
+    ```powershell
+    # Edit the config file
+    code $env:APPDATA\Claude\claude_desktop_config.json
+    ```
+
+=== "Linux"
+
+    ```bash
+    # Edit the config file
+    code ~/.config/Claude/claude_desktop_config.json
+    ```
+
+Example configuration:
+
+```json
+{
+  "mcpServers": {
+    "Cisco Modeling Labs": {
+      "command": "uvx",
+      "args": ["cml-mcp"],
+      "env": {
+        "CML_URL": "https://cml.example.com",
+        "CML_USERNAME": "admin",
+        "CML_PASSWORD": "your_password"
+      }
+    }
+  }
+}
+```
+
+After saving, restart Claude Desktop. You should see the CML tools available in the tools menu (🔧).
+
+### VS Code with GitHub Copilot
+
+VS Code supports MCP servers through GitHub Copilot Chat. Configure the server in your VS Code settings:
+
+#### Option 1: User Settings (Global)
+
+1. Open VS Code Settings (`Cmd+,` on macOS, `Ctrl+,` on Windows/Linux)
+2. Search for `mcp`
+3. Click "Edit in settings.json"
+4. Add the MCP server configuration:
+
+```json
+{
+  "mcp": {
+    "servers": {
+      "cml-mcp": {
+        "command": "uvx",
+        "args": ["cml-mcp"],
+        "env": {
+          "CML_URL": "https://cml.example.com",
+          "CML_USERNAME": "admin",
+          "CML_PASSWORD": "your_password"
+        }
+      }
+    }
+  }
+}
+```
+
+#### Option 2: Workspace Settings (Project-Specific)
+
+Create a `.vscode/mcp.json` file in your workspace:
+
+```json
+{
+  "servers": {
+    "cml-mcp": {
+      "command": "uvx",
+      "args": ["cml-mcp"],
+      "env": {
+        "CML_URL": "https://cml.example.com",
+        "CML_USERNAME": "admin",
+        "CML_PASSWORD": "your_password"
+      }
+    }
+  }
+}
+```
+
+!!! tip "Environment Variables"
+    For security, you can reference environment variables instead of hardcoding credentials:
+
+    ```json
+    {
+      "servers": {
+        "cml-mcp": {
+          "command": "uvx",
+          "args": ["cml-mcp"],
+          "env": {
+            "CML_URL": "${env:CML_URL}",
+            "CML_USERNAME": "${env:CML_USERNAME}",
+            "CML_PASSWORD": "${env:CML_PASSWORD}"
+          }
+        }
+      }
+    }
+    ```
+
+#### Using CML Tools in VS Code
+
+1. Open GitHub Copilot Chat (`Cmd+Shift+I` or `Ctrl+Shift+I`)
+2. Switch to **Agent Mode** (click the dropdown next to the chat input)
+3. The CML tools will be available automatically
+4. Ask questions like: *"List all my CML labs"* or *"Create a new lab with two routers"*
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant VSCode as VS Code Copilot
+    participant MCP as cml-mcp
+    participant CML as CML Server
+
+    User->>VSCode: "Show my CML labs"
+    VSCode->>MCP: Call get_cml_labs()
+    MCP->>CML: GET /api/v0/labs
+    CML-->>MCP: Lab list JSON
+    MCP-->>VSCode: Formatted results
+    VSCode-->>User: Display lab information
+```
+
+### Other MCP Clients
+
+Any MCP-compatible client can use cml-mcp. The general configuration pattern is:
+
+1. **Command**: `uvx` (or `python -m cml_mcp` if installed via pip)
+2. **Args**: `["cml-mcp"]` (for uvx) or `[]` (for direct execution)
+3. **Environment**: Set `CML_URL`, `CML_USERNAME`, `CML_PASSWORD`
 
 ## Configuration
 
