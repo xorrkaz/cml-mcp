@@ -41,11 +41,19 @@ class CMLClient(object):
     Handles authentication and provides methods to fetch system and lab information.
     """
 
-    def __init__(self, host: str, username: str, password: str, transport: str = "stdio"):
+    def __init__(
+        self,
+        host: str,
+        username: str,
+        password: str,
+        transport: str = "stdio",
+        verify_ssl: bool = False,
+    ):
         self.base_url = host.rstrip("/")
         self.api_base = f"{self.base_url}/api/v0"
-        self.client = httpx.AsyncClient(verify=False, timeout=API_TIMEOUT)
-        self.vclient = virl2_client.ClientLibrary(host, username, password, ssl_verify=False, raise_for_auth_failure=False)
+        self.verify_ssl = verify_ssl
+        self.client = httpx.AsyncClient(verify=verify_ssl, timeout=API_TIMEOUT)
+        self.vclient = virl2_client.ClientLibrary(host, username, password, ssl_verify=verify_ssl, raise_for_auth_failure=False)
         self._token = None
         self.admin = None
         self.username = username
