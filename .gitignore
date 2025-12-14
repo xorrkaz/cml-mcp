@@ -6,3 +6,4 @@ dist/
 .vscode
 .mcpregistry_*
 *.tar
+site/
