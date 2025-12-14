@@ -1,0 +1,114 @@
+# Docker Compose configuration for CML-MCP Server
+#
+# Usage:
+#   1. Copy .env.example to .env and configure your settings
+#   2. Run: docker compose up -d
+#   3. Check logs: docker compose logs -f
+#
+# For stdio mode (direct MCP client integration):
+#   docker compose --profile stdio up
+#
+# For HTTP mode (remote access / multi-client):
+#   docker compose --profile http up -d
+#
+# For development with hot reload:
+#   docker compose --profile dev up
+
+name: cml-mcp
+
+services:
+  # HTTP Mode - Standalone HTTP server for remote access
+  cml-mcp-http:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${CML_MCP_IMAGE:-cml-mcp:local}
+    container_name: cml-mcp-http
+    profiles:
+      - http
+      - default
+    ports:
+      - "${CML_MCP_PORT:-9000}:${CML_MCP_PORT:-9000}"
+    environment:
+      # CML Server Configuration
+      - CML_URL=${CML_URL:-https://cml.example.com}
+      # Transport Configuration
+      - CML_MCP_TRANSPORT=http
+      - CML_MCP_BIND=${CML_MCP_BIND:-0.0.0.0}
+      - CML_MCP_PORT=${CML_MCP_PORT:-9000}
+      # Logging
+      - DEBUG=${DEBUG:-false}
+      # TLS Configuration (optional)
+      - CML_VERIFY_SSL=${CML_VERIFY_SSL:-false}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${CML_MCP_PORT:-9000}/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - cml-mcp-network
+
+  # stdio Mode - For direct MCP client integration
+  cml-mcp-stdio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${CML_MCP_IMAGE:-cml-mcp:local}
+    container_name: cml-mcp-stdio
+    profiles:
+      - stdio
+    stdin_open: true
+    tty: true
+    environment:
+      # CML Server Configuration
+      - CML_URL=${CML_URL:-https://cml.example.com}
+      - CML_USERNAME=${CML_USERNAME:?CML_USERNAME is required for stdio mode}
+      - CML_PASSWORD=${CML_PASSWORD:?CML_PASSWORD is required for stdio mode}
+      # Transport Configuration
+      - CML_MCP_TRANSPORT=stdio
+      # PyATS Configuration (optional - for CLI command execution)
+      - PYATS_USERNAME=${PYATS_USERNAME:-}
+      - PYATS_PASSWORD=${PYATS_PASSWORD:-}
+      - PYATS_AUTH_PASS=${PYATS_AUTH_PASS:-}
+      # Logging
+      - DEBUG=${DEBUG:-false}
+      # TLS Configuration (optional)
+      - CML_VERIFY_SSL=${CML_VERIFY_SSL:-false}
+    networks:
+      - cml-mcp-network
+
+  # Development Mode - HTTP with auto-reload
+  cml-mcp-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ${CML_MCP_IMAGE:-cml-mcp:local}
+    container_name: cml-mcp-dev
+    profiles:
+      - dev
+    ports:
+      - "${CML_MCP_PORT:-9000}:${CML_MCP_PORT:-9000}"
+    environment:
+      - CML_URL=${CML_URL:-https://cml.example.com}
+      - CML_MCP_TRANSPORT=http
+      - CML_MCP_BIND=${CML_MCP_BIND:-0.0.0.0}
+      - CML_MCP_PORT=${CML_MCP_PORT:-9000}
+      - DEBUG=true
+      - CML_VERIFY_SSL=${CML_VERIFY_SSL:-false}
+    volumes:
+      - ./src:/app/src:ro
+    command: >
+      /app/.venv/bin/uvicorn cml_mcp.server:app 
+      --host ${CML_MCP_BIND:-0.0.0.0} 
+      --port ${CML_MCP_PORT:-9000} 
+      --reload
+      --reload-dir /app/src
+    networks:
+      - cml-mcp-network
+
+networks:
+  cml-mcp-network:
+    driver: bridge
+    name: cml-mcp-network
