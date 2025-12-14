@@ -1,0 +1,78 @@
+site_name: CML MCP Server
+site_url: https://xorrkaz.github.io/cml-mcp/
+site_description: Cisco Modeling Labs MCP Server - AI-powered network lab automation
+site_author: Joe Clarke
+repo_name: xorrkaz/cml-mcp
+repo_url: https://github.com/xorrkaz/cml-mcp
+
+copyright: Copyright &copy; 2024 Cisco Systems, Inc.
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: blue
+      accent: light-blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: blue
+      accent: light-blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.copy
+    - content.code.annotate
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search
+  - mermaid2
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/xorrkaz/cml-mcp
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - User Guide: user-guide.md
+  - Configuration: configuration.md
+  - API Reference: api-reference.md
+  - Transport Modes: transport-modes.md
+  - Docker: docker.md
+  - Architecture: architecture.md
+  - Development: development.md
+  - Schemas: schemas.md
