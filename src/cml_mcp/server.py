@@ -57,11 +57,17 @@ from cml_mcp.settings import settings
 from cml_mcp.types import ConsoleLogOutput, SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse
 
 # Set up logging
-loglevel = logging.DEBUG if os.getenv("DEBUG", "false").lower() == "true" else logging.INFO
+loglevel = logging.DEBUG if settings.debug else logging.INFO
 logging.basicConfig(level=loglevel, format="%(asctime)s %(levelname)s %(threadName)s %(name)s: %(message)s")
 logger = logging.getLogger("cml-mcp")
 
-cml_client = CMLClient(str(settings.cml_url), settings.cml_username, settings.cml_password, transport=str(settings.cml_mcp_transport))
+cml_client = CMLClient(
+    str(settings.cml_url),
+    settings.cml_username,
+    settings.cml_password,
+    transport=str(settings.cml_mcp_transport),
+    verify_ssl=settings.cml_verify_ssl,
+)
 
 
 # Provide a custom token validation function.
