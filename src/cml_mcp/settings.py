@@ -23,6 +23,7 @@
 # SUCH DAMAGE.
 
 from enum import StrEnum
+from ipaddress import IPv4Address
 
 from pydantic import AnyHttpUrl, Field, IPvAnyAddress
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -42,26 +43,40 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
+        env_prefix="",
     )
 
-    cml_url: AnyHttpUrl = Field(..., description="URL of the Cisco Modeling Labs server")
+    cml_url: AnyHttpUrl | None = Field(default=None, description="URL of the Cisco Modeling Labs server")
     cml_username: str | None = Field(default=None, description="Username for CML server authentication")
     cml_password: str | None = Field(default=None, description="Password for CML server authentication")
+    cml_verify_ssl: bool = Field(
+        default=False,
+        description="Verify SSL certificates when connecting to CML server",
+    )
     cml_mcp_transport: TransportEnum = Field(
         default=TransportEnum.STDIO,
         description="Transport type for the MCP server",
     )
     cml_mcp_bind: IPvAnyAddress = Field(
-        default="0.0.0.0",
+        default_factory=lambda: IPv4Address("0.0.0.0"),
         description="IP address to bind the MCP server when transport is HTTP",
     )
     cml_mcp_port: int = Field(
         default=9000,
         description="Port to bind the MCP server when transport is HTTP",
     )
+    debug: bool = Field(
+        default=False,
+        description="Enable debug logging",
+    )
 
 
 settings = Settings()
+
+# Validate required settings
+if not settings.cml_url:
+    raise ValueError("CML_URL must be set")
+
 if settings.cml_mcp_transport == TransportEnum.STDIO:
     if not settings.cml_username or not settings.cml_password:
         raise ValueError("CML_USERNAME and CML_PASSWORD must be set when using stdio transport")
