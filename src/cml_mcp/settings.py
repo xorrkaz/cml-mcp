@@ -65,6 +65,31 @@ class Settings(BaseSettings):
         default=9000,
         description="Port to bind the MCP server when transport is HTTP",
     )
+
+    # === Per-Request Server Configuration (HTTP Mode) ===
+    cml_allowed_urls: list[AnyHttpUrl] = Field(
+        default_factory=list,
+        description="Allowlist of permitted CML server URLs. Empty list = no allowlist restriction.",
+    )
+    cml_url_pattern: str | None = Field(
+        default=None,
+        description="Regex pattern for permitted CML server URLs (e.g., '^https://cml-.*\\.example\\.com$')",
+    )
+
+    # === Client Pool Configuration (HTTP Mode) ===
+    cml_pool_max_size: int = Field(
+        default=50,
+        description="Maximum number of CML clients in the pool",
+    )
+    cml_pool_ttl_seconds: int = Field(
+        default=300,
+        description="Time-to-live for idle clients in seconds (default: 5 minutes)",
+    )
+    cml_pool_max_per_server: int = Field(
+        default=5,
+        description="Maximum concurrent requests per CML server",
+    )
+
     debug: bool = Field(
         default=False,
         description="Enable debug logging",
