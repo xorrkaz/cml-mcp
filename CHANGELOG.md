@@ -9,6 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **Multi-Server Support (HTTP Mode)**: Per-request CML server configuration
+  - New `X-CML-Server-URL` header to specify target CML server per request
+  - New `X-CML-Verify-SSL` header for per-request SSL verification
+  - Client pool with LRU eviction, TTL expiration, and per-server limits
+  - URL validation via allowlist (`CML_ALLOWED_URLS`) and regex pattern (`CML_URL_PATTERN`)
+  - Full backward compatibility with STDIO mode
+
+- **New Settings**: Pool configuration environment variables
+  - `CML_POOL_MAX_SIZE` - Maximum clients in pool (default: 50)
+  - `CML_POOL_TTL_SECONDS` - Idle client TTL (default: 300)
+  - `CML_POOL_MAX_PER_SERVER` - Concurrent requests per server (default: 5)
+  - `CML_ALLOWED_URLS` - JSON array of permitted server URLs
+  - `CML_URL_PATTERN` - Regex pattern for URL validation
+
+- **New Module**: `client_pool.py` for request-scoped client management
+  - `CMLClientPool` class with thread-safe async operations
+  - `PooledClient` dataclass for client metadata tracking
+  - `get_cml_client()` helper for transparent client access
+  - ContextVar-based request isolation
+
+- **Test Suite**: Comprehensive tests for multi-server functionality
+  - Unit tests for settings, client pool, URL normalization/validation
+  - Integration tests for middleware and header parsing
+  - E2E tests for complete request flows and error handling
+  - 99 tests with 95% coverage on new modules
+
+- **Documentation**: Multi-server implementation guide
+  - `implementation-multi-server.md` with full design details
+  - Updated `architecture.md` with client pool diagrams
+  - Updated `configuration.md` with new settings
+  - Updated `transport-modes.md` with HTTP mode enhancements
+
 - **Documentation**: Complete MkDocs-based documentation site
   - New `user-guide.md` for CML end-users with practical examples
   - New `docker.md` for container deployment and production setup
@@ -33,6 +65,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `docs-deploy` - Deploy to GitHub Pages
   - `docs-clean` - Remove build artifacts
 
+- **Justfile**: New testing commands
+  - `test` - Run pytest test suite
+  - `test-cov` - Run tests with coverage report
+
 - **Dependencies**: Added `docs` dependency group
   - mkdocs >= 1.6
   - mkdocs-material >= 9.5
@@ -40,6 +76,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - pymdown-extensions >= 10.0
 
 ### Changed
+
+- **Server**: All 40+ tool functions now use `get_cml_client()` for client access
+  - Enables per-request server selection in HTTP mode
+  - Maintains backward compatibility for STDIO mode
+
+- **Middleware**: Enhanced HTTP middleware for multi-server support
+  - Extracts `X-CML-Server-URL` and `X-CML-Verify-SSL` headers
+  - Manages client pool lifecycle (get/release)
+  - Sets request-scoped ContextVar for tool access
+
+- **CMLClient**: Added `update_vclient_url()` method for URL updates
 
 - **Documentation**: Rewrote all existing documentation files
   - `index.md` - New home page with feature overview

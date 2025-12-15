@@ -69,12 +69,12 @@ project := "cml-mcp"
 # Start HTTP server (default profile)
 [group('docker')]
 up *args:
-    docker compose -p {{project}} up -d {{args}}
+    docker compose -p {{project}} --profile http up -d {{args}}
 
 # Stop all services
 [group('docker')]
 down *args:
-    docker compose -p {{project}} down {{args}}
+    docker compose -p {{project}} --profile http down {{args}}
 
 # View logs (follow mode)
 [group('docker')]
