@@ -37,6 +37,8 @@ from fastmcp.server.dependencies import get_http_headers
 from fastmcp.server.middleware import Middleware, MiddlewareContext
 from mcp.shared.exceptions import McpError
 from mcp.types import METHOD_NOT_FOUND, ErrorData
+from starlette.responses import JSONResponse
+from starlette.routing import Route
 from virl2_client.models.cl_pyats import ClPyats, PyatsNotInstalled
 
 from cml_mcp.cml_client import CMLClient
@@ -240,6 +242,13 @@ app = None
 if settings.cml_mcp_transport == "http":
     server_mcp.add_middleware(CustomRequestMiddleware())
     app = server_mcp.http_app()
+
+    # Add health endpoint for Docker health checks
+    async def health_check(request):
+        """Health check endpoint for Docker/Kubernetes."""
+        return JSONResponse({"status": "healthy", "service": "cml-mcp"})
+
+    app.routes.append(Route("/health", health_check, methods=["GET"]))
 
 
 async def get_all_labs() -> list[UUID4Type]:
