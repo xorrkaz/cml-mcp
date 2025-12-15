@@ -78,6 +78,7 @@ cml-mcp/
 │   ├── __main__.py        # CLI entry point
 │   ├── server.py          # MCP server, 39 tool definitions
 │   ├── cml_client.py      # Async HTTP client for CML API
+│   ├── client_pool.py     # Connection pool for HTTP mode
 │   ├── settings.py        # Pydantic settings configuration
 │   ├── types.py           # Custom type definitions
 │   └── schemas/           # Pydantic models for CML API
@@ -86,8 +87,10 @@ cml-mcp/
 │       ├── nodes.py       # Node models
 │       ├── links.py       # Link models
 │       └── ...            # Other schema modules
+├── scripts/               # Utility scripts (NOT pytest tests)
+│   └── test_http_e2e.py   # E2E test script for HTTP mode
 ├── docs/                  # MkDocs documentation
-├── tests/                 # Test suite
+├── tests/                 # pytest test suite
 ├── .github/               # GitHub Actions workflows
 ├── pyproject.toml         # Project configuration
 ├── Justfile               # Task automation
@@ -182,7 +185,7 @@ just test
 
 ## Testing
 
-### Running Tests
+### Running Unit Tests
 
 ```bash
 # Using uv
@@ -198,15 +201,50 @@ just test
 pytest --cov=cml_mcp --cov-report=html
 ```
 
+### Running End-to-End Tests
+
+The E2E test script (`scripts/test_http_e2e.py`) validates the full MCP protocol flow against a running HTTP service:
+
+```bash
+# Start the service first
+just up
+
+# Run E2E tests (loads .env automatically)
+just test-e2e
+
+# Or manually
+set -a && source .env && set +a
+python scripts/test_http_e2e.py
+```
+
+!!! note "E2E vs Unit Tests"
+    - **Unit tests** (`tests/`): Run with pytest, mock external dependencies
+    - **E2E tests** (`scripts/`): Run standalone, require a live service and CML credentials
+
+The E2E test validates:
+
+| Test | What it verifies |
+|------|------------------|
+| Health Endpoint | Service is running and healthy |
+| SSE Connection | MCP endpoint responds with SSE stream |
+| MCP Protocol | Session initialization and tool discovery |
+| Tool Call (status) | CML server connectivity via `get_cml_status` |
+| Tool Call (labs) | Data retrieval via `get_cml_labs` |
+
 ### Test Structure
 
 ```
-tests/
-├── conftest.py          # Fixtures
-├── test_server.py       # Server tests
-├── test_client.py       # Client tests
-├── test_settings.py     # Settings tests
-└── test_schemas.py      # Schema validation tests
+tests/                       # pytest unit tests
+├── conftest.py              # Fixtures
+├── test_server.py           # Server tests
+├── test_client.py           # Client tests
+├── test_client_pool.py      # Connection pool tests
+├── test_settings.py         # Settings tests
+├── test_e2e_multiserver.py  # Multi-server mock tests
+└── test_middleware_integration.py
+
+scripts/                     # Standalone scripts (NOT pytest)
+└── test_http_e2e.py         # E2E test for HTTP mode
 ```
 
 ### Writing Tests

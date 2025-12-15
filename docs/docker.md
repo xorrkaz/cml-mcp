@@ -304,6 +304,47 @@ services:
 
 ---
 
+## Testing the Service
+
+### Quick Health Check
+
+Verify the service is running:
+
+```bash
+curl http://localhost:9000/health
+# Expected: {"status": "healthy", "service": "cml-mcp"}
+```
+
+### End-to-End Testing
+
+The project includes a comprehensive E2E test script that validates the full MCP protocol flow:
+
+```bash
+# Using just (recommended)
+just test-e2e
+
+# Or directly with Python
+set -a && source .env && set +a
+python scripts/test_http_e2e.py
+```
+
+The E2E test performs:
+
+| Test | Description |
+|------|-------------|
+| Health Endpoint | Validates `/health` returns healthy status |
+| SSE Connection | Verifies `/mcp` responds with `text/event-stream` |
+| MCP Protocol | Initializes MCP session and discovers tools |
+| Tool Call (status) | Calls `get_cml_status` to verify CML connectivity |
+| Tool Call (labs) | Calls `get_cml_labs` to list labs from CML |
+
+!!! tip "Prerequisites"
+    - Service must be running (`just up` or `docker compose up`)
+    - Valid CML credentials in `.env` file
+    - MCP Python SDK installed (`pip install mcp`)
+
+---
+
 ## Troubleshooting
 
 ### Container Won't Start
