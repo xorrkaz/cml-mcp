@@ -74,8 +74,8 @@ Create a `.env` file in the project root:
 
 # CML Server Connection (Required)
 CML_URL=https://cml.example.com
-CML_USERNAME=admin
-CML_PASSWORD=your_secure_password
+CML_USERNAME=admin              # Required for stdio mode only
+CML_PASSWORD=your_secure_password  # Required for stdio mode only
 
 # SSL Verification (set to false for self-signed certificates)
 CML_VERIFY_SSL=false
@@ -84,6 +84,17 @@ CML_VERIFY_SSL=false
 CML_MCP_TRANSPORT=stdio    # Options: stdio, http
 CML_MCP_BIND=0.0.0.0       # HTTP mode only
 CML_MCP_PORT=9000          # HTTP mode only
+
+# === Multi-Server Security (HTTP mode only) ===
+# Allowlist of permitted CML server URLs (JSON array)
+CML_ALLOWED_URLS='["https://cml-prod.example.com", "https://cml-dev.example.com"]'
+# Regex pattern for permitted CML server URLs (alternative to allowlist)
+CML_URL_PATTERN='^https://cml-.*\.example\.com$'
+
+# === Client Pool Configuration (HTTP mode only) ===
+CML_POOL_MAX_SIZE=50           # Maximum clients in the pool
+CML_POOL_TTL_SECONDS=300       # Idle timeout for pooled clients (5 min default)
+CML_POOL_MAX_PER_SERVER=5      # Max concurrent requests per CML server
 
 # PyATS Device Credentials (for CLI command execution)
 PYATS_USERNAME=cisco
@@ -282,11 +293,12 @@ CML_URL=https://cml-prod.company.com
 CML_MCP_TRANSPORT=http
 CML_MCP_BIND=0.0.0.0
 CML_MCP_PORT=9000
+CML_VERIFY_SSL=true
 
-# Only allow these specific CML servers
+# Only allow these specific CML servers (JSON array format)
 CML_ALLOWED_URLS='["https://cml-prod.company.com", "https://cml-dr.company.com"]'
 
-# Or use pattern matching
+# Or use pattern matching (regex string)
 CML_URL_PATTERN='^https://cml-[a-z]+\.company\.com$'
 
 # Pool tuning for high load
@@ -294,6 +306,9 @@ CML_POOL_MAX_SIZE=100
 CML_POOL_TTL_SECONDS=600
 CML_POOL_MAX_PER_SERVER=10
 ```
+
+!!! note "URL Validation"
+    When both `CML_ALLOWED_URLS` and `CML_URL_PATTERN` are configured, the URL must pass **both** checks. If only one is configured, only that check is applied. If neither is configured, any URL is permitted.
 
 ### Docker Compose
 
