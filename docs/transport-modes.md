@@ -157,12 +157,20 @@ uvicorn cml_mcp.server:app --host 0.0.0.0 --port 9000 --reload
 In HTTP mode, server selection and authentication are provided on each request:
 
 | Header | Format | Required | Purpose |
-|--------|--------|----------|---------|
-| `X-CML-Server-URL` | URL | No | Target CML server (falls back to `CML_URL`) |
-| `X-Authorization` | `Basic <base64(user:pass)>` | Yes | CML credentials |
-| `X-CML-Verify-SSL` | `true` or `false` | No | SSL verification override |
-| `X-PyATS-Authorization` | `Basic <base64(user:pass)>` | No | Device credentials |
-| `X-PyATS-Enable` | `Basic <base64(password)>` | No | Enable password |
+|--------|--------|----------|--------|
+| `X-CML-Server-URL` | URL | No | Target CML server (falls back to `CML_URL` env var) |
+| `X-Authorization` | `Basic <base64(user:pass)>` | **Yes** | CML credentials |
+| `X-CML-Verify-SSL` | `true` or `false` | No | SSL verification override (defaults to `CML_VERIFY_SSL` env var) |
+| `X-PyATS-Authorization` | `Basic <base64(user:pass)>` | No | Device credentials for CLI commands |
+| `X-PyATS-Enable` | `Basic <base64(password)>` | No | Enable password for CLI commands |
+
+!!! info "Header Fallback Behavior"
+    - **`X-CML-Server-URL`**: If not provided, the server uses `CML_URL` environment variable as the default target.
+    - **`X-CML-Verify-SSL`**: If not provided, uses `CML_VERIFY_SSL` environment variable (defaults to `false`).
+    - **`X-Authorization`**: Always required in HTTP mode—there is no fallback to environment variables.
+
+!!! warning "Security Consideration: PyATS Credentials"
+    When `X-PyATS-Authorization` and `X-PyATS-Enable` headers are provided, the server temporarily sets `PYATS_USERNAME`, `PYATS_PASSWORD`, and `PYATS_AUTH_PASS` environment variables for the duration of the request. These are cleared after each request.
 
 ### Encoding Credentials
 
@@ -300,10 +308,20 @@ HTTP mode uses a connection pool for efficient multi-server support:
 
 | Feature | Description |
 |---------|-------------|
-| **LRU Eviction** | Removes least recently used clients when pool is full |
-| **TTL Eviction** | Removes idle clients after configurable timeout |
-| **Per-Server Limits** | Prevents connection exhaustion to any single server |
-| **URL Validation** | Allowlist and/or pattern-based security |
+| **LRU Eviction** | Removes least recently used clients when pool is full (`CML_POOL_MAX_SIZE`) |
+| **TTL Eviction** | Removes idle clients after configurable timeout (`CML_POOL_TTL_SECONDS`) |
+| **Per-Server Limits** | Prevents connection exhaustion to any single server (`CML_POOL_MAX_PER_SERVER`) |
+| **URL Validation** | Allowlist (`CML_ALLOWED_URLS`) and/or pattern-based (`CML_URL_PATTERN`) security |
+| **URL Normalization** | URLs are normalized (lowercase, default ports removed) for consistent cache keys |
+
+!!! tip "Pool Configuration"
+    For high-load environments, tune the pool settings:
+
+    ```bash
+    CML_POOL_MAX_SIZE=100        # Support more concurrent CML servers
+    CML_POOL_TTL_SECONDS=600     # Keep clients alive longer (10 minutes)
+    CML_POOL_MAX_PER_SERVER=10   # Allow more concurrent requests per server
+    ```
 
 ### Authentication Middleware
 

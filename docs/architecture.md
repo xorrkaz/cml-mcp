@@ -194,8 +194,9 @@ async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> bool:
                 raise me
 
         if not elicit_supported or result.action == "accept":
-            # Perform destructive action
-            await cml_client.delete(f"/labs/{lid}")
+            # Use get_cml_client() for request-scoped client resolution
+            client = get_cml_client()
+            await client.delete(f"/labs/{lid}")
             return True
         else:
             raise Exception("Operation cancelled by user.")
@@ -252,21 +253,36 @@ class CMLClientPool:
 
 #### Request-Scoped Context
 
-Uses Python's `contextvars` to provide request-scoped client access:
+Uses Python's `contextvars` to provide request-scoped client access. This is the **key pattern** that enables multi-server support:
 
 ```python
 from contextvars import ContextVar
 
-# Set by middleware, accessed by tools
+# ContextVar: Set by middleware at request start, cleared at request end
 current_cml_client: ContextVar[CMLClient | None] = ContextVar("current_cml_client", default=None)
 
 def get_cml_client() -> CMLClient:
-    """Get the CML client for the current request (HTTP) or global client (stdio)."""
+    """
+    Get the CML client for the current request.
+
+    In HTTP mode: Returns the request-scoped client from ContextVar (set by middleware)
+    In stdio mode: Returns the global client (single CML server configured via env vars)
+
+    This function is called by ALL tools, providing transparent multi-server support.
+    """
     client = current_cml_client.get()
-    if client is None:
-        return global_cml_client  # Fallback for stdio mode
-    return client
+    if client is not None:
+        return client  # HTTP mode: per-request client
+
+    # Fallback to global client (stdio mode)
+    from cml_mcp.server import cml_client as global_client
+    if global_client is None:
+        raise RuntimeError("No CML client available")
+    return global_client
 ```
+
+!!! tip "Why ContextVar?"
+    Python's `contextvars` module provides task-local storage that works correctly with `asyncio`. Each concurrent HTTP request gets its own isolated context, ensuring that one request's CML client doesn't leak into another's—even when requests are processed concurrently.
 
 #### HTTP Methods
 
