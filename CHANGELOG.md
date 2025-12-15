@@ -41,6 +41,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated `configuration.md` with new settings
   - Updated `transport-modes.md` with HTTP mode enhancements
 
+- **Documentation**: Comprehensive documentation audit and improvements
+  - Fixed transport value from `sse` to `http` across all docs (docker.md)
+  - Added `X-CML-Verify-SSL` header documentation in transport-modes.md
+  - Documented `get_cml_client()` and ContextVar pattern in architecture.md
+  - Added Multi-Server capability to index.md feature table
+  - Added HTTP mode section and troubleshooting to user-guide.md
+  - Updated README.md with multi-server config and all HTTP headers
+  - Added pool configuration and URL validation documentation
+
 - **Documentation**: Complete MkDocs-based documentation site
   - New `user-guide.md` for CML end-users with practical examples
   - New `docker.md` for container deployment and production setup
