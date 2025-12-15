@@ -8,13 +8,7 @@ from typing import Annotated, Literal
 from fastapi import Body
 from pydantic import BaseModel, Field
 
-from cml_mcp.schemas.common import (
-    Label,
-    LinuxInterfaceName,
-    MACAddress,
-    State,
-    UUID4Type,
-)
+from cml_mcp.schemas.common import Label, LinuxInterfaceName, MACAddress, State, UUID4Type
 
 InterfaceLabel = Annotated[Label, Field(..., description="An interface label.")]
 InterfaceSlot = Annotated[int, Field(ge=0, le=128, description="Number of slots.")]

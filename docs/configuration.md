@@ -226,7 +226,7 @@ curl -X POST http://mcp-server:9000/mcp \
   -H "X-CML-Server-URL: https://cml-prod.example.com" \
   -H "X-Authorization: Basic $(echo -n 'admin:prodpass' | base64)"
 
-# Request to development CML  
+# Request to development CML
 curl -X POST http://mcp-server:9000/mcp \
   -H "X-CML-Server-URL: https://cml-dev.example.com" \
   -H "X-Authorization: Basic $(echo -n 'dev:devpass' | base64)"

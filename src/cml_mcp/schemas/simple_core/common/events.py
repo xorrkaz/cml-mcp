@@ -12,16 +12,7 @@ from typing import NamedTuple
 
 import attr
 
-from .type_hints import (
-    ComputeId,
-    ExternalConnectorId,
-    LabId,
-    LinkCaptureKey,
-    LinkId,
-    NodeId,
-    NoticeId,
-    UserId,
-)
+from .type_hints import ComputeId, ExternalConnectorId, LabId, LinkCaptureKey, LinkId, NodeId, NoticeId, UserId
 
 
 class BootEventType(Enum):

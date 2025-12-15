@@ -10,15 +10,7 @@ from typing import Annotated
 from fastapi import Body
 from pydantic import BaseModel, Field, model_validator
 
-from cml_mcp.schemas.common import (
-    Hostname,
-    IPNetwork,
-    Label,
-    MACAddress,
-    TagArray,
-    UUID4ArrayType,
-    UUID4Type,
-)
+from cml_mcp.schemas.common import Hostname, IPNetwork, Label, MACAddress, TagArray, UUID4ArrayType, UUID4Type
 from cml_mcp.schemas.external_connector import ExternalConnectorDeviceName
 
 

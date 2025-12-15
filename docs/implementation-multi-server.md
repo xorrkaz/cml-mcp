@@ -1,7 +1,7 @@
 # Implementation Plan: Per-Request CML Server Configuration
 
-**Version**: 1.0  
-**Date**: December 15, 2025  
+**Version**: 1.0
+**Date**: December 15, 2025
 **Status**: Ready for Implementation
 
 ## Executive Summary
@@ -539,10 +539,10 @@ Add method for dynamic URL switching (for PyATS `virl2_client`):
 def update_vclient_url(self, url: str) -> None:
     """
     Update the virl2_client URL for dynamic server switching.
-    
+
     This recreates the virl2_client.ClientLibrary instance with the new URL
     while preserving the current credentials.
-    
+
     Args:
         url: New CML server URL
     """

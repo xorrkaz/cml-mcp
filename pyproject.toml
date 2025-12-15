@@ -38,11 +38,30 @@ Issues = "https://github.com/xorrkaz/cml-mcp/issues"
 [tool.black]
 line-length = 140
 
+[tool.isort]
+profile = "black"
+line_length = 140
+
+[tool.flake8]
+max-line-length = 140
+extend-ignore = ["E203", "W503"]
+
 [tool.uv.sources]
 cml-mcp = { workspace = true }
 
 [dependency-groups]
-dev = ["pytest"]
+dev = [
+    "pytest",
+    "pytest-asyncio",
+    "pytest-mock",
+    "pytest-cov",
+    "pre-commit",
+    "black",
+    "isort",
+    "flake8",
+    "flake8-bugbear",
+    "flake8-comprehensions",
+]
 docs = [
     "mkdocs>=1.6",
     "mkdocs-material>=9.5",
@@ -70,6 +89,15 @@ virl2_client = "*"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "*"
+pytest-asyncio = "*"
+pytest-mock = "*"
+pytest-cov = "*"
+pre-commit = "*"
+black = "*"
+isort = "*"
+flake8 = "*"
+flake8-bugbear = "*"
+flake8-comprehensions = "*"
 
 [tool.poetry.group.docs.dependencies]
 mkdocs = ">=1.6"

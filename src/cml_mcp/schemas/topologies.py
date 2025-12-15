@@ -13,16 +13,9 @@ from cml_mcp.schemas.annotations import AnnotationResponse, AnnotationUpdate
 from cml_mcp.schemas.common import MACAddress, UUID4Type
 from cml_mcp.schemas.interfaces import InterfaceLabel, InterfaceSlot, InterfaceType
 from cml_mcp.schemas.labs import LabDescription, LabNotes, LabTitle
-from cml_mcp.schemas.links import (
-    LinkConditionConfiguration,
-    LinkLabel,
-    LinkWithConditionConfig,
-)
+from cml_mcp.schemas.links import LinkConditionConfiguration, LinkLabel, LinkWithConditionConfig
 from cml_mcp.schemas.nodes import NodeConfiguration, NodeDefined
-from cml_mcp.schemas.smart_annotations import (
-    SmartAnnotationBase,
-    SmartAnnotationResponse,
-)
+from cml_mcp.schemas.smart_annotations import SmartAnnotationBase, SmartAnnotationResponse
 
 TopologyID = Annotated[str, Field(min_length=1, max_length=64, description="Element ID.", examples=["l1"])]
 

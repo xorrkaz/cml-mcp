@@ -58,7 +58,7 @@ Install and configure with your favorite MCP client:
           "args": [
             "run", "-i", "--rm",
             "-e", "CML_URL",
-            "-e", "CML_USERNAME", 
+            "-e", "CML_USERNAME",
             "-e", "CML_PASSWORD",
             "xorrkaz/cml-mcp:latest"
           ],

@@ -9,8 +9,6 @@ from typing import Annotated, Literal
 from fastapi import Body
 from pydantic import BaseModel, Field
 
-from cml_mcp.schemas.simple_core.common.events import LabEventElementType, LabEventType
-from cml_mcp.schemas.simple_core.common.states import InterfaceState, LinkState, NodeState
 from cml_mcp.schemas.annotations import AnnotationResponse
 from cml_mcp.schemas.common import (
     BaseDBModel,
@@ -25,6 +23,8 @@ from cml_mcp.schemas.common import (
 )
 from cml_mcp.schemas.links import Link
 from cml_mcp.schemas.nodes import Node
+from cml_mcp.schemas.simple_core.common.events import LabEventElementType, LabEventType
+from cml_mcp.schemas.simple_core.common.states import InterfaceState, LinkState, NodeState
 from cml_mcp.schemas.smart_annotations import SmartAnnotationBase
 
 LabTitle = Annotated[
@@ -57,9 +57,7 @@ LabDescription = Annotated[
 
 class LabGroupBase(BaseModel, extra="allow"):
     id: UUID4Type = Field(..., description="ID of the lab group.")
-    permission: OldPermission = Field(
-        ..., description="Permission level for the lab group."
-    )
+    permission: OldPermission = Field(..., description="Permission level for the lab group.")
 
 
 class GroupLab(LabGroupBase, extra="forbid"):
@@ -72,25 +70,17 @@ class LabGroup(LabGroupBase, extra="forbid"):
 
 class LabGroupAssociation(BaseModel, extra="forbid"):
     id: UUID4Type = Field(..., description="ID of the group.")
-    permissions: Permissions = Field(
-        ..., description="Permissions for the specified group and lab."
-    )
+    permissions: Permissions = Field(..., description="Permissions for the specified group and lab.")
 
 
 class LabUserAssociation(BaseModel, extra="forbid"):
     id: UUID4Type = Field(..., description="ID of the user.")
-    permissions: Permissions = Field(
-        ..., description="Permissions for the specified user and lab."
-    )
+    permissions: Permissions = Field(..., description="Permissions for the specified user and lab.")
 
 
 class LabAssociations(BaseModel, extra="forbid"):
-    groups: list[LabGroupAssociation] = Field(
-        default=None, description="Array of group associations."
-    )
-    users: list[LabUserAssociation] = Field(
-        default=None, description="Array of user associations."
-    )
+    groups: list[LabGroupAssociation] = Field(default=None, description="Array of group associations.")
+    users: list[LabUserAssociation] = Field(default=None, description="Array of user associations.")
 
 
 LabOwner = Annotated[UUID4Type, Field(description="ID of the lab owner.")]
@@ -122,13 +112,9 @@ class Lab(BaseDBModel):
     lab_title: LabTitle = Field(...)
     owner: LabOwner = Field(default=None)
     owner_username: UserName = Field(default=None, description="The owner username.")
-    owner_fullname: UserFullName = Field(
-        default=None, description="The owner full name."
-    )
+    owner_fullname: UserFullName = Field(default=None, description="The owner full name.")
     state: State = Field(..., description="The overall state of the lab.")
-    node_count: int = Field(
-        default=None, description="Number of nodes (or devices) in the lab.", ge=0
-    )
+    node_count: int = Field(default=None, description="Number of nodes (or devices) in the lab.", ge=0)
     link_count: int = Field(
         default=None,
         description="Number of connections between nodes in the lab.",
@@ -144,9 +130,7 @@ class Lab(BaseDBModel):
 
 LabGroupsBody = Annotated[
     list[LabGroup],
-    Body(
-        description="This request body is a JSON object that describes the group permissions for a lab."
-    ),
+    Body(description="This request body is a JSON object that describes the group permissions for a lab."),
 ]
 
 LabCreateBody = Annotated[LabCreate, Body(description="The lab's data.")]
@@ -211,11 +195,7 @@ class LabInfoResponse(BaseDBModel, extra="forbid"):
     owner_username: str = Field(...)
     owner_fullname: str = Field(...)
     node_count: int = Field(..., ge=0, description="Number of nodes in the lab.")
-    link_count: int = Field(
-        ..., ge=0, description="Number of connections between nodes in the lab."
-    )
+    link_count: int = Field(..., ge=0, description="Number of connections between nodes in the lab.")
     groups: list[LabGroup] = Field(...)
     effective_permissions: EffectivePermissions = Field(...)
-    topology: SimplifiedLabTopology = Field(
-        default=None, description="Lab topology data"
-    )
+    topology: SimplifiedLabTopology = Field(default=None, description="Lab topology data")

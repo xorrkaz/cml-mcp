@@ -9,14 +9,7 @@ from typing import Annotated
 from fastapi import Body
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
-from cml_mcp.schemas.common import (
-    Coordinate,
-    DefinitionID,
-    Label,
-    PinnedComputeID,
-    TagArray,
-    UUID4Type,
-)
+from cml_mcp.schemas.common import Coordinate, DefinitionID, Label, PinnedComputeID, TagArray, UUID4Type
 
 NodeLabel = Annotated[Label, Field(..., description="A node label.", examples=["desktop-1"])]
 NodeId = Annotated[

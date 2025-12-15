@@ -243,7 +243,7 @@ async def test_get_cml_labs(mock_client):
 async def my_new_tool(param: str) -> dict:
     """
     Tool description for LLM.
-    
+
     Explain what the tool does and any constraints.
     """
     try:

@@ -10,9 +10,9 @@ from typing import Annotated
 from fastapi import Path
 from pydantic import BaseModel, Field, model_validator
 
-from cml_mcp.schemas.simple_common.constants import BASE_DIR
 from cml_mcp.schemas.common import HTTP_URL_REG, DefinitionID, UUID4Type
 from cml_mcp.schemas.labs import LabDescription, LabTitle
+from cml_mcp.schemas.simple_common.constants import BASE_DIR
 
 GitUrl = Annotated[str, Field(pattern=re.compile(HTTP_URL_REG), description="An HTTPS git URL")]
 

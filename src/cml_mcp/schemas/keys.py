@@ -12,7 +12,6 @@ from cml_mcp.schemas.common import IPAddress, UUID4Type
 from cml_mcp.schemas.node_definitions import LibvirtDomainDrivers
 from cml_mcp.schemas.nodes import NodeLabel
 
-
 UpperLibvirtDomainDrivers = Enum(
     "UpperLibvirtDomainDrivers",
     {member.name: member.name.upper() for member in LibvirtDomainDrivers},

@@ -7,13 +7,7 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from cml_mcp.schemas.common import (
-    IPv4Address,
-    IPv6Address,
-    Label,
-    MACAddress,
-    UUID4Type,
-)
+from cml_mcp.schemas.common import IPv4Address, IPv6Address, Label, MACAddress, UUID4Type
 from cml_mcp.schemas.nodes import NodeId, NodeLabel
 
 

@@ -9,13 +9,7 @@ from typing import Annotated, Literal
 from fastapi import Body
 from pydantic import BaseModel, Field, model_validator
 
-from cml_mcp.schemas.common import (
-    DOMAIN_REG,
-    PORT_REG,
-    GroupName,
-    UserName,
-    UUID4Type,
-)
+from cml_mcp.schemas.common import DOMAIN_REG, PORT_REG, GroupName, UserName, UUID4Type
 
 from .users import Password
 
@@ -29,9 +23,7 @@ class UserAuthData(BaseModel):
 
 AuthDataBody = Annotated[
     UserAuthData,
-    Body(
-        description="This request body is a JSON object that holds authentication data."
-    ),
+    Body(description="This request body is a JSON object that holds authentication data."),
 ]
 
 
@@ -88,25 +80,18 @@ class SystemAuthConfigBase(BaseModel, extra="allow"):
     server_urls: str = Field(
         default=None,
         max_length=256,
-        description="URI of LDAP server, either LDAP or LDAPS,"
-        "multiple servers can be specified, separate with space.",
+        description="URI of LDAP server, either LDAP or LDAPS," "multiple servers can be specified, separate with space.",
         examples=["ldaps://ad.corp.com:3269"],
-        pattern=re.compile(
-            rf"^(?:(?: (?=l))?ldaps?://(?:{DOMAIN_REG})(?::{PORT_REG})?)*(?![\n\r])$"
-        ),
+        pattern=re.compile(rf"^(?:(?: (?=l))?ldaps?://(?:{DOMAIN_REG})(?::{PORT_REG})?)*(?![\n\r])$"),
     )
     verify_tls: bool = Field(
         default=None,
         description="Set to `false` if certificates should not be verified.",
     )
-    cert_data_pem: PublicCertificate = Field(
-        default=None, description="Reference to a public certificate."
-    )
+    cert_data_pem: PublicCertificate = Field(default=None, description="Reference to a public certificate.")
     use_ntlm: bool = Field(
         default=None,
-        description="If `true` then password for manager user"
-        " will be stored as NTLM hash. "
-        "Only works with ActiveDirectory servers.",
+        description="If `true` then password for manager user" " will be stored as NTLM hash. " "Only works with ActiveDirectory servers.",
     )
     root_dn: str = Field(
         default=None,
@@ -117,46 +102,36 @@ class SystemAuthConfigBase(BaseModel, extra="allow"):
     user_search_base: str = Field(
         default=None,
         max_length=256,
-        description="The user search base where users should be looked up. "
-        "Typically a OU or CN. Will be combined with the root DN.",
+        description="The user search base where users should be looked up. " "Typically a OU or CN. Will be combined with the root DN.",
         examples=["CN=users,CN=accounts"],
     )
     user_search_filter: str = Field(
         default=None,
         max_length=1024,
-        description="The filter that will be applied to the user. "
-        "Must have a placeholder `{0}` replaced with the username.",
-        examples=[
-            "(&(uid={0})(memberOf=CN=cmlusers,CN=groups,CN=accounts,DC=corp,DC=com))"
-        ],
+        description="The filter that will be applied to the user. " "Must have a placeholder `{0}` replaced with the username.",
+        examples=["(&(uid={0})(memberOf=CN=cmlusers,CN=groups,CN=accounts,DC=corp,DC=com))"],
     )
     admin_search_filter: str = Field(
         default=None,
         max_length=1024,
-        description="Same as for the user search filter. "
-        "Grants admin rights if matched.",
-        examples=[
-            "(&(uid={0})(memberOf=CN=cmladmins,CN=groups,CN=accounts,DC=corp,DC=com))"
-        ],
+        description="Same as for the user search filter. " "Grants admin rights if matched.",
+        examples=["(&(uid={0})(memberOf=CN=cmladmins,CN=groups,CN=accounts,DC=corp,DC=com))"],
     )
     group_search_base: str = Field(
         default=None,
         max_length=256,
-        description="The group search base where groups should be looked up. "
-        "Typically a OU or CN. Will be combined with the root DN.",
+        description="The group search base where groups should be looked up. " "Typically a OU or CN. Will be combined with the root DN.",
         examples=["CN=groups,CN=accounts"],
     )
     group_search_filter: str = Field(
         default=None,
         max_length=1024,
-        description="The filter applied to groups. "
-        "Must have a placeholder `{0}` replaced with the group name.",
+        description="The filter applied to groups. " "Must have a placeholder `{0}` replaced with the group name.",
         examples=["(&(cn={0})(objectclass=posixgroup))"],
     )
     group_via_user: bool = Field(
         default=None,
-        description="If `true`, use `group_user_attribute` "
-        "to determine user group memberships.",
+        description="If `true`, use `group_user_attribute` " "to determine user group memberships.",
     )
     group_user_attribute: str = Field(
         default=None,
@@ -194,9 +169,7 @@ class SystemAuthConfigBase(BaseModel, extra="allow"):
         description="User attribute for displaying the email address.",
         examples=["mail"],
     )
-    resource_pool: UUID4Type | None = Field(
-        default=None, description="Resource pool or template ID for new user accounts."
-    )
+    resource_pool: UUID4Type | None = Field(default=None, description="Resource pool or template ID for new user accounts.")
 
 
 class SystemAuthConfigRequest(SystemAuthConfigBase, extra="forbid"):
@@ -243,8 +216,7 @@ class AuthTestUserResponse(BaseModel):
     )
     is_admin: bool = Field(
         default=None,
-        description="The user has admin rights. If LDAP is configured, "
-        "then the admin filter must match.",
+        description="The user has admin rights. If LDAP is configured, " "then the admin filter must match.",
     )
     display: str = Field(
         default=None,
@@ -295,12 +267,8 @@ class AuthTestGroupResponse(BaseModel):
 class AuthTestResponse(BaseModel, extra="forbid"):
     """System Authentication Test response."""
 
-    user: AuthTestUserResponse = Field(
-        default=None, description="Results for the user."
-    )
-    group: AuthTestGroupResponse = Field(
-        default=None, description="Results for the group."
-    )
+    user: AuthTestUserResponse = Field(default=None, description="Results for the user.")
+    group: AuthTestGroupResponse = Field(default=None, description="Results for the group.")
 
 
 class AuthenticateResponse(BaseModel):
@@ -315,8 +283,5 @@ class AuthenticateResponse(BaseModel):
         description="Error messages for errors that occurred while authenticating, "
         "but did not interrupt the login, such as LDAP group membership "
         "refresh errors.",
-        examples=[
-            "Could not refresh LDAP group memberships "
-            "(Invalid base DN or root DN format)"
-        ],
+        examples=["Could not refresh LDAP group memberships " "(Invalid base DN or root DN format)"],
     )

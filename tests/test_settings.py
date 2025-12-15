@@ -9,9 +9,6 @@ reload, which is problematic due to the module-level validation code.
 
 from __future__ import annotations
 
-import pytest
-from pydantic import ValidationError
-
 
 class TestMultiServerSettingsDefaults:
     """Test the default values for multi-server configuration fields."""
@@ -19,7 +16,7 @@ class TestMultiServerSettingsDefaults:
     def test_default_pool_max_size(self):
         """Test default value for cml_pool_max_size is 50."""
         from cml_mcp.settings import Settings
-        
+
         # Create settings with minimal required fields
         s = Settings(cml_url="https://cml.example.com")
         assert s.cml_pool_max_size == 50
@@ -27,28 +24,28 @@ class TestMultiServerSettingsDefaults:
     def test_default_pool_ttl_seconds(self):
         """Test default value for cml_pool_ttl_seconds is 300."""
         from cml_mcp.settings import Settings
-        
+
         s = Settings(cml_url="https://cml.example.com")
         assert s.cml_pool_ttl_seconds == 300
 
     def test_default_pool_max_per_server(self):
         """Test default value for cml_pool_max_per_server is 5."""
         from cml_mcp.settings import Settings
-        
+
         s = Settings(cml_url="https://cml.example.com")
         assert s.cml_pool_max_per_server == 5
 
     def test_default_allowed_urls_empty(self):
         """Test default value for cml_allowed_urls is empty list."""
         from cml_mcp.settings import Settings
-        
+
         s = Settings(cml_url="https://cml.example.com")
         assert s.cml_allowed_urls == []
 
     def test_default_url_pattern_none(self):
         """Test default value for cml_url_pattern is None."""
         from cml_mcp.settings import Settings
-        
+
         s = Settings(cml_url="https://cml.example.com")
         assert s.cml_url_pattern is None
 
@@ -59,7 +56,7 @@ class TestMultiServerSettingsCustomValues:
     def test_custom_pool_max_size(self):
         """Test custom value for cml_pool_max_size."""
         from cml_mcp.settings import Settings
-        
+
         s = Settings(
             cml_url="https://cml.example.com",
             cml_pool_max_size=100,
@@ -69,7 +66,7 @@ class TestMultiServerSettingsCustomValues:
     def test_custom_pool_ttl_seconds(self):
         """Test custom value for cml_pool_ttl_seconds."""
         from cml_mcp.settings import Settings
-        
+
         s = Settings(
             cml_url="https://cml.example.com",
             cml_pool_ttl_seconds=600,
@@ -79,7 +76,7 @@ class TestMultiServerSettingsCustomValues:
     def test_custom_pool_max_per_server(self):
         """Test custom value for cml_pool_max_per_server."""
         from cml_mcp.settings import Settings
-        
+
         s = Settings(
             cml_url="https://cml.example.com",
             cml_pool_max_per_server=10,
@@ -89,7 +86,7 @@ class TestMultiServerSettingsCustomValues:
     def test_custom_allowed_urls(self):
         """Test custom value for cml_allowed_urls."""
         from cml_mcp.settings import Settings
-        
+
         s = Settings(
             cml_url="https://cml.example.com",
             cml_allowed_urls=[
@@ -105,7 +102,7 @@ class TestMultiServerSettingsCustomValues:
     def test_custom_url_pattern(self):
         """Test custom value for cml_url_pattern."""
         from cml_mcp.settings import Settings
-        
+
         pattern = r"^https://cml[0-9]+\.example\.com$"
         s = Settings(
             cml_url="https://cml.example.com",
@@ -120,7 +117,7 @@ class TestSettingsFieldCombinations:
     def test_all_pool_settings_together(self):
         """Test setting all pool configuration together."""
         from cml_mcp.settings import Settings
-        
+
         s = Settings(
             cml_url="https://cml.example.com",
             cml_pool_max_size=200,
@@ -134,7 +131,7 @@ class TestSettingsFieldCombinations:
     def test_url_restrictions_together(self):
         """Test both URL restriction methods together."""
         from cml_mcp.settings import Settings
-        
+
         s = Settings(
             cml_url="https://cml.example.com",
             cml_allowed_urls=["https://cml1.example.com"],
@@ -150,7 +147,7 @@ class TestSettingsTransportModes:
     def test_http_transport_mode(self):
         """Test HTTP transport mode settings."""
         from cml_mcp.settings import Settings, TransportEnum
-        
+
         s = Settings(
             cml_url="https://cml.example.com",
             cml_mcp_transport=TransportEnum.HTTP,
@@ -160,7 +157,7 @@ class TestSettingsTransportModes:
     def test_stdio_transport_mode(self):
         """Test STDIO transport mode settings."""
         from cml_mcp.settings import Settings, TransportEnum
-        
+
         s = Settings(
             cml_url="https://cml.example.com",
             cml_mcp_transport=TransportEnum.STDIO,
@@ -176,34 +173,34 @@ class TestSettingsFieldTypes:
     def test_pool_max_size_is_int(self):
         """Test cml_pool_max_size is integer."""
         from cml_mcp.settings import Settings
-        
+
         s = Settings(cml_url="https://cml.example.com")
         assert isinstance(s.cml_pool_max_size, int)
 
     def test_pool_ttl_seconds_is_int(self):
         """Test cml_pool_ttl_seconds is integer."""
         from cml_mcp.settings import Settings
-        
+
         s = Settings(cml_url="https://cml.example.com")
         assert isinstance(s.cml_pool_ttl_seconds, int)
 
     def test_pool_max_per_server_is_int(self):
         """Test cml_pool_max_per_server is integer."""
         from cml_mcp.settings import Settings
-        
+
         s = Settings(cml_url="https://cml.example.com")
         assert isinstance(s.cml_pool_max_per_server, int)
 
     def test_allowed_urls_is_list(self):
         """Test cml_allowed_urls is list."""
         from cml_mcp.settings import Settings
-        
+
         s = Settings(cml_url="https://cml.example.com")
         assert isinstance(s.cml_allowed_urls, list)
 
     def test_url_pattern_is_string_or_none(self):
         """Test cml_url_pattern is string or None."""
         from cml_mcp.settings import Settings
-        
+
         s = Settings(cml_url="https://cml.example.com")
         assert s.cml_url_pattern is None or isinstance(s.cml_url_pattern, str)

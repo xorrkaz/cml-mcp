@@ -11,7 +11,7 @@ graph TB
         CC[Claude Code]
         CU[Cursor]
     end
-    
+
     subgraph "cml-mcp Server"
         direction TB
         EP[Entry Point<br/>__main__.py]
@@ -21,14 +21,14 @@ graph TB
         CL[CML Client<br/>cml_client.py]
         SC[Schemas<br/>schemas/]
     end
-    
+
     subgraph "External Services"
         CML1[CML Server 1<br/>REST API]
         CML2[CML Server 2<br/>REST API]
         CMLN[CML Server N<br/>REST API]
         DEV[Virtual Devices<br/>via PyATS]
     end
-    
+
     CD & CC & CU -->|MCP Protocol| EP
     EP --> FM
     FM --> MW
@@ -50,15 +50,15 @@ graph LR
         H2["X-Authorization: Basic ..."]
         H3["X-CML-Verify-SSL: true"]
     end
-    
+
     subgraph "Client Pool"
         P1[("cml-prod<br/>client")]
         P2[("cml-dev<br/>client")]
         P3[("cml-staging<br/>client")]
     end
-    
+
     H1 --> P1
-    
+
     subgraph "Eviction Strategies"
         E1[LRU: Max pool size]
         E2[TTL: Idle timeout]
@@ -79,7 +79,7 @@ sequenceDiagram
     R->>MW: X-CML-Server-URL: https://cml-prod.example.com
     MW->>MW: Validate URL (allowlist/pattern)
     MW->>CP: get_client(url, credentials)
-    
+
     alt Client exists in pool
         CP-->>MW: Return cached client
     else Client not in pool
@@ -87,7 +87,7 @@ sequenceDiagram
         CP->>CP: Add to pool (evict LRU if needed)
         CP-->>MW: Return new client
     end
-    
+
     MW->>CV: current_cml_client.set(client)
     MW->>T: Execute tool
     T->>CV: get_cml_client()
@@ -192,7 +192,7 @@ async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> bool:
                 elicit_supported = False
             else:
                 raise me
-        
+
         if not elicit_supported or result.action == "accept":
             # Perform destructive action
             await cml_client.delete(f"/labs/{lid}")
@@ -210,10 +210,10 @@ Async HTTP client wrapping the CML REST API:
 ```python
 class CMLClient:
     def __init__(
-        self, 
-        host: str, 
-        username: str, 
-        password: str, 
+        self,
+        host: str,
+        username: str,
+        password: str,
         transport: str = "stdio",
         verify_ssl: bool = False
     ):
@@ -236,7 +236,7 @@ class CMLClientPool:
     - Max concurrent connections per server
     - URL validation (allowlist + pattern)
     """
-    
+
     def __init__(
         self,
         max_size: int = 50,
@@ -245,7 +245,7 @@ class CMLClientPool:
         allowed_urls: list[str] | None = None,
         url_pattern: str | None = None,
     ): ...
-    
+
     async def get_client(self, url: str, username: str, password: str, verify_ssl: bool) -> CMLClient: ...
     async def release_client(self, url: str, verify_ssl: bool) -> None: ...
 ```
@@ -288,13 +288,13 @@ sequenceDiagram
 
     T->>C: Request (e.g., get_cml_labs)
     C->>C: check_authentication()
-    
+
     alt No token or expired
         C->>A: POST /authenticate
         A-->>C: JWT Token
         C->>C: Store token
     end
-    
+
     C->>A: GET /labs (with token)
     A-->>C: Response
     C-->>T: Parsed result
@@ -318,21 +318,21 @@ class Settings(BaseSettings):
     cml_username: str | None = Field(default=None)
     cml_password: str | None = Field(default=None)
     cml_verify_ssl: bool = Field(default=False)
-    
+
     # Transport settings
     cml_mcp_transport: TransportEnum = Field(default=TransportEnum.STDIO)
     cml_mcp_bind: IPvAnyAddress = Field(default_factory=lambda: IPv4Address("0.0.0.0"))
     cml_mcp_port: int = Field(default=9000)
-    
+
     # Multi-server security (HTTP mode)
     cml_allowed_urls: list[AnyHttpUrl] = Field(default_factory=list)
     cml_url_pattern: str | None = Field(default=None)
-    
+
     # Client pool settings (HTTP mode)
     cml_pool_max_size: int = Field(default=50)
     cml_pool_ttl_seconds: int = Field(default=300)
     cml_pool_max_per_server: int = Field(default=5)
-    
+
     debug: bool = Field(default=False)
 ```
 
@@ -366,27 +366,27 @@ graph TB
         MW[Middleware]
         VAL[URL Validator]
     end
-    
+
     subgraph "Client Pool"
         POOL[CMLClientPool]
-        
+
         subgraph "Cached Clients"
             C1["(cml-prod, ssl=true)<br/>last_used: 10s ago<br/>active: 2"]
             C2["(cml-dev, ssl=false)<br/>last_used: 5s ago<br/>active: 0"]
             C3["(cml-staging, ssl=true)<br/>last_used: 300s ago<br/>active: 0"]
         end
-        
+
         subgraph "Eviction"
             LRU[LRU: max_size=50]
             TTL[TTL: 300s idle]
             MPS[Max Per Server: 5]
         end
     end
-    
+
     subgraph "Context"
         CV[ContextVar<br/>current_cml_client]
     end
-    
+
     REQ --> MW
     MW --> VAL
     VAL -->|Valid| POOL
@@ -477,13 +477,13 @@ sequenceDiagram
     CP-->>M: Client for cml-prod
     M->>P: API Request
     P-->>M: Response
-    
+
     C2->>M: X-CML-Server-URL: https://cml-dev
     M->>CP: get_client(cml-dev)
     CP-->>M: Client for cml-dev
     M->>D: API Request
     D-->>M: Response
-    
+
     Note over CP: Pool maintains both clients<br/>with LRU/TTL eviction
 ```
 
@@ -542,25 +542,25 @@ graph LR
         FA[fastapi]
         UV[uvicorn]
     end
-    
+
     subgraph HTTP
         HX[httpx]
     end
-    
+
     subgraph CML
         V2[virl2_client]
     end
-    
+
     subgraph Validation
         PD[pydantic]
         PS[pydantic-settings]
     end
-    
+
     subgraph Optional
         PA[pyats]
         GE[genie]
     end
-    
+
     cml-mcp --> FM & HX & V2 & PD
     FM --> FA & UV
     V2 --> PA & GE

@@ -8,13 +8,7 @@ from typing import Annotated
 from fastapi import Body
 from pydantic import BaseModel, Field, conlist
 
-from cml_mcp.schemas.common import (
-    GenericDescription,
-    Label,
-    NullableGenericDescription,
-    UUID4ArrayType,
-    UUID4Type,
-)
+from cml_mcp.schemas.common import GenericDescription, Label, NullableGenericDescription, UUID4ArrayType, UUID4Type
 from cml_mcp.schemas.external_connector import ExternalConnectorDeviceName
 
 ResourcePoolLabel = Annotated[Label, Field(..., description="A resource pool label.")]

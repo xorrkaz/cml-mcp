@@ -10,12 +10,7 @@ from fastapi import Body
 from pydantic import BaseModel, Field
 from pydantic_strict_partial import create_partial_model
 
-from cml_mcp.schemas.common import (
-    COLOR_EXAMPLES_STR,
-    AnnotationColor,
-    BorderStyle,
-    UUID4Type,
-)
+from cml_mcp.schemas.common import COLOR_EXAMPLES_STR, AnnotationColor, BorderStyle, UUID4Type
 
 CoordinateFloat = Annotated[float, Field(description="A coordinate (floating point).", ge=-15000, le=15000)]
 

@@ -44,7 +44,7 @@ class TestToolFunctionsUseGetCmlClient:
         """Test that tool GET operations use the context client."""
         client = get_cml_client()
         await client.get("/labs")
-        
+
         set_mock_client.get.assert_called_once_with("/labs")
 
     @pytest.mark.asyncio
@@ -53,7 +53,7 @@ class TestToolFunctionsUseGetCmlClient:
         client = get_cml_client()
         data = {"title": "Test Lab"}
         await client.post("/labs", data=data)
-        
+
         set_mock_client.post.assert_called_once_with("/labs", data=data)
 
     @pytest.mark.asyncio
@@ -61,7 +61,7 @@ class TestToolFunctionsUseGetCmlClient:
         """Test that tool PUT operations use the context client."""
         client = get_cml_client()
         await client.put("/labs/test-uuid/start")
-        
+
         set_mock_client.put.assert_called_once_with("/labs/test-uuid/start")
 
     @pytest.mark.asyncio
@@ -70,7 +70,7 @@ class TestToolFunctionsUseGetCmlClient:
         client = get_cml_client()
         data = {"title": "Updated Title"}
         await client.patch("/labs/test-uuid", data=data)
-        
+
         set_mock_client.patch.assert_called_once_with("/labs/test-uuid", data=data)
 
     @pytest.mark.asyncio
@@ -78,7 +78,7 @@ class TestToolFunctionsUseGetCmlClient:
         """Test that tool DELETE operations use the context client."""
         client = get_cml_client()
         await client.delete("/labs/test-uuid")
-        
+
         set_mock_client.delete.assert_called_once_with("/labs/test-uuid")
 
 
@@ -112,10 +112,10 @@ class TestToolFunctionPatterns:
         token = current_cml_client.set(mock_client)
         try:
             client = get_cml_client()
-            
+
             # Pattern: Check if admin before proceeding
             is_admin = await client.is_admin()
-            
+
             assert is_admin is False
             mock_client.is_admin.assert_called_once()
         finally:
@@ -127,12 +127,12 @@ class TestToolFunctionPatterns:
         token = current_cml_client.set(admin_client)
         try:
             client = get_cml_client()
-            
+
             # Pattern: Create and return ID
             data = {"name": "test-resource"}
             resp = await client.post("/resources", data=data)
             resource_id = resp["id"]
-            
+
             assert resource_id == "new-uuid"
             admin_client.post.assert_called_once_with("/resources", data=data)
         finally:
@@ -145,14 +145,14 @@ class TestToolFunctionPatterns:
             {"id": "uuid1", "name": "resource1"},
             {"id": "uuid2", "name": "resource2"},
         ]
-        
+
         token = current_cml_client.set(mock_client)
         try:
             client = get_cml_client()
-            
+
             # Pattern: Get list of resources
             resources = await client.get("/resources")
-            
+
             assert len(resources) == 2
             mock_client.get.assert_called_once_with("/resources")
         finally:
@@ -162,14 +162,14 @@ class TestToolFunctionPatterns:
     async def test_get_with_params_pattern(self, mock_client):
         """Test the GET with params pattern used in tools."""
         mock_client.get.return_value = {"detailed": "data"}
-        
+
         token = current_cml_client.set(mock_client)
         try:
             client = get_cml_client()
-            
+
             # Pattern: GET with query parameters
             result = await client.get("/labs/uuid/nodes", params={"data": True, "operational": True})
-            
+
             assert result == {"detailed": "data"}
             mock_client.get.assert_called_once_with("/labs/uuid/nodes", params={"data": True, "operational": True})
         finally:
@@ -183,22 +183,18 @@ class TestStdioModeFallback:
         """Test that get_cml_client falls back to global when ContextVar is None."""
         # Ensure ContextVar is None
         current_cml_client.set(None)
-        
+
         mock_global = MagicMock()
-        
+
         # Patch the import inside get_cml_client
-        with patch.object(
-            __import__("cml_mcp.client_pool", fromlist=["get_cml_client"]),
-            "cml_client",
-            mock_global,
-            create=True
-        ):
+        with patch.object(__import__("cml_mcp.client_pool", fromlist=["get_cml_client"]), "cml_client", mock_global, create=True):
             # We need to patch at the server module level
             import sys
+
             mock_server = MagicMock()
             mock_server.cml_client = mock_global
             sys.modules["cml_mcp.server"] = mock_server
-            
+
             try:
                 result = get_cml_client()
                 assert result is mock_global
@@ -209,7 +205,7 @@ class TestStdioModeFallback:
         """Test that ContextVar client takes precedence over global."""
         mock_context = MagicMock(name="context_client")
         mock_global = MagicMock(name="global_client")
-        
+
         token = current_cml_client.set(mock_context)
         try:
             # Even if global exists, context client should be returned
@@ -227,11 +223,11 @@ class TestClientCredentialUpdates:
     async def test_credentials_updated_on_reuse(self, mock_cml_client_factory, mock_cml_client):
         """Test that credentials are updated when client is reused."""
         from cml_mcp.client_pool import CMLClientPool
-        
+
         mock_cml_client_factory.return_value = mock_cml_client
-        
+
         pool = CMLClientPool()
-        
+
         # First request with user1
         await pool.get_client("https://cml.example.com", "user1", "pass1", False)
         assert mock_cml_client.username == "user1"
@@ -239,7 +235,7 @@ class TestClientCredentialUpdates:
         assert mock_cml_client.vclient.username == "user1"
         assert mock_cml_client.vclient.password == "pass1"
         await pool.release_client("https://cml.example.com", False)
-        
+
         # Second request with user2 - should update credentials
         await pool.get_client("https://cml.example.com", "user2", "pass2", False)
         assert mock_cml_client.username == "user2"

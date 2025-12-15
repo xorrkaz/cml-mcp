@@ -248,7 +248,7 @@ server {
         proxy_set_header Connection "";
         proxy_buffering off;
         proxy_cache off;
-        
+
         # SSE support
         proxy_set_header X-Accel-Buffering no;
     }

@@ -31,7 +31,8 @@ import tempfile
 from typing import Any
 
 import httpx
-from fastmcp import Context, FastMCP, settings as fastmcp_settings
+from fastmcp import Context, FastMCP
+from fastmcp import settings as fastmcp_settings
 from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
 from fastmcp.server.middleware import Middleware, MiddlewareContext
@@ -41,8 +42,8 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 from virl2_client.models.cl_pyats import ClPyats, PyatsNotInstalled
 
-from cml_mcp.cml_client import CMLClient
 from cml_mcp.client_pool import CMLClientPool, current_cml_client, get_cml_client
+from cml_mcp.cml_client import CMLClient
 from cml_mcp.schemas.annotations import EllipseAnnotation, LineAnnotation, RectangleAnnotation, TextAnnotation
 from cml_mcp.schemas.common import DefinitionID, UserName, UUID4Type
 from cml_mcp.schemas.groups import GroupCreate, GroupInfoResponse

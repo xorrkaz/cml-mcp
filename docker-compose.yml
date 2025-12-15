@@ -100,9 +100,9 @@ services:
     volumes:
       - ./src:/app/src:ro
     command: >
-      /app/.venv/bin/uvicorn cml_mcp.server:app 
-      --host ${CML_MCP_BIND:-0.0.0.0} 
-      --port ${CML_MCP_PORT:-9000} 
+      /app/.venv/bin/uvicorn cml_mcp.server:app
+      --host ${CML_MCP_BIND:-0.0.0.0}
+      --port ${CML_MCP_PORT:-9000}
       --reload
       --reload-dir /app/src
     networks:

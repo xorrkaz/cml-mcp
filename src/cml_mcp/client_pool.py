@@ -276,9 +276,7 @@ class CMLClientPool:
         """Evict clients that have been idle longer than TTL."""
         now = time.time()
         expired_keys = [
-            key
-            for key, pooled in self._clients.items()
-            if (now - pooled.last_used) > self._ttl_seconds and pooled.active_requests == 0
+            key for key, pooled in self._clients.items() if (now - pooled.last_used) > self._ttl_seconds and pooled.active_requests == 0
         ]
         for key in expired_keys:
             pooled = self._clients.pop(key)

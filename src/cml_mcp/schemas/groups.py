@@ -8,13 +8,7 @@ from typing import Annotated
 from fastapi import Body, Path
 from pydantic import BaseModel, Field
 
-from cml_mcp.schemas.common import (
-    BaseDBModel,
-    GenericDescription,
-    GroupName,
-    UUID4ArrayType,
-    UUID4Type,
-)
+from cml_mcp.schemas.common import BaseDBModel, GenericDescription, GroupName, UUID4ArrayType, UUID4Type
 from cml_mcp.schemas.labs import GroupLab, LabGroupAssociation
 
 GroupIdPathParameter = Annotated[UUID4Type, Path(description="The unique ID of a group on this controller.")]

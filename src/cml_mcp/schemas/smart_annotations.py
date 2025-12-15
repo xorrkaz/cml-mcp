@@ -8,12 +8,7 @@ from typing import Annotated
 from fastapi import Body
 from pydantic import BaseModel, Field
 
-from cml_mcp.schemas.common import (
-    COLOR_EXAMPLES_STR,
-    AnnotationColor,
-    BorderStyle,
-    UUID4Type,
-)
+from cml_mcp.schemas.common import COLOR_EXAMPLES_STR, AnnotationColor, BorderStyle, UUID4Type
 
 
 class SmartAnnotationBase(BaseModel, extra="allow"):

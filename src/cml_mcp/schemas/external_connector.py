@@ -24,9 +24,7 @@ NullableExternalConnectorDeviceName = Annotated[
     Field(description="A nullable Linux bridge name usable for external connectivity."),
 ]
 
-ExternalConnectorTag = Annotated[
-    Tag, Field(description="The key configured in external connector nodes.")
-]
+ExternalConnectorTag = Annotated[Tag, Field(description="The key configured in external connector nodes.")]
 
 
 class ExternalConnectorMappingBase(BaseModel, extra="allow"):
@@ -46,9 +44,7 @@ class ExternalConnectorMapping(ExternalConnectorMappingBase, extra="forbid"):
         description="Unique label for the external connector.",
         max_length=128,
     )
-    tags: TagArray = Field(
-        default=None, description="Tags denoting purpose of the external connector."
-    )
+    tags: TagArray = Field(default=None, description="Tags denoting purpose of the external connector.")
     allowed: bool = Field(
         default=None,
         description="""

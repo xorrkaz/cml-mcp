@@ -19,7 +19,7 @@ graph TB
         A1[MCP Client] <-->|stdin/stdout| B1[cml-mcp]
         B1 --> C1[CML API]
     end
-    
+
     subgraph "HTTP Mode"
         A2[MCP Client] <-->|stdio| M[mcp-remote]
         M <-->|HTTP/SSE| B2[cml-mcp]
@@ -313,18 +313,18 @@ The HTTP mode uses custom middleware to handle per-request server selection:
 class CustomRequestMiddleware(Middleware):
     async def on_request(self, context: MiddlewareContext, call_next) -> Any:
         headers = get_http_headers()
-        
+
         # Get target CML server (with fallback to default)
         cml_url = headers.get("x-cml-server-url") or settings.cml_url
-        
+
         # Extract credentials
         auth_header = headers.get("x-authorization")
         username, password = decode_basic_auth(auth_header)
-        
+
         # Get client from pool (validates URL, manages connections)
         client = await cml_pool.get_client(cml_url, username, password)
         current_cml_client.set(client)  # Request-scoped via ContextVar
-        
+
         try:
             await client.check_authentication()
             return await call_next(context)

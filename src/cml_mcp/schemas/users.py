@@ -9,14 +9,7 @@ from typing import Annotated
 from fastapi import Body
 from pydantic import BaseModel, Field
 
-from cml_mcp.schemas.common import (
-    BaseDBModel,
-    GenericDescription,
-    UserFullName,
-    UserName,
-    UUID4ArrayType,
-    UUID4Type,
-)
+from cml_mcp.schemas.common import BaseDBModel, GenericDescription, UserFullName, UserName, UUID4ArrayType, UUID4Type
 from cml_mcp.schemas.labs import LabUserAssociation
 
 Password = Annotated[str, Field(description="The password of the user.", examples=["super-secret"])]

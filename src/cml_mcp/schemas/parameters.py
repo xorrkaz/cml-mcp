@@ -8,13 +8,8 @@ from typing import Annotated
 
 from fastapi import Path, Query
 
+from cml_mcp.schemas.common import DOMAIN_REG, PORT_REG, Permission, UUID4Type
 from cml_mcp.schemas.simple_core.common.type_hints import Service
-from cml_mcp.schemas.common import (
-    DOMAIN_REG,
-    PORT_REG,
-    Permission,
-    UUID4Type,
-)
 
 LabIdPathParameter = Annotated[
     UUID4Type,

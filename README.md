@@ -336,7 +336,7 @@ To encode your credentials in Base64:
 # For CML credentials
 echo -n "username:password" | base64
 
-# For device credentials  
+# For device credentials
 echo -n "device_username:device_password" | base64
 
 # For enable password (if needed)
