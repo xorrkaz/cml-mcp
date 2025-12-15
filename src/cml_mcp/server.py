@@ -40,6 +40,7 @@ from mcp.types import METHOD_NOT_FOUND, ErrorData
 from virl2_client.models.cl_pyats import ClPyats, PyatsNotInstalled
 
 from cml_mcp.cml_client import CMLClient
+from cml_mcp.client_pool import CMLClientPool, current_cml_client, get_cml_client
 from cml_mcp.schemas.annotations import EllipseAnnotation, LineAnnotation, RectangleAnnotation, TextAnnotation
 from cml_mcp.schemas.common import DefinitionID, UserName, UUID4Type
 from cml_mcp.schemas.groups import GroupCreate, GroupInfoResponse
@@ -61,6 +62,7 @@ loglevel = logging.DEBUG if settings.debug else logging.INFO
 logging.basicConfig(level=loglevel, format="%(asctime)s %(levelname)s %(threadName)s %(name)s: %(message)s")
 logger = logging.getLogger("cml-mcp")
 
+# Global client for stdio mode (also used as fallback)
 cml_client = CMLClient(
     str(settings.cml_url),
     settings.cml_username,
@@ -69,43 +71,122 @@ cml_client = CMLClient(
     verify_ssl=settings.cml_verify_ssl,
 )
 
+# Initialize pool for HTTP mode
+cml_pool: CMLClientPool | None = None
+if settings.cml_mcp_transport == "http":
+    cml_pool = CMLClientPool(
+        max_size=settings.cml_pool_max_size,
+        ttl_seconds=settings.cml_pool_ttl_seconds,
+        max_per_server=settings.cml_pool_max_per_server,
+        allowed_urls=[str(u) for u in settings.cml_allowed_urls] if settings.cml_allowed_urls else None,
+        url_pattern=settings.cml_url_pattern,
+    )
+
 
 # Provide a custom token validation function.
 class CustomRequestMiddleware(Middleware):
     async def on_request(self, context: MiddlewareContext, call_next) -> Any:
-        # Reset client state
-        cml_client.token = None
-        cml_client.admin = None
+        # Reset PyATS env vars
         os.environ.pop("PYATS_USERNAME", None)
         os.environ.pop("PYATS_PASSWORD", None)
         os.environ.pop("PYATS_AUTH_PASS", None)
 
         headers = get_http_headers()
+
+        # === CML Server URL (with fallback) ===
+        cml_url = headers.get("x-cml-server-url")
+        if not cml_url:
+            # Fallback to configured default
+            if settings.cml_url:
+                cml_url = str(settings.cml_url)
+            else:
+                raise McpError(
+                    ErrorData(
+                        message="Missing X-CML-Server-URL header and no default CML_URL configured",
+                        code=-31002,
+                    )
+                )
+
+        # === SSL Verification ===
+        verify_ssl_header = headers.get("x-cml-verify-ssl", "").lower()
+        if verify_ssl_header:
+            verify_ssl = verify_ssl_header == "true"
+        else:
+            verify_ssl = settings.cml_verify_ssl
+
+        # === CML Credentials ===
         auth_header = headers.get("x-authorization")
         if not auth_header or not auth_header.startswith("Basic "):
-            raise McpError(ErrorData(message="Unauthorized: Missing or invalid X-Authorization header", code=-31002))
+            raise McpError(
+                ErrorData(
+                    message="Unauthorized: Missing or invalid X-Authorization header",
+                    code=-31002,
+                )
+            )
         parts = auth_header.split(" ", 1)
         if len(parts) != 2 or parts[0].lower() != "basic":
-            raise McpError(ErrorData(message="Invalid X-Authorization header format. Expected 'Basic <credentials>'", code=-31001))
+            raise McpError(
+                ErrorData(
+                    message="Invalid X-Authorization header format. Expected 'Basic <credentials>'",
+                    code=-31001,
+                )
+            )
         try:
             decoded = base64.b64decode(parts[1]).decode("utf-8")
             username, password = decoded.split(":", 1)
-            cml_client.username = username
-            cml_client.password = password
-            cml_client.vclient.username = username
-            cml_client.vclient.password = password
         except Exception:
-            raise McpError(ErrorData(message="Failed to decode Basic authentication credentials", code=-31002))
+            raise McpError(
+                ErrorData(
+                    message="Failed to decode Basic authentication credentials",
+                    code=-31002,
+                )
+            )
+
+        # === Get client from pool ===
+        if cml_pool is None:
+            raise McpError(
+                ErrorData(
+                    message="Internal error: Client pool not initialized",
+                    code=-31002,
+                )
+            )
         try:
-            await cml_client.check_authentication()
+            client = await cml_pool.get_client(cml_url, username, password, verify_ssl)
+            current_cml_client.set(client)
+        except McpError:
+            raise
         except Exception as e:
-            raise McpError(ErrorData(message=f"Unauthorized: {str(e)}", code=-31002))
+            raise McpError(
+                ErrorData(
+                    message=f"Failed to get CML client: {str(e)}",
+                    code=-31002,
+                )
+            )
+
+        # === Authenticate with CML ===
+        try:
+            # Reset token for stateless operation
+            client.token = None
+            client.admin = None
+            await client.check_authentication()
+        except Exception as e:
+            raise McpError(
+                ErrorData(
+                    message=f"Unauthorized: {str(e)}",
+                    code=-31002,
+                )
+            )
+
+        # === PyATS Headers ===
         pyats_header = headers.get("x-pyats-authorization")
         if pyats_header and pyats_header.startswith("Basic "):
             pyats_parts = pyats_header.split(" ", 1)
             if len(pyats_parts) != 2 or pyats_parts[0].lower() != "basic":
                 raise McpError(
-                    ErrorData(message="Invalid X-PyATS-Authorization header format. Expected 'Basic <credentials>'", code=-31001)
+                    ErrorData(
+                        message="Invalid X-PyATS-Authorization header format. Expected 'Basic <credentials>'",
+                        code=-31001,
+                    )
                 )
             try:
                 pyats_decoded = base64.b64decode(pyats_parts[1]).decode("utf-8")
@@ -113,20 +194,42 @@ class CustomRequestMiddleware(Middleware):
                 os.environ["PYATS_USERNAME"] = pyats_username
                 os.environ["PYATS_PASSWORD"] = pyats_password
             except Exception:
-                raise McpError(ErrorData(message="Failed to decode Basic authentication credentials for PyATS", code=-31002))
+                raise McpError(
+                    ErrorData(
+                        message="Failed to decode Basic authentication credentials for PyATS",
+                        code=-31002,
+                    )
+                )
+
             pyats_enable_header = headers.get("x-pyats-enable")
             if pyats_enable_header and pyats_enable_header.startswith("Basic "):
                 pyats_enable_parts = pyats_enable_header.split(" ", 1)
                 if len(pyats_enable_parts) != 2 or pyats_enable_parts[0].lower() != "basic":
-                    raise McpError(ErrorData(message="Invalid X-PyATS-Enable header format. Expected 'Basic <credentials>'", code=-31001))
+                    raise McpError(
+                        ErrorData(
+                            message="Invalid X-PyATS-Enable header format. Expected 'Basic <credentials>'",
+                            code=-31001,
+                        )
+                    )
                 try:
                     pyats_enable_decoded = base64.b64decode(pyats_enable_parts[1]).decode("utf-8")
-                    pyats_enable_password = pyats_enable_decoded
-                    os.environ["PYATS_AUTH_PASS"] = pyats_enable_password
+                    os.environ["PYATS_AUTH_PASS"] = pyats_enable_decoded
                 except Exception:
-                    raise McpError(ErrorData(message="Failed to decode Basic authentication credentials for PyATS Enable", code=-31002))
+                    raise McpError(
+                        ErrorData(
+                            message="Failed to decode Basic authentication credentials for PyATS Enable",
+                            code=-31002,
+                        )
+                    )
 
-        return await call_next(context)
+        # === Execute request and cleanup ===
+        try:
+            return await call_next(context)
+        finally:
+            # Release client back to pool
+            if cml_pool is not None:
+                await cml_pool.release_client(cml_url, verify_ssl)
+            current_cml_client.set(None)
 
 
 if settings.cml_mcp_transport == "http":
@@ -146,7 +249,8 @@ async def get_all_labs() -> list[UUID4Type]:
     Returns:
         list[UUID4Type]: A list of lab IDs.
     """
-    labs = await cml_client.get("/labs", params={"show_all": True})
+    client = get_cml_client()
+    labs = await client.get("/labs", params={"show_all": True})
     return [UUID4Type(lab) for lab in labs]
 
 
@@ -167,15 +271,16 @@ async def get_cml_labs(user: UserName | None = None) -> list[Lab]:
     #     user = settings.cml_username  # Default to the configured username
 
     try:
+        client = get_cml_client()
         # If the requested user is not the configured user and is not an admin, deny access
-        # if user and not await cml_client.is_admin():
+        # if user and not await client.is_admin():
         #     raise ValueError("User is not an admin and cannot view all labs.")
         ulabs = []
         # Get all labs from the CML server
         labs = await get_all_labs()
         for lab in labs:
             # For each lab, get its details
-            lab_details = await cml_client.get(f"/labs/{lab}")
+            lab_details = await client.get(f"/labs/{lab}")
             # Only include labs owned by the specified user
             if not user or lab_details.get("owner_username") == str(user):
                 ulabs.append(Lab(**lab_details))
@@ -198,7 +303,8 @@ async def get_cml_users() -> list[UserResponse]:
     Get the list of users from the CML server.
     """
     try:
-        users = await cml_client.get("/users")
+        client = get_cml_client()
+        users = await client.get("/users")
         return [UserResponse(**user) for user in users]
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -233,13 +339,14 @@ async def create_cml_user(user: UserCreate | dict) -> UUID4Type:
     Only admin users can create new users.
     """
     try:
-        if not await cml_client.is_admin():
+        client = get_cml_client()
+        if not await client.is_admin():
             raise ValueError("Only admin users can create new users.")
         # XXX The dict usage is a workaround for some LLMs that pass a JSON string
         # representation of the argument object.
         if isinstance(user, dict):
             user = UserCreate(**user)
-        resp = await cml_client.post("/users", data=user.model_dump(mode="json", exclude_none=True))
+        resp = await client.post("/users", data=user.model_dump(mode="json", exclude_none=True))
         return UUID4Type(resp["id"])
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -262,7 +369,8 @@ async def delete_cml_user(user_id: UUID4Type, ctx: Context) -> bool:
     Before running this tool make sure to ask the user if they're sure they want to delete this user and wait for a response.
     """
     try:
-        if not await cml_client.is_admin():
+        client = get_cml_client()
+        if not await client.is_admin():
             raise ValueError("Only admin users can delete users.")
         elicit_supported = True
         try:
@@ -273,7 +381,7 @@ async def delete_cml_user(user_id: UUID4Type, ctx: Context) -> bool:
             else:
                 raise me
         if not elicit_supported or result.action == "accept":
-            await cml_client.delete(f"/users/{user_id}")
+            await client.delete(f"/users/{user_id}")
             return True
         else:
             raise Exception("Delete operation cancelled by user.")
@@ -295,7 +403,8 @@ async def get_cml_groups() -> list[GroupInfoResponse]:
     Get the list of groups from the CML server.
     """
     try:
-        groups = await cml_client.get("/groups")
+        client = get_cml_client()
+        groups = await client.get("/groups")
         return [GroupInfoResponse(**group) for group in groups]
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -324,13 +433,14 @@ async def create_cml_group(group: GroupCreate | dict) -> UUID4Type:
     Only admin users can create new groups.
     """
     try:
-        if not await cml_client.is_admin():
+        client = get_cml_client()
+        if not await client.is_admin():
             raise ValueError("Only admin users can create new groups.")
         # XXX The dict usage is a workaround for some LLMs that pass a JSON string
         # representation of the argument object.
         if isinstance(group, dict):
             group = GroupCreate(**group)
-        resp = await cml_client.post("/groups", data=group.model_dump(mode="json", exclude_none=True))
+        resp = await client.post("/groups", data=group.model_dump(mode="json", exclude_none=True))
         return UUID4Type(resp["id"])
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -353,7 +463,8 @@ async def delete_cml_group(group_id: UUID4Type, ctx: Context) -> bool:
     Before running this tool make sure to ask the user if they're sure they want to delete this group and wait for a response.
     """
     try:
-        if not await cml_client.is_admin():
+        client = get_cml_client()
+        if not await client.is_admin():
             raise ValueError("Only admin users can delete groups.")
         elicit_supported = True
         try:
@@ -364,7 +475,7 @@ async def delete_cml_group(group_id: UUID4Type, ctx: Context) -> bool:
             else:
                 raise me
         if not elicit_supported or result.action == "accept":
-            await cml_client.delete(f"/groups/{group_id}")
+            await client.delete(f"/groups/{group_id}")
             return True
         else:
             raise Exception("Delete operation cancelled by user.")
@@ -386,7 +497,8 @@ async def get_cml_information() -> SystemInformation:
     Get information about the CML server.
     """
     try:
-        info = await cml_client.get("/system_information")
+        client = get_cml_client()
+        info = await client.get("/system_information")
         return SystemInformation(**info)
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -406,7 +518,8 @@ async def get_cml_status() -> SystemHealth:
     Get the status of the CML server.
     """
     try:
-        status = await cml_client.get("/system_health")
+        client = get_cml_client()
+        status = await client.get("/system_health")
         return SystemHealth(**status)
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -426,7 +539,8 @@ async def get_cml_statistics() -> SystemStats:
     Get statistics about the CML server.
     """
     try:
-        stats = await cml_client.get("/system_stats")
+        client = get_cml_client()
+        stats = await client.get("/system_stats")
         return SystemStats(**stats)
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -446,7 +560,8 @@ async def get_cml_licensing_details() -> dict[str, Any]:
     Get licensing details from the CML server.
     """
     try:
-        licensing_info = await cml_client.get("/licensing")
+        client = get_cml_client()
+        licensing_info = await client.get("/licensing")
         # This is needed because some clients attempt to serialize the response
         # with Python classes for datetime rather than as pure JSON.  Cursor
         # is notably affected whereas Claude Desktop is not.
@@ -469,7 +584,8 @@ async def get_cml_node_definitions() -> list[SuperSimplifiedNodeDefinitionRespon
     Get the list of node definitions from the CML server.
     """
     try:
-        node_definitions = await cml_client.get("/simplified_node_definitions")
+        client = get_cml_client()
+        node_definitions = await client.get("/simplified_node_definitions")
         return [SuperSimplifiedNodeDefinitionResponse(**nd) for nd in node_definitions]
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -488,7 +604,8 @@ async def get_node_def_details(did: DefinitionID) -> NodeDefinition:
     Returns:
         NodeDefinition: The node definition details.
     """
-    node_definition = await cml_client.get(f"/node_definitions/{did}", params={"json": True})
+    client = get_cml_client()
+    node_definition = await client.get(f"/node_definitions/{did}", params={"json": True})
     return NodeDefinition(**node_definition)
 
 
@@ -536,11 +653,12 @@ async def create_empty_lab(lab: LabCreate | dict) -> UUID4Type:
             - permissions (list[str]): Permissions for the user ("lab_admin", "lab_edit", "lab_exec", "lab_view").
     """
     try:
+        client = get_cml_client()
         # XXX The dict usage is a workaround for some LLMs that pass a JSON string
         # representation of the argument object.
         if isinstance(lab, dict):
             lab = LabCreate(**lab)
-        resp = await cml_client.post("/labs", data=lab.model_dump(mode="json", exclude_none=True))
+        resp = await client.post("/labs", data=lab.model_dump(mode="json", exclude_none=True))
         return UUID4Type(resp["id"])
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -576,11 +694,12 @@ async def modify_cml_lab(lid: UUID4Type, lab: LabCreate | dict) -> bool:
             - permissions (list[str]): Permissions for the user ("lab_admin", "lab_edit", "lab_exec", "lab_view").
     """
     try:
+        client = get_cml_client()
         # XXX The dict usage is a workaround for some LLMs that pass a JSON string
         # representation of the argument object.
         if isinstance(lab, dict):
             lab = LabCreate(**lab)
-        await cml_client.patch(f"/labs/{lid}", data=lab.model_dump(mode="json", exclude_none=True))
+        await client.patch(f"/labs/{lid}", data=lab.model_dump(mode="json", exclude_none=True))
         return True
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -618,11 +737,12 @@ async def create_full_lab_topology(topology: Topology | dict) -> UUID4Type:
       - smart_annotations: list of SmartAnnotationBase objects
     """
     try:
+        client = get_cml_client()
         # XXX The dict usage is a workaround for some LLMs that pass a JSON string
         # representation of the argument object.
         if isinstance(topology, dict):
             topology = Topology(**topology)
-        resp = await cml_client.post("/import", data=topology.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
+        resp = await client.post("/import", data=topology.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
         return UUID4Type(resp["id"])
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -639,10 +759,11 @@ async def start_cml_lab(lid: UUID4Type, wait_for_convergence: bool = False) -> b
     If wait_for_convergence is True, the tool will wait for the lab to reach a stable state before returning.
     """
     try:
-        await cml_client.put(f"/labs/{lid}/start")
+        client = get_cml_client()
+        await client.put(f"/labs/{lid}/start")
         if wait_for_convergence:
             while True:
-                converged = await cml_client.get(f"/labs/{lid}/check_if_converged")
+                converged = await client.get(f"/labs/{lid}/check_if_converged")
                 if converged:
                     break
                 await asyncio.sleep(3)
@@ -661,7 +782,8 @@ async def stop_lab(lid: UUID4Type) -> None:
     Args:
         lid (UUID4Type): The lab ID.
     """
-    await cml_client.put(f"/labs/{lid}/stop")
+    client = get_cml_client()
+    await client.put(f"/labs/{lid}/stop")
 
 
 async def wipe_lab(lid: UUID4Type) -> None:
@@ -671,7 +793,8 @@ async def wipe_lab(lid: UUID4Type) -> None:
     Args:
         lid (UUID4Type): The lab ID.
     """
-    await cml_client.put(f"/labs/{lid}/wipe")
+    client = get_cml_client()
+    await client.put(f"/labs/{lid}/wipe")
 
 
 @server_mcp.tool(annotations={"title": "Stop a CML Lab", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
@@ -752,7 +875,8 @@ async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> bool:
         if not elicit_supported or result.action == "accept":
             await stop_lab(lid)  # Ensure the lab is stopped before deletion
             await wipe_lab(lid)  # Ensure the lab is wiped before deletion
-            await cml_client.delete(f"/labs/{lid}")
+            client = get_cml_client()
+            await client.delete(f"/labs/{lid}")
             return True
         else:
             raise Exception("Delete operation cancelled by user.")
@@ -774,7 +898,8 @@ async def add_interface(lid: UUID4Type, intf: InterfaceCreate) -> SimplifiedInte
     Returns:
         InterfaceResponse: The added interface details.
     """
-    resp = await cml_client.post(f"/labs/{lid}/interfaces", data=intf.model_dump(mode="json", exclude_none=True))
+    client = get_cml_client()
+    resp = await client.post(f"/labs/{lid}/interfaces", data=intf.model_dump(mode="json", exclude_none=True))
     return SimplifiedInterfaceResponse(**resp)
 
 
@@ -803,11 +928,12 @@ async def add_node_to_cml_lab(lid: UUID4Type, node: NodeCreate | dict) -> UUID4T
         - Optional: image_definition, ram, cpu_limit, data_volume, boot_disk_size, hide_links, tags, cpus, configuration, parameters.
     """
     try:
+        client = get_cml_client()
         # XXX The dict usage is a workaround for some LLMs that pass a JSON string
         # representation of the argument object.
         if isinstance(node, dict):
             node = NodeCreate(**node)
-        resp = await cml_client.post(
+        resp = await client.post(
             f"/labs/{lid}/nodes", params={"populate_interfaces": True}, data=node.model_dump(mode="json", exclude_defaults=True)
         )
         return UUID4Type(resp["id"])
@@ -899,7 +1025,8 @@ async def add_annotation_to_cml_lab(
                 raise ValueError(
                     f"Invalid annotation type: {annotation['type']}. Must be one of 'text', 'rectangle', 'ellipse', or 'line'."
                 )
-        resp = await cml_client.post(f"/labs/{lid}/annotations", data=annotation.model_dump(mode="json", exclude_defaults=True))
+        client = get_cml_client()
+        resp = await client.post(f"/labs/{lid}/annotations", data=annotation.model_dump(mode="json", exclude_defaults=True))
         return UUID4Type(resp["id"])
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -932,7 +1059,8 @@ async def delete_annotation_from_lab(lid: UUID4Type, annotation_id: UUID4Type, c
             else:
                 raise me
         if not elicit_supported or result.action == "accept":
-            await cml_client.delete(f"/labs/{lid}/annotations/{annotation_id}")
+            client = get_cml_client()
+            await client.delete(f"/labs/{lid}/annotations/{annotation_id}")
             return True
         else:
             raise Exception("Delete operation cancelled by user.")
@@ -985,7 +1113,8 @@ async def get_interfaces_for_node(lid: UUID4Type, nid: UUID4Type) -> list[Simpli
     Get a list of interfaces for a specific node in a CML lab by its lab ID and node ID.
     """
     try:
-        resp = await cml_client.get(f"/labs/{lid}/nodes/{nid}/interfaces", params={"data": True, "operational": False})
+        client = get_cml_client()
+        resp = await client.get(f"/labs/{lid}/nodes/{nid}/interfaces", params={"data": True, "operational": False})
         return [SimplifiedInterfaceResponse(**iface) for iface in resp]
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -1014,11 +1143,12 @@ async def connect_two_nodes(lid: UUID4Type, link_info: LinkCreate | dict) -> UUI
             - dst_int (str): UUID4 of the destination interface.
     """
     try:
+        client = get_cml_client()
         # XXX The dict usage is a workaround for some LLMs that pass a JSON string
         # representation of the argument object.
         if isinstance(link_info, dict):
             link_info = LinkCreate(**link_info)
-        resp = await cml_client.post(f"/labs/{lid}/links", data=link_info.model_dump(mode="json"))
+        resp = await client.post(f"/labs/{lid}/links", data=link_info.model_dump(mode="json"))
         return UUID4Type(resp["id"])
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -1038,7 +1168,8 @@ async def get_all_links_for_lab(lid: UUID4Type) -> list[Link]:
     Get all links for a CML lab by its ID.
     """
     try:
-        resp = await cml_client.get(f"/labs/{lid}/links", params={"data": True})
+        client = get_cml_client()
+        resp = await client.get(f"/labs/{lid}/links", params={"data": True})
         return [Link(**link) for link in resp]
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -1075,11 +1206,12 @@ async def apply_link_conditioning(lid: UUID4Type, link_id: UUID4Type, condition:
             - enabled (bool): Whether conditioning is enabled.
     """
     try:
+        client = get_cml_client()
         # XXX The dict usage is a workaround for some LLMs that pass a JSON string
         # representation of the argument object.
         if isinstance(condition, dict):
             condition = LinkConditionConfiguration(**condition)
-        await cml_client.patch(f"/labs/{lid}/links/{link_id}/condition", data=condition.model_dump(mode="json", exclude_none=True))
+        await client.patch(f"/labs/{lid}/links/{link_id}/condition", data=condition.model_dump(mode="json", exclude_none=True))
         return True
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -1102,7 +1234,8 @@ async def configure_cml_node(lid: UUID4Type, nid: UUID4Type, config: NodeConfigu
     """
     payload = {"configuration": str(config)}
     try:
-        await cml_client.patch(f"/labs/{lid}/nodes/{nid}", data=payload)
+        client = get_cml_client()
+        await client.patch(f"/labs/{lid}/nodes/{nid}", data=payload)
         return True
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -1117,7 +1250,8 @@ async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node]:
     Get a list of nodes for a CML lab by its ID.
     """
     try:
-        resp = await cml_client.get(f"/labs/{lid}/nodes", params={"data": True, "operational": True, "exclude_configurations": True})
+        client = get_cml_client()
+        resp = await client.get(f"/labs/{lid}/nodes", params={"data": True, "operational": True, "exclude_configurations": True})
         rnodes = []
         for node in list(resp):
             # XXX: Fixup known issues with bad data coming from
@@ -1143,9 +1277,10 @@ async def get_cml_lab_by_title(title: LabTitle) -> Lab:
     Get a CML lab by its title.
     """
     try:
+        client = get_cml_client()
         labs = await get_all_labs()
         for lid in labs:
-            lab = await cml_client.get(f"/labs/{lid}")
+            lab = await client.get(f"/labs/{lid}")
             if lab["lab_title"] == str(title):
                 return Lab(**lab)
         raise ValueError(f"Lab with title '{title}' not found.")
@@ -1164,7 +1299,8 @@ async def stop_node(lid: UUID4Type, nid: UUID4Type) -> None:
         lid (UUID4Type): The lab ID.
         nid (UUID4Type): The node ID.
     """
-    await cml_client.put(f"/labs/{lid}/nodes/{nid}/state/stop")
+    client = get_cml_client()
+    await client.put(f"/labs/{lid}/nodes/{nid}/state/stop")
 
 
 async def wipe_node(lid: UUID4Type, nid: UUID4Type) -> None:
@@ -1175,7 +1311,8 @@ async def wipe_node(lid: UUID4Type, nid: UUID4Type) -> None:
         lid (UUID4Type): The lab ID.
         nid (UUID4Type): The node ID.
     """
-    await cml_client.put(f"/labs/{lid}/nodes/{nid}/wipe_disks")
+    client = get_cml_client()
+    await client.put(f"/labs/{lid}/nodes/{nid}/wipe_disks")
 
 
 @server_mcp.tool(annotations={"title": "Stop a CML Node", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True})
@@ -1201,10 +1338,11 @@ async def start_cml_node(lid: UUID4Type, nid: UUID4Type, wait_for_convergence: b
     If wait_for_convergence is True, the tool will wait for the node to reach a stable state before returning.
     """
     try:
-        await cml_client.put(f"/labs/{lid}/nodes/{nid}/state/start")
+        client = get_cml_client()
+        await client.put(f"/labs/{lid}/nodes/{nid}/state/start")
         if wait_for_convergence:
             while True:
-                converged = await cml_client.get(f"/labs/{lid}/nodes/{nid}/check_if_converged")
+                converged = await client.get(f"/labs/{lid}/nodes/{nid}/check_if_converged")
                 if converged:
                     break
                 await asyncio.sleep(3)
@@ -1267,7 +1405,8 @@ async def delete_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
         if not elicit_supported or result.action == "accept":
             await stop_node(lid, nid)  # Ensure the node is stopped before deletion
             await wipe_node(lid, nid)
-            await cml_client.delete(f"/labs/{lid}/nodes/{nid}")
+            client = get_cml_client()
+            await client.delete(f"/labs/{lid}/nodes/{nid}")
             return True
         else:
             raise Exception("Delete operation cancelled by user.")
@@ -1291,7 +1430,8 @@ async def start_cml_link(lid: UUID4Type, link_id: UUID4Type) -> bool:
     Start a link in a CML lab by its lab ID and link ID.
     """
     try:
-        await cml_client.put(f"/labs/{lid}/links/{link_id}/state/start")
+        client = get_cml_client()
+        await client.put(f"/labs/{lid}/links/{link_id}/state/start")
         return True
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -1313,7 +1453,8 @@ async def stop_cml_link(lid: UUID4Type, link_id: UUID4Type) -> bool:
     Stop a link in a CML lab by its lab ID and link ID.
     """
     try:
-        await cml_client.put(f"/labs/{lid}/links/{link_id}/state/stop")
+        client = get_cml_client()
+        await client.put(f"/labs/{lid}/links/{link_id}/state/stop")
         return True
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -1335,9 +1476,10 @@ async def get_console_log(lid: UUID4Type, nid: UUID4Type) -> list[ConsoleLogOutp
         - message (str): The console log message.
     """
     return_lines = []
+    client = get_cml_client()
     for i in range(0, 2):  # Assume a maximum of 2 consoles per node
         try:
-            resp = await cml_client.get(f"/labs/{lid}/nodes/{nid}/consoles/{i}/log")
+            resp = await client.get(f"/labs/{lid}/nodes/{nid}/consoles/{i}/log")
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 400:
                 continue  # Console index does not exist, try the next one
@@ -1374,10 +1516,11 @@ async def send_cli_command(lid: UUID4Type, label: NodeLabel, commands: str, conf
     cwd = os.getcwd()  # Save the current working directory
     try:
         os.chdir(tempfile.gettempdir())  # Change to a writable directory (required by pyATS/ClPyats)
-        lab = cml_client.vclient.join_existing_lab(str(lid))  # Join the existing lab using the provided lab ID
+        client = get_cml_client()
+        lab = client.vclient.join_existing_lab(str(lid))  # Join the existing lab using the provided lab ID
         try:
             pylab = ClPyats(lab)  # Create a ClPyats object for interacting with the lab
-            pylab.sync_testbed(cml_client.vclient.username, cml_client.vclient.password)  # Sync the testbed with CML credentials
+            pylab.sync_testbed(client.vclient.username, client.vclient.password)  # Sync the testbed with CML credentials
 
             # Set the credentials for all devices other than the Terminal Server from ENVs, default to cisco
             for device in pylab._testbed.devices.values():
