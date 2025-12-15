@@ -15,3 +15,6 @@ CONTRIBUTING.md
 .flake8
 .gitignore
 *.tar
+tests/
+.pytest_cache/
+.inline-snapshot

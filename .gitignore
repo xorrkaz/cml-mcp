@@ -6,3 +6,5 @@ dist/
 .vscode
 .mcpregistry_*
 *.tar
+.inline-snapshot
+.pytest_cache
