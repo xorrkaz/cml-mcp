@@ -1548,8 +1548,9 @@ async def send_cli_command(lid: UUID4Type, label: NodeLabel, commands: str, conf
         if config_command:
             # Send the command as a configuration command
             results = pylab.run_config_command(str(label), commands)
-        # Send the command as an exec/operational command
-        results = pylab.run_command(str(label), commands)
+        else:
+            # Send the command as an exec/operational command
+            results = pylab.run_command(str(label), commands)
 
         # Genie may return dict output where the key is the command and the value is its output.
         if isinstance(results, dict):
