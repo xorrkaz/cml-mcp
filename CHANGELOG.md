@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- **E2E Test Script**: Standalone HTTP service validation (`scripts/test_http_e2e.py`)
+  - Tests health endpoint, SSE connection, MCP protocol, and tool calls
+  - Uses MCP SDK with Streamable HTTP transport
+  - Comprehensive documentation with architecture diagram and usage examples
+
+- **Justfile**: New `test-e2e` command for running E2E tests against live service
+
 - **Multi-Server Support (HTTP Mode)**: Per-request CML server configuration
   - New `X-CML-Server-URL` header to specify target CML server per request
   - New `X-CML-Verify-SSL` header for per-request SSL verification
