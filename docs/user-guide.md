@@ -376,6 +376,34 @@ For running nodes (requires PyATS):
 3. **Wait for convergence**: Ask the assistant to wait for nodes to boot before running commands
 4. **Check prerequisites**: Ensure nodes are in the correct state (e.g., BOOTED for CLI commands)
 
+## HTTP Mode for Multi-Server Access
+
+If you need to connect to multiple CML servers or share access across teams, use HTTP mode. See [Transport Modes](transport-modes.md) for details.
+
+**Quick HTTP mode setup:**
+
+1. Start the server in HTTP mode:
+   ```bash
+   CML_URL=https://default-cml.example.com CML_MCP_TRANSPORT=http cml-mcp
+   ```
+
+2. Configure your client to use `mcp-remote`:
+   ```json
+   {
+     "mcpServers": {
+       "CML Production": {
+         "command": "npx",
+         "args": [
+           "-y", "mcp-remote",
+           "http://localhost:9000/mcp",
+           "--header", "X-CML-Server-URL: https://cml-prod.example.com",
+           "--header", "X-Authorization: Basic YWRtaW46c2VjcmV0"
+         ]
+       }
+     }
+   }
+   ```
+
 ## Troubleshooting
 
 ### "CML_URL must be set"
@@ -394,4 +422,12 @@ Verify your CML credentials are correct and the user has appropriate permissions
 
 ### Self-signed certificate errors
 
-Set `CML_VERIFY_SSL=false` in your environment.
+Set `CML_VERIFY_SSL=false` in your environment (stdio mode) or use `X-CML-Verify-SSL: false` header (HTTP mode).
+
+### "CML server URL not in allowlist" (HTTP mode)
+
+The server administrator has configured URL restrictions. Contact them to add your CML server to the allowlist (`CML_ALLOWED_URLS`) or pattern (`CML_URL_PATTERN`).
+
+### "Too many concurrent requests" (HTTP mode)
+
+The server has reached the per-server connection limit. Wait a moment and retry, or ask the administrator to increase `CML_POOL_MAX_PER_SERVER`.

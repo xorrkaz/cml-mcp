@@ -16,6 +16,7 @@ for [Cisco Modeling Labs (CML)](https://www.cisco.com/c/en/us/products/cloud-sys
 - **Control Labs and Nodes:** Tools to start and stop labs or individual nodes as needed.
 - **Manage CML Users and Groups** Tools to list, create, and delete local users and groups.
 - **Run Commands on Devices:** Using [PyATS](https://developer.cisco.com/pyats/), MCP clients can execute commands on virtual devices within CML labs.
+- **Multi-Server Support (HTTP Mode):** Connect to different CML servers on a per-request basis with intelligent connection pooling.
 
 ## Requirements
 
@@ -241,13 +242,34 @@ When using HTTP transport, authentication is handled differently than stdio mode
 
 - **CML Credentials**: Instead of being set via environment variables, CML credentials are provided via the `X-Authorization` HTTP header using Basic authentication format.
 - **PyATS Credentials**: For CLI command execution, PyATS credentials can be provided via the `X-PyATS-Authorization` header (Basic auth) and the enable password via the `X-PyATS-Enable` header
+- **CML Server URL**: Optionally specify a target CML server per-request via the `X-CML-Server-URL` header (falls back to `CML_URL` env var)
+- **SSL Verification**: Optionally override SSL verification per-request via the `X-CML-Verify-SSL` header (`true` or `false`)
 
 Example headers:
 
 ```http
+X-CML-Server-URL: https://cml-prod.example.com
 X-Authorization: Basic <base64_encoded_cml_username:cml_password>
+X-CML-Verify-SSL: false
 X-PyATS-Authorization: Basic <base64_encoded_device_username:device_password>
 X-PyATS-Enable: Basic <base64_encoded_enable_password>
+```
+
+#### Multi-Server Configuration (HTTP Mode)
+
+In HTTP mode, you can connect to multiple CML servers by specifying the `X-CML-Server-URL` header on each request. For security, administrators can restrict which CML servers are allowed:
+
+```sh
+# Allow specific CML servers (JSON array)
+export CML_ALLOWED_URLS='["https://cml-prod.example.com", "https://cml-dev.example.com"]'
+
+# Or use a regex pattern
+export CML_URL_PATTERN='^https://cml-.*\.example\.com$'
+
+# Pool configuration for high-load environments
+export CML_POOL_MAX_SIZE=100          # Max clients in pool
+export CML_POOL_TTL_SECONDS=600       # Idle timeout (10 min)
+export CML_POOL_MAX_PER_SERVER=10     # Max concurrent requests per server
 ```
 
 #### Configuring MCP Clients for HTTP

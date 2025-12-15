@@ -23,6 +23,7 @@ graph LR
 | **User/Group Admin** | Create and manage users and groups |
 | **CLI Execution** | Run commands on virtual devices via PyATS |
 | **Annotations** | Add visual annotations to lab topologies |
+| **Multi-Server** | Connect to multiple CML servers per request (HTTP mode) |
 
 ## Quick Start
 
