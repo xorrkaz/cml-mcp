@@ -9,6 +9,15 @@ set shell := ['bash', '-c']
 test:
     uv run -m pytest
 
+# Run E2E tests against running HTTP service (requires Docker service running)
+[group('qa')]
+test-e2e:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    source .env 2>/dev/null || true
+    export CML_USERNAME CML_PASSWORD CML_URL CML_MCP_URL
+    uv run python scripts/test_http_e2e.py
+
 [group('build')]
 build:
     uv build
