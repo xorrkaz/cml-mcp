@@ -1,0 +1,6 @@
+{
+  "version": "2.9.1+build.7",
+  "ready": true,
+  "allow_ssh_pubkey_auth": false,
+  "oui": "52:54:00:00:00:00"
+}

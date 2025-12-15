@@ -26,9 +26,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from cml_mcp.schemas.common import DefinitionID, LinuxInterfaceName, UUID4Type
-from cml_mcp.schemas.interfaces import InterfaceLabel
-from cml_mcp.schemas.node_definitions import General
+from cml_mcp.cml.simple_webserver.schemas.common import DefinitionID, LinuxInterfaceName, UUID4Type
+from cml_mcp.cml.simple_webserver.schemas.node_definitions import General
 
 
 class SimplifiedInterfaces(BaseModel, extra="ignore"):
@@ -79,7 +78,7 @@ class SuperSimplifiedNodeDefinitionResponse(BaseModel, extra="ignore"):
 class SimplifiedInterfaceBase(BaseModel, extra="ignore"):
     """Interface object."""
 
-    label: InterfaceLabel = Field(default=None)
+    label: str = Field(default=None)
     is_connected: bool = Field(default=None, description="Whether this interface is connected (in-use).")
 
 
@@ -87,7 +86,7 @@ class SimplifiedInterfaceResponse(SimplifiedInterfaceBase, extra="ignore"):
     """The response body is a JSON interface object."""
 
     id: UUID4Type = Field(..., description="ID of the interface.")
-    label: InterfaceLabel = Field(...)
+    label: str = Field(...)
     device_name: LinuxInterfaceName | None = Field(default=None, max_length=64, description="Device name (operational).")
 
 

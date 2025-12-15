@@ -1,0 +1,38 @@
+[
+  {
+    "label": "Loopback0",
+    "is_connected": false,
+    "id": "2ea56121-e882-4ded-b4e6-78c5e61e4b86",
+    "device_name": null
+  },
+  {
+    "label": "Ethernet0/0",
+    "is_connected": false,
+    "id": "2cbaa238-e14a-4e4d-83de-5e269539eb19",
+    "device_name": null
+  },
+  {
+    "label": "Ethernet0/1",
+    "is_connected": false,
+    "id": "91b26d24-ba1a-4194-88e5-4380c7e77ca2",
+    "device_name": null
+  },
+  {
+    "label": "Ethernet0/2",
+    "is_connected": false,
+    "id": "4212d833-00a2-4ac3-b34f-01140a41c898",
+    "device_name": null
+  },
+  {
+    "label": "Ethernet0/3",
+    "is_connected": false,
+    "id": "6d8b26bb-9ccb-49b3-90a9-08c29e415e7b",
+    "device_name": null
+  },
+  {
+    "label": "Ethernet1/0",
+    "is_connected": false,
+    "id": "89c0221d-0bc1-4a5b-9054-6c882d24a12b",
+    "device_name": null
+  }
+]

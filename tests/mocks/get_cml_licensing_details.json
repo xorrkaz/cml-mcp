@@ -1,0 +1,79 @@
+{
+  "registration": {
+    "status": "COMPLETED",
+    "smart_account": "Cisco Demo Internal Smart Account",
+    "virtual_account": "Joe Clarke - Lic Test",
+    "expires": "2026-08-20 17:25:30",
+    "register_time": {
+      "succeeded": null,
+      "attempted": "2023-08-11 19:33:12",
+      "scheduled": null,
+      "status": null,
+      "failure": "OK",
+      "success": "SUCCESS"
+    },
+    "renew_time": {
+      "succeeded": null,
+      "attempted": "2025-08-20 17:30:32",
+      "scheduled": "2026-02-16 17:30:31",
+      "status": null,
+      "failure": null,
+      "success": "SUCCESS"
+    }
+  },
+  "authorization": {
+    "status": "IN_COMPLIANCE",
+    "expires": "2026-02-20 15:13:31",
+    "renew_time": {
+      "succeeded": null,
+      "attempted": "2025-11-22 15:18:33",
+      "scheduled": "2025-12-22 15:18:32",
+      "status": "SUCCEEDED",
+      "failure": null,
+      "success": "SUCCESS"
+    }
+  },
+  "features": [
+    {
+      "id": "regid.2019-10.com.cisco.CML_ENT_BASE,1.0_15d3393c-846c-4e00-a54e-1ea90f2b2160",
+      "name": "CML - Enterprise License",
+      "description": "Cisco Modeling Labs - Enterprise License with 20 nodes capacity included",
+      "in_use": 1,
+      "status": "IN_COMPLIANCE",
+      "version": "1.0",
+      "min": 0,
+      "max": 1,
+      "minEndDate": null,
+      "maxEndDate": null
+    },
+    {
+      "id": "regid.2019-10.com.cisco.CML_NODE_COUNT,1.0_2607650b-6ca8-46d5-81e5-e6688b7383c4",
+      "name": "CML - Expansion Node License",
+      "description": "Cisco Modeling Labs - Expansion node capacity for CML Enterprise Servers",
+      "in_use": 200,
+      "status": "IN_COMPLIANCE",
+      "version": "1.0",
+      "min": 0,
+      "max": 500,
+      "minEndDate": null,
+      "maxEndDate": null
+    }
+  ],
+  "reservation_mode": false,
+  "transport": {
+    "default_ssms": "https://smartreceiver.cisco.com/licservice/license",
+    "ssms": "https://smartreceiver.cisco.com/licservice/license",
+    "proxy": {
+      "server": null,
+      "port": null
+    }
+  },
+  "udi": {
+    "hostname": "cml-controller",
+    "product_uuid": "5e0e49e2-689d-4a2d-866e-9ba337fb2e8f"
+  },
+  "product_license": {
+    "active": "CML_Enterprise",
+    "is_enterprise": true
+  }
+}

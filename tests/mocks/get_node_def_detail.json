@@ -1,0 +1,100 @@
+{
+  "id": "external_connector",
+  "boot": {
+    "timeout": 5,
+    "completed": null,
+    "uses_regex": null
+  },
+  "sim": {
+    "linux_native": {
+      "libvirt_domain_driver": "none",
+      "driver": "external_connector",
+      "disk_driver": null,
+      "efi_boot": null,
+      "efi_code": null,
+      "efi_vars": null,
+      "machine_type": null,
+      "ram": null,
+      "cpus": null,
+      "cpu_limit": 100,
+      "cpu_model": null,
+      "nic_driver": null,
+      "data_volume": null,
+      "boot_disk_size": null,
+      "video": null,
+      "enable_rng": true,
+      "enable_tpm": false
+    },
+    "parameters": null,
+    "usage_estimations": null
+  },
+  "general": {
+    "nature": "external_connector",
+    "description": "Connect to devices outside of the simulation",
+    "read_only": true
+  },
+  "configuration": {
+    "generator": {
+      "driver": null
+    },
+    "provisioning": {
+      "files": [
+        {
+          "editable": true,
+          "name": "default",
+          "content": "NAT"
+        }
+      ],
+      "media_type": "raw",
+      "volume_name": "disk"
+    }
+  },
+  "device": {
+    "interfaces": {
+      "serial_ports": 0,
+      "default_console": null,
+      "physical": [
+        "port"
+      ],
+      "has_loopback_zero": false,
+      "min_count": null,
+      "default_count": 1,
+      "iol_static_ethernets": null,
+      "loopback": [],
+      "management": []
+    }
+  },
+  "ui": {
+    "label_prefix": "ext-conn-",
+    "icon": "cloud",
+    "label": "External Connector",
+    "visible": true,
+    "group": "Others",
+    "description": "\nThe external connector can be configured either in\n\n- **NAT** mode -or-\n- **Bridge** mode.\n\nWhen configured in bridge mode then the node connected to the\nexternal connector will be placed in the same network as the\nCML^2 appliance and thus can be reached from the outside given\nit can acquire an IP via DHCP or IPv6 RAs, if available on the\nsegment. Or the node has a properly configured static address.\n        ",
+    "has_configuration": null,
+    "show_ram": null,
+    "show_cpus": null,
+    "show_cpu_limit": null,
+    "show_data_volume": null,
+    "show_boot_disk_size": null,
+    "has_config_extraction": null
+  },
+  "inherited": {
+    "image": {
+      "ram": false,
+      "cpus": false,
+      "data_volume": false,
+      "boot_disk_size": false,
+      "cpu_limit": false
+    },
+    "node": {
+      "ram": false,
+      "cpus": false,
+      "data_volume": false,
+      "boot_disk_size": false,
+      "cpu_limit": false
+    }
+  },
+  "pyats": null,
+  "schema_version": "0.0.1"
+}

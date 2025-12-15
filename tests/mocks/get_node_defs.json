@@ -1,0 +1,1212 @@
+[
+  {
+    "id": "external_connector",
+    "general": {
+      "nature": "external_connector",
+      "description": "Connect to devices outside of the simulation",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 0,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 1,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "asav",
+    "general": {
+      "nature": "firewall",
+      "description": "Cisco Adaptive Security Virtual Appliance",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 2,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "asav-9-20-2"
+    ]
+  },
+  {
+    "id": "fortigate",
+    "general": {
+      "nature": "firewall",
+      "description": "FortiGate Next Generation Firewall",
+      "read_only": false
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "ftdv",
+    "general": {
+      "nature": "firewall",
+      "description": "Cisco Firepower Threat Defense Virtual",
+      "read_only": false
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "chrome",
+    "general": {
+      "nature": "host",
+      "description": "Google Chrome stable (Docker)",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 1,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "chrome-135.0.7049.52-1"
+    ]
+  },
+  {
+    "id": "firefox",
+    "general": {
+      "nature": "host",
+      "description": "Firefox (Docker)",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 1,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "firefox-136.0.4-build1"
+    ]
+  },
+  {
+    "id": "splunk",
+    "general": {
+      "nature": "host",
+      "description": "Splunk (Docker)",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 1,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "cat-sdwan-edge",
+    "general": {
+      "nature": "router",
+      "description": "Catalyst SD-WAN Edge",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "cat8000v",
+    "general": {
+      "nature": "router",
+      "description": "Catalyst 8000V Edge Software",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "cat8000v-17-13-01a"
+    ]
+  },
+  {
+    "id": "chr",
+    "general": {
+      "nature": "router",
+      "description": "MikroTik Cloud Hosted Router",
+      "read_only": false
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "chr-7.8"
+    ]
+  },
+  {
+    "id": "csr1000v",
+    "general": {
+      "nature": "router",
+      "description": "Cloud Services Router 1000V",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "csr1000v-17-03-02",
+      "csr1000v-17-03-08a"
+    ]
+  },
+  {
+    "id": "frr",
+    "general": {
+      "nature": "router",
+      "description": "Free Range Routing (Docker)",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": 1,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "frr-10.2.1-r1"
+    ]
+  },
+  {
+    "id": "iol-xe",
+    "general": {
+      "nature": "router",
+      "description": "IOL XE Router",
+      "read_only": false
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": 4,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "iol-153-01-03-T",
+      "iol-xe-17-12-01"
+    ]
+  },
+  {
+    "id": "iol-xe-serial-4eth",
+    "general": {
+      "nature": "router",
+      "description": "IOL XE Router with 4 serial interfaces",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": 8,
+        "default_count": 8,
+        "iol_static_ethernets": 4
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "ios-xrd-control-plane",
+    "general": {
+      "nature": "router",
+      "description": "Cisco IOS XRd (Docker)",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": 1,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "ios-xrd-control-plane-25-2-2"
+    ]
+  },
+  {
+    "id": "iosv",
+    "general": {
+      "nature": "router",
+      "description": "Cisco IOSv Virtual Router Platform",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "iosv-159-3-m3",
+      "iosv-159-3-m8"
+    ]
+  },
+  {
+    "id": "iosxe-sdwan",
+    "general": {
+      "nature": "router",
+      "description": "Cisco IOS XE SD-WAN",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "iosxrv",
+    "general": {
+      "nature": "router",
+      "description": "Cisco IOS XRv Router platform",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 3,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "iosxrv-6.6.3"
+    ]
+  },
+  {
+    "id": "iosxrv9000",
+    "general": {
+      "nature": "router",
+      "description": "Cisco IOS XRv 9000 Router platform",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 4,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": 3,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "iosxrv9000-07-11-1"
+    ]
+  },
+  {
+    "id": "pagent",
+    "general": {
+      "nature": "router",
+      "description": "Cisco IOSv Pagent Platform",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "ESA",
+    "general": {
+      "nature": "server",
+      "description": "Cisco Email Security Appliance",
+      "read_only": false
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "CCIES-P5-ESA"
+    ]
+  },
+  {
+    "id": "a10vthunder",
+    "general": {
+      "nature": "server",
+      "description": "A10 vThunder Virtual Appliance",
+      "read_only": false
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 3,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "a10vthunder411gr1p2"
+    ]
+  },
+  {
+    "id": "alpine",
+    "general": {
+      "nature": "server",
+      "description": "Alpine Linux",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 1,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "alpine-3-12-base",
+      "alpine-3-13-2-base",
+      "alpine-base-3-19-1"
+    ]
+  },
+  {
+    "id": "cat-sdwan-controller",
+    "general": {
+      "nature": "server",
+      "description": "Cisco Catalyst SD-WAN Controller",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "cat-sdwan-manager",
+    "general": {
+      "nature": "server",
+      "description": "Cisco Catalyst SD-WAN Manager",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "cat-sdwan-validator",
+    "general": {
+      "nature": "server",
+      "description": "Cisco Catalyst SD-WAN Validator",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "cat-sdwan-vedge",
+    "general": {
+      "nature": "server",
+      "description": "Catalyst SD-WAN vEdge",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "coreos",
+    "general": {
+      "nature": "server",
+      "description": "CoreOS Container Linux",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 1,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "coreos-2135-4-0"
+    ]
+  },
+  {
+    "id": "cws",
+    "general": {
+      "nature": "server",
+      "description": "Cisco Certified DevNet Expert Candidate Workstation",
+      "read_only": false
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 1,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "devnet-cws-2022-04-08"
+    ]
+  },
+  {
+    "id": "desktop",
+    "general": {
+      "nature": "server",
+      "description": "Alpine Linux with X11 Desktop",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 1,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "alpine-desktop-3-19-1",
+      "desktop-3-13-2-xfce"
+    ]
+  },
+  {
+    "id": "dnsmasq",
+    "general": {
+      "nature": "server",
+      "description": "Dnsmasq server (Docker)",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": 1,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "dnsmasq-2.9.0"
+    ]
+  },
+  {
+    "id": "fmcv",
+    "general": {
+      "nature": "server",
+      "description": "Cisco Firepower Management Center Virtual Appliance",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": null,
+        "default_count": 1,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "ise",
+    "general": {
+      "nature": "server",
+      "description": "Cisco Identity Services Engine (ISE)",
+      "read_only": false
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": null,
+        "default_count": null,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "net-tools",
+    "general": {
+      "nature": "server",
+      "description": "Networking tools node (Docker)",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": 1,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "net-tools-1.0.0"
+    ]
+  },
+  {
+    "id": "netflow",
+    "general": {
+      "nature": "server",
+      "description": "Netflow daemon (Docker)",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": 1,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "netflow-0.68"
+    ]
+  },
+  {
+    "id": "nginx",
+    "general": {
+      "nature": "server",
+      "description": "Nginx (Docker)",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": 1,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 1,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "nginx-3.38"
+    ]
+  },
+  {
+    "id": "radius",
+    "general": {
+      "nature": "server",
+      "description": "FreeRadius server (Docker)",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": 1,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "radius-3.2.1"
+    ]
+  },
+  {
+    "id": "server",
+    "general": {
+      "nature": "server",
+      "description": "Tiny Core Linux",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 1,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "server-tcl-11-1",
+      "server-tcl-14-0"
+    ]
+  },
+  {
+    "id": "snort",
+    "general": {
+      "nature": "server",
+      "description": "Snort (Docker)",
+      "read_only": false
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": 1,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 1,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "snort3-latest"
+    ]
+  },
+  {
+    "id": "syslog",
+    "general": {
+      "nature": "server",
+      "description": "Syslog NG server (Docker)",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": 1,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "syslog-3.38"
+    ]
+  },
+  {
+    "id": "tacplus",
+    "general": {
+      "nature": "server",
+      "description": "Tacacs plus (Docker)",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": 1,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "tacplus-f4.0.4.28"
+    ]
+  },
+  {
+    "id": "thousandeyes-ea",
+    "general": {
+      "nature": "server",
+      "description": "Cisco ThousandEyes Agent (Docker)",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": 1,
+        "default_count": 1,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "thousandeyes-ea-1.210.0"
+    ]
+  },
+  {
+    "id": "trex",
+    "general": {
+      "nature": "server",
+      "description": "Alpine Linux",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 2,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "alpine-3-12-trex282",
+      "alpine-3-13-2-trex288",
+      "alpine-trex-3-19-1"
+    ]
+  },
+  {
+    "id": "trex-3intf",
+    "general": {
+      "nature": "server",
+      "description": "Alpine Linux",
+      "read_only": false
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 2,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "ubuntu",
+    "general": {
+      "nature": "server",
+      "description": "Ubuntu Cloud Init Platform",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 1,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "ubuntu-20-04",
+      "ubuntu-20-04-20210224",
+      "ubuntu-20-04-jclarke",
+      "ubuntu-22-04-20240126"
+    ]
+  },
+  {
+    "id": "viptela-bond",
+    "general": {
+      "nature": "server",
+      "description": "Viptela vBond System",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 2,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "viptela-edge",
+    "general": {
+      "nature": "server",
+      "description": "Viptela vEdge System",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 2,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "viptela-manage",
+    "general": {
+      "nature": "server",
+      "description": "Viptela vManage System",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 1,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "viptela-smart",
+    "general": {
+      "nature": "server",
+      "description": "Viptela vSmart System",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "vwlc",
+    "general": {
+      "nature": "server",
+      "description": "Virtual Wireless LAN Controller (vWLC) platform",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 2,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "wan_emulator",
+    "general": {
+      "nature": "server",
+      "description": "WAN Emulator",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 2,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "alpine-3-12-wanem",
+      "alpine-wanem-3-19-1"
+    ]
+  },
+  {
+    "id": "cat9000v-q200",
+    "general": {
+      "nature": "switch",
+      "description": "Catalyst 9000v Q200",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": 9,
+        "default_count": 25,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "cat9000v-q200-17-12-01prd9"
+    ]
+  },
+  {
+    "id": "cat9000v-uadp",
+    "general": {
+      "nature": "switch",
+      "description": "Catalyst 9000v UADP",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": 9,
+        "default_count": 25,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "cat9000v-uadp-17-12-01prd9"
+    ]
+  },
+  {
+    "id": "cat9800",
+    "general": {
+      "nature": "switch",
+      "description": "Cisco Catalyst 9800 Wireless Controller for Cloud",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  },
+  {
+    "id": "ioll2-xe",
+    "general": {
+      "nature": "switch",
+      "description": "IOL XE Switch",
+      "read_only": false
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 1,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": 4,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "ioll2-xe-17-12-01"
+    ]
+  },
+  {
+    "id": "iosvl2",
+    "general": {
+      "nature": "switch",
+      "description": "Cisco IOSv-L2 Virtual Switch Platform",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "iosvl2-2020"
+    ]
+  },
+  {
+    "id": "nxosv",
+    "general": {
+      "nature": "switch",
+      "description": "Cisco NX-OSv \"Titanium\" Switch",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "nxosv-7-3-0"
+    ]
+  },
+  {
+    "id": "nxosv9000",
+    "general": {
+      "nature": "switch",
+      "description": "Cisco Nexus 9000v Switch",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 2,
+        "default_console": null,
+        "has_loopback_zero": true,
+        "min_count": null,
+        "default_count": 4,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": [
+      "nxosv9300-09-3-6",
+      "nxosv9300-10-4-2-f",
+      "nxosv9500-9-3-6"
+    ]
+  },
+  {
+    "id": "unmanaged_switch",
+    "general": {
+      "nature": "switch",
+      "description": "Unmanaged Switch",
+      "read_only": true
+    },
+    "device": {
+      "interfaces": {
+        "serial_ports": 0,
+        "default_console": null,
+        "has_loopback_zero": false,
+        "min_count": null,
+        "default_count": 8,
+        "iol_static_ethernets": null
+      }
+    },
+    "image_definitions": []
+  }
+]
