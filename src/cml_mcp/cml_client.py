@@ -60,6 +60,27 @@ class CMLClient(object):
         self.password = password
         self.transport = transport
 
+    def update_vclient_url(self, url: str) -> None:
+        """
+        Update the virl2_client URL for dynamic server switching.
+
+        This recreates the virl2_client.ClientLibrary instance with the new URL
+        while preserving the current credentials.
+
+        Args:
+            url: New CML server URL
+        """
+        self.base_url = url.rstrip("/")
+        self.api_base = f"{self.base_url}/api/v0"
+        # Recreate virl2_client with new URL
+        self.vclient = virl2_client.ClientLibrary(
+            url,
+            self.username,
+            self.password,
+            ssl_verify=self.verify_ssl,
+            raise_for_auth_failure=False,
+        )
+
     @property
     def token(self) -> str | None:
         return self._token
