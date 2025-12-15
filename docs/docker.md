@@ -48,7 +48,7 @@ CML_PASSWORD=your-secure-password
 
 # Optional Settings
 CML_VERIFY_SSL=true
-CML_MCP_TRANSPORT=sse
+CML_MCP_TRANSPORT=http
 CML_MCP_BIND=0.0.0.0
 CML_MCP_PORT=8080
 DEBUG=false
@@ -107,7 +107,7 @@ services:
     profiles: ["http"]
     build: .
     environment:
-      - CML_MCP_TRANSPORT=sse
+      - CML_MCP_TRANSPORT=http
       - CML_MCP_BIND=0.0.0.0
       - CML_MCP_PORT=8080
     ports:
@@ -212,7 +212,7 @@ services:
     image: ghcr.io/xorrkaz/cml-mcp:latest
     environment:
       - CML_URL=${CML_URL}
-      - CML_MCP_TRANSPORT=sse
+      - CML_MCP_TRANSPORT=http
       - CML_MCP_BIND=0.0.0.0
       - CML_MCP_PORT=8080
     labels:
