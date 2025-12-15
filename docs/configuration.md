@@ -28,6 +28,25 @@ The server is configured entirely through environment variables. You can set the
 |----------|---------|-------------|
 | `CML_VERIFY_SSL` | `false` | Verify SSL certificates |
 
+### Multi-Server Settings (HTTP Mode)
+
+These settings control per-request CML server selection and security:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CML_ALLOWED_URLS` | `[]` | JSON array of allowed CML server URLs |
+| `CML_URL_PATTERN` | - | Regex pattern for allowed CML server URLs |
+
+### Client Pool Settings (HTTP Mode)
+
+These settings control the connection pool for multi-server support:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `CML_POOL_MAX_SIZE` | `50` | Maximum clients in the pool |
+| `CML_POOL_TTL_SECONDS` | `300` | Idle timeout for pooled clients |
+| `CML_POOL_MAX_PER_SERVER` | `5` | Max concurrent requests per server |
+
 ### PyATS Settings
 
 Required for executing CLI commands on running devices:
@@ -187,13 +206,31 @@ Edit `~/.config/claude/claude_desktop_config.json` (Linux/macOS) or `%APPDATA%\C
 
 ## HTTP Mode Headers
 
-When using HTTP transport, authentication is provided via request headers:
+When using HTTP transport, authentication and server selection are provided via request headers:
 
 | Header | Format | Description |
 |--------|--------|-------------|
-| `X-Authorization` | `Basic <base64(user:pass)>` | CML credentials |
+| `X-CML-Server-URL` | URL string | Target CML server (optional, falls back to `CML_URL`) |
+| `X-Authorization` | `Basic <base64(user:pass)>` | CML credentials (required) |
+| `X-CML-Verify-SSL` | `true` or `false` | SSL verification (optional) |
 | `X-PyATS-Authorization` | `Basic <base64(user:pass)>` | Device credentials |
 | `X-PyATS-Enable` | `Basic <base64(password)>` | Enable password |
+
+### Multi-Server Example
+
+Connect to different CML servers per request:
+
+```bash
+# Request to production CML
+curl -X POST http://mcp-server:9000/mcp \
+  -H "X-CML-Server-URL: https://cml-prod.example.com" \
+  -H "X-Authorization: Basic $(echo -n 'admin:prodpass' | base64)"
+
+# Request to development CML  
+curl -X POST http://mcp-server:9000/mcp \
+  -H "X-CML-Server-URL: https://cml-dev.example.com" \
+  -H "X-Authorization: Basic $(echo -n 'dev:devpass' | base64)"
+```
 
 ### Encoding Credentials
 
@@ -236,6 +273,26 @@ CML_MCP_BIND=0.0.0.0
 CML_MCP_PORT=9000
 CML_VERIFY_SSL=true
 DEBUG=false
+```
+
+### Production with Multi-Server Security
+
+```bash
+CML_URL=https://cml-prod.company.com
+CML_MCP_TRANSPORT=http
+CML_MCP_BIND=0.0.0.0
+CML_MCP_PORT=9000
+
+# Only allow these specific CML servers
+CML_ALLOWED_URLS='["https://cml-prod.company.com", "https://cml-dr.company.com"]'
+
+# Or use pattern matching
+CML_URL_PATTERN='^https://cml-[a-z]+\.company\.com$'
+
+# Pool tuning for high load
+CML_POOL_MAX_SIZE=100
+CML_POOL_TTL_SECONDS=600
+CML_POOL_MAX_PER_SERVER=10
 ```
 
 ### Docker Compose

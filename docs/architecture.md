@@ -17,22 +17,85 @@ graph TB
         EP[Entry Point<br/>__main__.py]
         FM[FastMCP Server<br/>server.py]
         MW[Auth Middleware<br/>HTTP only]
+        CP[Client Pool<br/>client_pool.py]
         CL[CML Client<br/>cml_client.py]
         SC[Schemas<br/>schemas/]
     end
     
     subgraph "External Services"
-        CML[CML Server<br/>REST API]
+        CML1[CML Server 1<br/>REST API]
+        CML2[CML Server 2<br/>REST API]
+        CMLN[CML Server N<br/>REST API]
         DEV[Virtual Devices<br/>via PyATS]
     end
     
     CD & CC & CU -->|MCP Protocol| EP
     EP --> FM
     FM --> MW
-    MW --> CL
+    MW --> CP
+    CP --> CL
     CL --> SC
-    CL -->|httpx| CML
+    CL -->|httpx| CML1 & CML2 & CMLN
     CL -->|virl2_client| DEV
+```
+
+## Multi-Server Support (HTTP Mode)
+
+In HTTP mode, cml-mcp supports connecting to **multiple CML servers** on a per-request basis. Each request can target a different CML server by specifying the server URL in the `X-CML-Server-URL` header.
+
+```mermaid
+graph LR
+    subgraph "Request Headers"
+        H1["X-CML-Server-URL: https://cml-prod.example.com"]
+        H2["X-Authorization: Basic ..."]
+        H3["X-CML-Verify-SSL: true"]
+    end
+    
+    subgraph "Client Pool"
+        P1[("cml-prod<br/>client")]
+        P2[("cml-dev<br/>client")]
+        P3[("cml-staging<br/>client")]
+    end
+    
+    H1 --> P1
+    
+    subgraph "Eviction Strategies"
+        E1[LRU: Max pool size]
+        E2[TTL: Idle timeout]
+        E3[Per-Server: Max concurrent]
+    end
+```
+
+### Request-Scoped Client Resolution
+
+```mermaid
+sequenceDiagram
+    participant R as HTTP Request
+    participant MW as Middleware
+    participant CP as Client Pool
+    participant CV as ContextVar
+    participant T as MCP Tool
+
+    R->>MW: X-CML-Server-URL: https://cml-prod.example.com
+    MW->>MW: Validate URL (allowlist/pattern)
+    MW->>CP: get_client(url, credentials)
+    
+    alt Client exists in pool
+        CP-->>MW: Return cached client
+    else Client not in pool
+        CP->>CP: Create new CMLClient
+        CP->>CP: Add to pool (evict LRU if needed)
+        CP-->>MW: Return new client
+    end
+    
+    MW->>CV: current_cml_client.set(client)
+    MW->>T: Execute tool
+    T->>CV: get_cml_client()
+    CV-->>T: Request-scoped client
+    T->>T: Use client for CML API calls
+    T-->>MW: Result
+    MW->>CP: release_client(url)
+    MW->>CV: current_cml_client.set(None)
 ```
 
 ## Component Details
@@ -59,7 +122,7 @@ The core module containing:
 1. **Server initialization** with FastMCP 2.0
 2. **39 MCP tool definitions** as decorated async functions
 3. **Authentication middleware** for HTTP mode
-4. **CML client** singleton instance
+4. **Client pool integration** for multi-server support (HTTP mode)
 
 #### Server Initialization
 
@@ -71,15 +134,22 @@ if settings.cml_mcp_transport == "http":
 # Create FastMCP server instance
 server_mcp = FastMCP("Cisco Modeling Labs (CML)")
 
-# Add middleware and create HTTP app for HTTP mode
+# Initialize client pool for HTTP mode
 if settings.cml_mcp_transport == "http":
+    cml_pool = CMLClientPool(
+        max_size=settings.cml_pool_max_size,
+        ttl_seconds=settings.cml_pool_ttl_seconds,
+        max_per_server=settings.cml_pool_max_per_server,
+        allowed_urls=[str(u) for u in settings.cml_allowed_urls],
+        url_pattern=settings.cml_url_pattern,
+    )
     server_mcp.add_middleware(CustomRequestMiddleware())
     app = server_mcp.http_app()
 ```
 
 #### Tool Definition Pattern
 
-All tools follow a consistent pattern:
+All tools follow a consistent pattern using request-scoped client resolution:
 
 ```python
 @server_mcp.tool(
@@ -95,7 +165,9 @@ async def tool_name(param1: Type1, param2: Type2 = default) -> ReturnType:
     Tool description for LLM understanding.
     """
     try:
-        result = await cml_client.get("/endpoint")
+        # Get the request-scoped client (HTTP) or global client (stdio)
+        client = get_cml_client()
+        result = await client.get("/endpoint")
         return ResultModel(**result)
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -151,6 +223,51 @@ class CMLClient:
         self.vclient = virl2_client.ClientLibrary(...)  # For PyATS
 ```
 
+### Client Pool (`client_pool.py`) - HTTP Mode Only
+
+Manages a pool of `CMLClient` instances for multi-server support:
+
+```python
+class CMLClientPool:
+    """
+    Thread-safe pool of CMLClient instances with:
+    - LRU eviction when at max capacity
+    - TTL-based eviction for idle clients
+    - Max concurrent connections per server
+    - URL validation (allowlist + pattern)
+    """
+    
+    def __init__(
+        self,
+        max_size: int = 50,
+        ttl_seconds: int = 300,
+        max_per_server: int = 5,
+        allowed_urls: list[str] | None = None,
+        url_pattern: str | None = None,
+    ): ...
+    
+    async def get_client(self, url: str, username: str, password: str, verify_ssl: bool) -> CMLClient: ...
+    async def release_client(self, url: str, verify_ssl: bool) -> None: ...
+```
+
+#### Request-Scoped Context
+
+Uses Python's `contextvars` to provide request-scoped client access:
+
+```python
+from contextvars import ContextVar
+
+# Set by middleware, accessed by tools
+current_cml_client: ContextVar[CMLClient | None] = ContextVar("current_cml_client", default=None)
+
+def get_cml_client() -> CMLClient:
+    """Get the CML client for the current request (HTTP) or global client (stdio)."""
+    client = current_cml_client.get()
+    if client is None:
+        return global_cml_client  # Fallback for stdio mode
+    return client
+```
+
 #### HTTP Methods
 
 | Method | Description |
@@ -196,13 +313,26 @@ class Settings(BaseSettings):
         env_prefix="",
     )
 
+    # Core CML settings
     cml_url: AnyHttpUrl | None = Field(default=None)
     cml_username: str | None = Field(default=None)
     cml_password: str | None = Field(default=None)
     cml_verify_ssl: bool = Field(default=False)
+    
+    # Transport settings
     cml_mcp_transport: TransportEnum = Field(default=TransportEnum.STDIO)
     cml_mcp_bind: IPvAnyAddress = Field(default_factory=lambda: IPv4Address("0.0.0.0"))
     cml_mcp_port: int = Field(default=9000)
+    
+    # Multi-server security (HTTP mode)
+    cml_allowed_urls: list[AnyHttpUrl] = Field(default_factory=list)
+    cml_url_pattern: str | None = Field(default=None)
+    
+    # Client pool settings (HTTP mode)
+    cml_pool_max_size: int = Field(default=50)
+    cml_pool_ttl_seconds: int = Field(default=300)
+    cml_pool_max_per_server: int = Field(default=5)
+    
     debug: bool = Field(default=False)
 ```
 
@@ -224,6 +354,64 @@ schemas/
 ├── system.py              # SystemInformation, SystemHealth, SystemStats
 └── simple_core/           # State enums and type hints
 ```
+
+## Client Pool Architecture (HTTP Mode)
+
+The client pool manages connections to multiple CML servers with intelligent caching and eviction:
+
+```mermaid
+graph TB
+    subgraph "Request Processing"
+        REQ[Incoming Request]
+        MW[Middleware]
+        VAL[URL Validator]
+    end
+    
+    subgraph "Client Pool"
+        POOL[CMLClientPool]
+        
+        subgraph "Cached Clients"
+            C1["(cml-prod, ssl=true)<br/>last_used: 10s ago<br/>active: 2"]
+            C2["(cml-dev, ssl=false)<br/>last_used: 5s ago<br/>active: 0"]
+            C3["(cml-staging, ssl=true)<br/>last_used: 300s ago<br/>active: 0"]
+        end
+        
+        subgraph "Eviction"
+            LRU[LRU: max_size=50]
+            TTL[TTL: 300s idle]
+            MPS[Max Per Server: 5]
+        end
+    end
+    
+    subgraph "Context"
+        CV[ContextVar<br/>current_cml_client]
+    end
+    
+    REQ --> MW
+    MW --> VAL
+    VAL -->|Valid| POOL
+    VAL -->|Invalid| ERR[Error Response]
+    POOL --> C1 & C2 & C3
+    POOL --> CV
+    C3 -.->|Evict if idle| TTL
+```
+
+### Pool Eviction Strategies
+
+| Strategy | Trigger | Behavior |
+|----------|---------|----------|
+| **LRU** | Pool at `max_size` | Evict least recently used client with no active requests |
+| **TTL** | Client idle > `ttl_seconds` | Evict idle clients on next pool access |
+| **Per-Server** | Server at `max_per_server` | Reject request with error (prevent connection exhaustion) |
+
+### URL Validation
+
+Incoming `X-CML-Server-URL` headers are validated against:
+
+1. **Allowlist** (`CML_ALLOWED_URLS`): Explicit list of permitted URLs
+2. **Pattern** (`CML_URL_PATTERN`): Regex pattern for permitted URLs
+
+Both can be used together (AND logic) or independently.
 
 ## Data Flow
 
@@ -254,19 +442,49 @@ sequenceDiagram
     participant C as Claude Desktop
     participant R as mcp-remote
     participant M as cml-mcp (HTTP)
+    participant CP as Client Pool
     participant A as CML API
 
     U->>C: "Create a lab with 2 routers"
     C->>R: JSON-RPC (stdin)
-    R->>M: HTTP POST /mcp<br/>X-Authorization: Basic ...
-    M->>M: Validate credentials
+    R->>M: HTTP POST /mcp<br/>X-CML-Server-URL: https://cml-prod<br/>X-Authorization: Basic ...
+    M->>M: Validate URL (allowlist/pattern)
+    M->>CP: get_client(url, credentials)
+    CP-->>M: CMLClient (cached or new)
     M->>A: POST /authenticate
     A-->>M: JWT Token
     M->>A: POST /labs
     A-->>M: Lab created
+    M->>CP: release_client(url)
     M-->>R: SSE Response
     R-->>C: JSON-RPC (stdout)
     C-->>U: "Created lab with 2 routers"
+```
+
+### Multi-Server Request Flow (HTTP Mode)
+
+```mermaid
+sequenceDiagram
+    participant C1 as Client 1
+    participant C2 as Client 2
+    participant M as cml-mcp
+    participant CP as Client Pool
+    participant P as CML Prod
+    participant D as CML Dev
+
+    C1->>M: X-CML-Server-URL: https://cml-prod
+    M->>CP: get_client(cml-prod)
+    CP-->>M: Client for cml-prod
+    M->>P: API Request
+    P-->>M: Response
+    
+    C2->>M: X-CML-Server-URL: https://cml-dev
+    M->>CP: get_client(cml-dev)
+    CP-->>M: Client for cml-dev
+    M->>D: API Request
+    D-->>M: Response
+    
+    Note over CP: Pool maintains both clients<br/>with LRU/TTL eviction
 ```
 
 ## Error Handling
@@ -363,7 +581,9 @@ graph LR
 )
 async def my_new_tool(param: str) -> dict:
     """Tool description."""
-    result = await cml_client.get(f"/my-endpoint/{param}")
+    # Use get_cml_client() for request-scoped client resolution
+    client = get_cml_client()
+    result = await client.get(f"/my-endpoint/{param}")
     return result
 ```
 
@@ -376,3 +596,31 @@ async def my_new_tool(param: str) -> dict:
 1. Create or update schema file in `schemas/`
 2. Import in `schemas/__init__.py`
 3. Use in tool definitions
+
+## Security Considerations
+
+### URL Validation (HTTP Mode)
+
+To prevent arbitrary CML server connections, configure URL restrictions:
+
+```bash
+# Option 1: Explicit allowlist
+CML_ALLOWED_URLS='["https://cml-prod.example.com", "https://cml-dev.example.com"]'
+
+# Option 2: Pattern matching
+CML_URL_PATTERN='^https://cml-.*\.example\.com$'
+
+# Option 3: Both (URL must match allowlist AND pattern)
+CML_ALLOWED_URLS='["https://cml-prod.example.com"]'
+CML_URL_PATTERN='^https://.*\.example\.com$'
+```
+
+### Connection Limits
+
+Prevent resource exhaustion with pool limits:
+
+```bash
+CML_POOL_MAX_SIZE=50          # Max total clients in pool
+CML_POOL_TTL_SECONDS=300      # Evict idle clients after 5 minutes
+CML_POOL_MAX_PER_SERVER=5     # Max concurrent requests per CML server
+```

@@ -124,16 +124,26 @@ Runs as a standalone HTTP service using Server-Sent Events (SSE) for streaming.
 - Containerized/Kubernetes deployments
 - Shared infrastructure scenarios
 - Clients that don't support process spawning
+- **Connecting to multiple CML servers** (per-request server selection)
 
 ### Configuration
 
 ```bash
 # Server configuration
-export CML_URL=https://cml.example.com
+export CML_URL=https://cml.example.com    # Default/fallback CML server
 export CML_MCP_TRANSPORT=http
 export CML_MCP_BIND=0.0.0.0
 export CML_MCP_PORT=9000
 # No username/password needed (provided via headers)
+
+# Optional: Multi-server security
+export CML_ALLOWED_URLS='["https://cml-prod.example.com", "https://cml-dev.example.com"]'
+export CML_URL_PATTERN='^https://cml-.*\.example\.com$'
+
+# Optional: Pool tuning
+export CML_POOL_MAX_SIZE=50
+export CML_POOL_TTL_SECONDS=300
+export CML_POOL_MAX_PER_SERVER=5
 
 # Run
 cml-mcp
@@ -142,15 +152,17 @@ cml-mcp
 uvicorn cml_mcp.server:app --host 0.0.0.0 --port 9000 --reload
 ```
 
-### Authentication Headers
+### Request Headers
 
-In HTTP mode, authentication is provided on each request:
+In HTTP mode, server selection and authentication are provided on each request:
 
-| Header | Format | Purpose |
-|--------|--------|---------|
-| `X-Authorization` | `Basic <base64(user:pass)>` | CML credentials |
-| `X-PyATS-Authorization` | `Basic <base64(user:pass)>` | Device credentials |
-| `X-PyATS-Enable` | `Basic <base64(password)>` | Enable password |
+| Header | Format | Required | Purpose |
+|--------|--------|----------|---------|
+| `X-CML-Server-URL` | URL | No | Target CML server (falls back to `CML_URL`) |
+| `X-Authorization` | `Basic <base64(user:pass)>` | Yes | CML credentials |
+| `X-CML-Verify-SSL` | `true` or `false` | No | SSL verification override |
+| `X-PyATS-Authorization` | `Basic <base64(user:pass)>` | No | Device credentials |
+| `X-PyATS-Enable` | `Basic <base64(password)>` | No | Enable password |
 
 ### Encoding Credentials
 
@@ -178,6 +190,34 @@ MCP clients don't natively support HTTP. Use `mcp-remote` as a bridge:
             "-y", "mcp-remote",
             "http://server-host:9000/mcp",
             "--header", "X-Authorization: Basic YWRtaW46c2VjcmV0"
+          ]
+        }
+      }
+    }
+    ```
+
+=== "Multi-Server"
+
+    ```json
+    {
+      "mcpServers": {
+        "CML Production": {
+          "command": "npx",
+          "args": [
+            "-y", "mcp-remote",
+            "http://server-host:9000/mcp",
+            "--header", "X-CML-Server-URL: https://cml-prod.example.com",
+            "--header", "X-Authorization: Basic YWRtaW46cHJvZHBhc3M=",
+            "--header", "X-CML-Verify-SSL: true"
+          ]
+        },
+        "CML Development": {
+          "command": "npx",
+          "args": [
+            "-y", "mcp-remote",
+            "http://server-host:9000/mcp",
+            "--header", "X-CML-Server-URL: https://cml-dev.example.com",
+            "--header", "X-Authorization: Basic ZGV2OnBhc3M="
           ]
         }
       }
@@ -230,39 +270,67 @@ MCP clients don't natively support HTTP. Use `mcp-remote` as a bridge:
 │   MCP Client    │    stdio     │   mcp-remote    │   HTTP/SSE   │   cml-mcp       │
 │ (Claude Desktop)│◀────────────▶│    (bridge)     │◀────────────▶│   (HTTP)        │
 └─────────────────┘              └─────────────────┘              └─────────────────┘
+                                                                          │
+                                                                          ▼
+                                                                 ┌─────────────────┐
+                                                                 │  Client Pool    │
+                                                                 │  ┌───┐ ┌───┐    │
+                                                                 │  │P1 │ │P2 │... │
+                                                                 │  └───┘ └───┘    │
+                                                                 └─────────────────┘
+                                                                          │
+                                         ┌────────────────────────────────┼────────────────────────────────┐
+                                         ▼                                ▼                                ▼
+                                ┌─────────────────┐              ┌─────────────────┐              ┌─────────────────┐
+                                │  CML Server 1   │              │  CML Server 2   │              │  CML Server N   │
+                                └─────────────────┘              └─────────────────┘              └─────────────────┘
 ```
 
 1. Client spawns `mcp-remote` as a subprocess
-2. `mcp-remote` connects to cml-mcp via HTTP
-3. Each request includes authentication headers
-4. Server authenticates with CML on each request (stateless)
-5. Responses are streamed via Server-Sent Events
+2. `mcp-remote` connects to cml-mcp via HTTP with headers
+3. Middleware extracts `X-CML-Server-URL` (or uses default)
+4. Client pool provides/creates a CMLClient for that server
+5. Server authenticates with target CML on each request (stateless)
+6. Responses are streamed via Server-Sent Events
+7. Client is released back to pool
+
+### Client Pool
+
+HTTP mode uses a connection pool for efficient multi-server support:
+
+| Feature | Description |
+|---------|-------------|
+| **LRU Eviction** | Removes least recently used clients when pool is full |
+| **TTL Eviction** | Removes idle clients after configurable timeout |
+| **Per-Server Limits** | Prevents connection exhaustion to any single server |
+| **URL Validation** | Allowlist and/or pattern-based security |
 
 ### Authentication Middleware
 
-The HTTP mode uses custom middleware to handle authentication:
+The HTTP mode uses custom middleware to handle per-request server selection:
 
 ```python
 class CustomRequestMiddleware(Middleware):
     async def on_request(self, context: MiddlewareContext, call_next) -> Any:
-        # Reset client state (stateless)
-        cml_client.token = None
-        
-        # Extract credentials from X-Authorization header
         headers = get_http_headers()
+        
+        # Get target CML server (with fallback to default)
+        cml_url = headers.get("x-cml-server-url") or settings.cml_url
+        
+        # Extract credentials
         auth_header = headers.get("x-authorization")
+        username, password = decode_basic_auth(auth_header)
         
-        # Decode and validate credentials
-        decoded = base64.b64decode(parts[1]).decode("utf-8")
-        username, password = decoded.split(":", 1)
+        # Get client from pool (validates URL, manages connections)
+        client = await cml_pool.get_client(cml_url, username, password)
+        current_cml_client.set(client)  # Request-scoped via ContextVar
         
-        # Set credentials and authenticate
-        cml_client.username = username
-        cml_client.password = password
-        await cml_client.check_authentication()
-        
-        # Process request
-        return await call_next(context)
+        try:
+            await client.check_authentication()
+            return await call_next(context)
+        finally:
+            await cml_pool.release_client(cml_url)
+            current_cml_client.set(None)
 ```
 
 ---
@@ -279,7 +347,7 @@ docker run -i --rm \
   xorrkaz/cml-mcp:latest
 ```
 
-### HTTP Mode
+### HTTP Mode (Single Server)
 
 ```bash
 docker run -d \
@@ -287,6 +355,19 @@ docker run -d \
   -p 9000:9000 \
   -e CML_URL=https://cml.example.com \
   -e CML_MCP_TRANSPORT=http \
+  xorrkaz/cml-mcp:latest
+```
+
+### HTTP Mode (Multi-Server with Security)
+
+```bash
+docker run -d \
+  --name cml-mcp \
+  -p 9000:9000 \
+  -e CML_URL=https://cml-prod.example.com \
+  -e CML_MCP_TRANSPORT=http \
+  -e CML_ALLOWED_URLS='["https://cml-prod.example.com","https://cml-dev.example.com"]' \
+  -e CML_POOL_MAX_SIZE=100 \
   xorrkaz/cml-mcp:latest
 ```
 
@@ -308,3 +389,4 @@ See [Docker](docker.md) for complete docker-compose configuration with multiple 
 | CI/CD pipelines | Either |
 | Maximum simplicity | stdio |
 | Maximum flexibility | HTTP |
+| **Multiple CML servers** | **HTTP** |
