@@ -65,14 +65,16 @@ loglevel = logging.DEBUG if settings.debug else logging.INFO
 logging.basicConfig(level=loglevel, format="%(asctime)s %(levelname)s %(threadName)s %(name)s: %(message)s")
 logger = logging.getLogger("cml-mcp")
 
-# Global client for stdio mode (also used as fallback)
-cml_client = CMLClient(
-    str(settings.cml_url),
-    settings.cml_username,
-    settings.cml_password,
-    transport=str(settings.cml_mcp_transport),
-    verify_ssl=settings.cml_verify_ssl,
-)
+# Global client for stdio mode only - HTTP mode uses per-request clients from pool
+cml_client: CMLClient | None = None
+if settings.cml_mcp_transport == "stdio":
+    cml_client = CMLClient(
+        str(settings.cml_url),
+        settings.cml_username,
+        settings.cml_password,
+        transport=str(settings.cml_mcp_transport),
+        verify_ssl=settings.cml_verify_ssl,
+    )
 
 # Initialize pool for HTTP mode
 cml_pool: CMLClientPool | None = None
