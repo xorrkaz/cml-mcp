@@ -23,6 +23,7 @@
 # SUCH DAMAGE.
 
 from enum import StrEnum
+from ipaddress import IPv4Address
 
 from pydantic import AnyHttpUrl, Field, IPvAnyAddress
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -44,29 +45,36 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    cml_url: AnyHttpUrl = Field(..., description="URL of the Cisco Modeling Labs server")
+    cml_url: AnyHttpUrl | None = Field(default=None, description="URL of the Cisco Modeling Labs server")
     cml_username: str | None = Field(default=None, description="Username for CML server authentication")
     cml_password: str | None = Field(default=None, description="Password for CML server authentication")
+    cml_verify_ssl: bool = Field(
+        default=False,
+        description="Whether to verify the CML server's SSL certificate",
+    )
     cml_mcp_transport: TransportEnum = Field(
         default=TransportEnum.STDIO,
         description="Transport type for the MCP server",
     )
     cml_mcp_bind: IPvAnyAddress = Field(
-        default="0.0.0.0",
+        default_factory=lambda: IPv4Address("0.0.0.0"),
         description="IP address to bind the MCP server when transport is HTTP",
     )
     cml_mcp_port: int = Field(
         default=9000,
         description="Port to bind the MCP server when transport is HTTP",
     )
+    cml_allowed_urls: list[AnyHttpUrl] = Field(
+        default_factory=list,
+        description="List of allowed CML server URLs when transport is HTTP.  Empty list allows any URL.",
+    )
+    cml_url_pattern: str | None = Field(
+        default=None,
+        description="Regex pattern that the CML server URL must match when transport is HTTP (e.g., '^https://cml\\.example\\.com').",
+    )
 
 
 settings = Settings()
 if settings.cml_mcp_transport == TransportEnum.STDIO:
-    if not settings.cml_username or not settings.cml_password:
-        raise ValueError("CML_USERNAME and CML_PASSWORD must be set when using stdio transport")
-else:
-    # Use '__bogus__' as the default for http to have some initial credentials.  The real
-    # values will be provided through Basic Auth.
-    settings.cml_username = "__bogus__"
-    settings.cml_password = "__bogus__"
+    if not settings.cml_url or not settings.cml_username or not settings.cml_password:
+        raise ValueError("CML_URL, CML_USERNAME, and CML_PASSWORD must be set when using stdio transport")

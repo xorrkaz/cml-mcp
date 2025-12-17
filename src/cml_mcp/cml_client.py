@@ -41,16 +41,29 @@ class CMLClient(object):
     Handles authentication and provides methods to fetch system and lab information.
     """
 
-    def __init__(self, host: str, username: str, password: str, transport: str = "stdio"):
-        self.base_url = host.rstrip("/")
-        self.api_base = f"{self.base_url}/api/v0"
-        self.client = httpx.AsyncClient(verify=False, timeout=API_TIMEOUT)
-        self.vclient = virl2_client.ClientLibrary(host, username, password, ssl_verify=False, raise_for_auth_failure=False)
+    def __init__(
+        self,
+        host: str | None,
+        username: str | None,
+        password: str | None,
+        transport: str = "stdio",
+        verify_ssl: bool = False,
+    ) -> None:
+        if transport == "stdio":
+            assert host is not None, "Host must be provided for stdio transport"
+            assert username is not None, "Username must be provided for stdio transport"
+            assert password is not None, "Password must be provided for stdio transport"
+            self.base_url = host.rstrip("/")
+            self.api_base = f"{self.base_url}/api/v0"
+            self.vclient = virl2_client.ClientLibrary(host, username, password, ssl_verify=verify_ssl)
+
+        self.client = httpx.AsyncClient(verify=verify_ssl, timeout=API_TIMEOUT)
         self._token = None
-        self.admin = None
         self.username = username
         self.password = password
+        self.admin = None
         self.transport = transport
+        self.verify_ssl = verify_ssl
 
     @property
     def token(self) -> str | None:
@@ -63,6 +76,23 @@ class CMLClient(object):
             self.client.headers.pop("Authorization", None)
         else:
             self.client.headers.update({"Authorization": f"Bearer {self._token}"})
+
+    def update_client(self, host: str, username: str, password: str, verify_ssl: bool) -> None:
+        """
+        Update the client with new host, username, and password.
+        Resets the token and admin status.
+        """
+        assert self.transport == "http", "update_client is only valid for HTTP transport"
+        self.base_url = host.rstrip("/")
+        self.api_base = f"{self.base_url}/api/v0"
+        if verify_ssl != self.verify_ssl:
+            self.client = httpx.AsyncClient(verify=verify_ssl, timeout=API_TIMEOUT)
+            self.verify_ssl = verify_ssl
+        self.vclient = virl2_client.ClientLibrary(host, username, password, ssl_verify=self.verify_ssl)
+        self.username = username
+        self.password = password
+        self.token = None
+        self.admin = None
 
     async def login(self) -> None:
         """

@@ -29,6 +29,7 @@ import os
 import re
 import tempfile
 from typing import Any
+from pydantic import AnyHttpUrl
 
 import httpx
 from fastmcp import Context, FastMCP, settings as fastmcp_settings
@@ -61,11 +62,48 @@ loglevel = logging.DEBUG if os.getenv("DEBUG", "false").lower() == "true" else l
 logging.basicConfig(level=loglevel, format="%(asctime)s %(levelname)s %(threadName)s %(name)s: %(message)s")
 logger = logging.getLogger("cml-mcp")
 
-cml_client = CMLClient(str(settings.cml_url), settings.cml_username, settings.cml_password, transport=str(settings.cml_mcp_transport))
+cml_client = CMLClient(
+    str(settings.cml_url),
+    settings.cml_username,
+    settings.cml_password,
+    transport=str(settings.cml_mcp_transport),
+    verify_ssl=settings.cml_verify_ssl,
+)
 
 
 # Provide a custom token validation function.
 class CustomHttpRequestMiddleware(Middleware):
+
+    @staticmethod
+    def _validate_url(url: AnyHttpUrl | str, allowed_urls: list[AnyHttpUrl], url_pattern: str | None) -> None:
+        if not allowed_urls and not url_pattern:
+            raise McpError(
+                ErrorData(
+                    message="At least one of CML_ALLOWED_URLS or CML_URL_PATTERN must be set when using HTTP transport to accept"
+                    " client-provided CML server URLs",
+                    code=-31003,
+                )
+            )
+        if allowed_urls:
+            for allowed_url in allowed_urls:
+                if str(url).lower() == str(allowed_url).lower():
+                    break
+            else:
+                raise McpError(
+                    ErrorData(
+                        message=f"CML server URL '{url}' is not in the list of allowed URLs",
+                        code=-31003,
+                    )
+                )
+        if url_pattern:
+            if not re.match(url_pattern, str(url)):
+                raise McpError(
+                    ErrorData(
+                        message=f"CML server URL '{url}' does not match the required pattern",
+                        code=-31004,
+                    )
+                )
+
     async def on_request(self, context: MiddlewareContext, call_next) -> Any:
         # Reset client state
         cml_client.token = None
@@ -75,6 +113,26 @@ class CustomHttpRequestMiddleware(Middleware):
         os.environ.pop("PYATS_AUTH_PASS", None)
 
         headers = get_http_headers()
+        cml_url = headers.get("x-cml-server-url")
+        if not cml_url:
+            if settings.cml_url:
+                cml_url = str(settings.cml_url)
+            else:
+                raise McpError(
+                    ErrorData(
+                        message="Missing X-CML-Server-URL header and no default CML_URL configured",
+                        code=-31002,
+                    )
+                )
+        else:
+            # Validate the server URL is allowed.
+            CustomHttpRequestMiddleware._validate_url(cml_url, settings.cml_allowed_urls, settings.cml_url_pattern)
+        verify_ssl_header = headers.get("x-cml-verify-ssl", "").lower()
+        if verify_ssl_header:
+            verify_ssl = verify_ssl_header == "true"
+        else:
+            verify_ssl = False
+
         auth_header = headers.get("x-authorization")
         if not auth_header or not auth_header.startswith("Basic "):
             raise McpError(ErrorData(message="Unauthorized: Missing or invalid X-Authorization header", code=-31002))
@@ -84,10 +142,6 @@ class CustomHttpRequestMiddleware(Middleware):
         try:
             decoded = base64.b64decode(parts[1]).decode("utf-8")
             username, password = decoded.split(":", 1)
-            cml_client.username = username
-            cml_client.password = password
-            cml_client.vclient.username = username
-            cml_client.vclient.password = password
         except Exception:
             raise McpError(ErrorData(message="Failed to decode Basic authentication credentials", code=-31002))
         try:
@@ -120,6 +174,7 @@ class CustomHttpRequestMiddleware(Middleware):
                 except Exception:
                     raise McpError(ErrorData(message="Failed to decode Basic authentication credentials for PyATS Enable", code=-31002))
 
+        cml_client.update_client(cml_url, username, password, verify_ssl)
         return await call_next(context)
 
 
