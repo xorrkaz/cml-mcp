@@ -59,9 +59,15 @@ from cml_mcp.settings import settings
 from cml_mcp.types import ConsoleLogOutput, SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse
 
 # Set up logging
-loglevel = logging.DEBUG if os.getenv("DEBUG", "false").lower() == "true" else logging.INFO
-logging.basicConfig(level=loglevel, format="%(asctime)s %(levelname)s %(threadName)s %(name)s: %(message)s")
 logger = logging.getLogger("cml-mcp")
+loglevel = logging.DEBUG if os.getenv("DEBUG", "false").lower() == "true" else logging.INFO
+logger.setLevel(loglevel)
+# Configure handler with format for this module only
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(threadName)s %(name)s: %(message)s"))
+    logger.addHandler(handler)
+    logger.propagate = False
 
 cml_client = CMLClient(
     str(settings.cml_url),
@@ -145,10 +151,6 @@ class CustomHttpRequestMiddleware(Middleware):
             username, password = decoded.split(":", 1)
         except Exception:
             raise McpError(ErrorData(message="Failed to decode Basic authentication credentials", code=-31002))
-        try:
-            await cml_client.check_authentication()
-        except Exception as e:
-            raise McpError(ErrorData(message=f"Unauthorized: {str(e)}", code=-31002))
         pyats_header = headers.get("x-pyats-authorization")
         if pyats_header and pyats_header.startswith("Basic "):
             pyats_parts = pyats_header.split(" ", 1)
@@ -176,6 +178,11 @@ class CustomHttpRequestMiddleware(Middleware):
                     raise McpError(ErrorData(message="Failed to decode Basic authentication credentials for PyATS Enable", code=-31002))
 
         cml_client.update_client(cml_url, username, password, verify_ssl)
+        try:
+            await cml_client.check_authentication()
+        except Exception as e:
+            logger.error("Authentication failed: %s", str(e), exc_info=True)
+            raise McpError(ErrorData(message=f"Unauthorized: {str(e)}", code=-31002))
         return await call_next(context)
 
 

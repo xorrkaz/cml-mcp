@@ -31,10 +31,16 @@ import virl2_client
 
 API_TIMEOUT = 10  # seconds
 
-# Set up logging
+# Set up logging for this module only
+logger = logging.getLogger("cml-mcp.cml_client")
 loglevel = logging.DEBUG if os.getenv("DEBUG", "false").lower() == "true" else logging.INFO
-logging.basicConfig(level=loglevel, format="%(asctime)s %(levelname)s %(threadName)s %(name)s: %(message)s")
-logger = logging.getLogger(__name__)
+logger.setLevel(loglevel)
+# Configure handler with format for this module only
+if not logger.handlers:
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(threadName)s %(name)s: %(message)s"))
+    logger.addHandler(handler)
+    logger.propagate = False
 
 
 class CMLClient(object):
@@ -58,6 +64,10 @@ class CMLClient(object):
             self.base_url = host.rstrip("/")
             self.api_base = f"{self.base_url}/api/v0"
             self.vclient = virl2_client.ClientLibrary(host, username, password, ssl_verify=verify_ssl)
+        else:
+            self.base_url = ""
+            self.api_base = ""
+            self.vclient = None
 
         self.client = httpx.AsyncClient(verify=verify_ssl, timeout=API_TIMEOUT)
         self._token = None
