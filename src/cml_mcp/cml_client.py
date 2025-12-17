@@ -23,6 +23,7 @@
 # SUCH DAMAGE.
 
 import logging
+import os
 from typing import Any
 
 import httpx
@@ -31,7 +32,8 @@ import virl2_client
 API_TIMEOUT = 10  # seconds
 
 # Set up logging
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s %(levelname)s %(threadName)s %(name)s: %(message)s")
+loglevel = logging.DEBUG if os.getenv("DEBUG", "false").lower() == "true" else logging.INFO
+logging.basicConfig(level=loglevel, format="%(asctime)s %(levelname)s %(threadName)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 

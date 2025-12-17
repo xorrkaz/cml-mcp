@@ -29,18 +29,18 @@ import os
 import re
 import tempfile
 from typing import Any
-from pydantic import AnyHttpUrl
 
 import httpx
-from fastmcp import Context, FastMCP, settings as fastmcp_settings
+from fastmcp import Context, FastMCP
+from fastmcp import settings as fastmcp_settings
 from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
 from fastmcp.server.middleware import Middleware, MiddlewareContext
 from mcp.shared.exceptions import McpError
-from mcp.types import METHOD_NOT_FOUND, ErrorData, INVALID_REQUEST, Icon
+from mcp.types import INVALID_REQUEST, METHOD_NOT_FOUND, ErrorData, Icon
+from pydantic import AnyHttpUrl
 from virl2_client.models.cl_pyats import ClPyats, PyatsNotInstalled
 
-from cml_mcp.cml_client import CMLClient
 from cml_mcp.cml.simple_webserver.schemas.annotations import EllipseAnnotation, LineAnnotation, RectangleAnnotation, TextAnnotation
 from cml_mcp.cml.simple_webserver.schemas.common import DefinitionID, UserName, UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.groups import GroupCreate, GroupResponse
@@ -48,12 +48,13 @@ from cml_mcp.cml.simple_webserver.schemas.interfaces import InterfaceCreate
 from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabRequest, LabTitle
 
 # from cml_mcp.cml.simple_webserver.schemas.licensing import LicensingStatus
-from cml_mcp.cml.simple_webserver.schemas.links import LinkResponse, LinkConditionConfiguration, LinkCreate
+from cml_mcp.cml.simple_webserver.schemas.links import LinkConditionConfiguration, LinkCreate, LinkResponse
 from cml_mcp.cml.simple_webserver.schemas.node_definitions import NodeDefinition
 from cml_mcp.cml.simple_webserver.schemas.nodes import Node, NodeConfigurationContent, NodeCreate, NodeLabel
 from cml_mcp.cml.simple_webserver.schemas.system import SystemHealth, SystemInformation, SystemStats
 from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
 from cml_mcp.cml.simple_webserver.schemas.users import UserCreate, UserResponse
+from cml_mcp.cml_client import CMLClient
 from cml_mcp.settings import settings
 from cml_mcp.types import ConsoleLogOutput, SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse
 
