@@ -196,7 +196,7 @@ data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFUAAAAwCAYAAABgzDazAAAEDmlDQ1BrQ0
 server_mcp = FastMCP(
     name="Cisco Modeling Labs (CML)",
     website_url="https://www.cisco.com/go/cml",
-    icons=[Icon(src=icon_data_url.strip(), mimeType="image/png", sizes=["48x48"])],
+    icons=[Icon(src=icon_data_url.strip(), mimeType="image/png", sizes=["any"])],
 )
 app = None
 if settings.cml_mcp_transport == "http":
