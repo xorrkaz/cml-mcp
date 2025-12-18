@@ -52,7 +52,9 @@ The easiest way is to use `uvx`, which downloads the server from PyPi and runs i
       "env": {
         "CML_URL": "<URL_OF_CML_SERVER>",
         "CML_USERNAME": "<USERNAME_ON_CML_SERVER>",
-        "CML_PASSWORD": "<PASSWORD_ON_CML_SERVER>"
+        "CML_PASSWORD": "<PASSWORD_ON_CML_SERVER>",
+        "CML_VERIFY_SSL": "false",
+        "DEBUG": "false"
       }
     }
   }
@@ -73,9 +75,11 @@ In order to execute CLI commands on devices running within CML, Linux and Mac us
         "CML_URL": "<URL_OF_CML_SERVER>",
         "CML_USERNAME": "<USERNAME_ON_CML_SERVER>",
         "CML_PASSWORD": "<PASSWORD_ON_CML_SERVER>",
+        "CML_VERIFY_SSL": "false",
         "PYATS_USERNAME": "<DEVICE_USERNAME>",
         "PYATS_PASSWORD": "<DEVICE_PASSWORD>",
-        "PYATS_AUTH_PASS": "<DEVICE_ENABLE_PASSWORD>"
+        "PYATS_AUTH_PASS": "<DEVICE_ENABLE_PASSWORD>",
+        "DEBUG": "false"
       }
     }
   }
@@ -102,7 +106,9 @@ Windows users that want CLI command support and are using Windows Subsystem for 
         "PYATS_USERNAME": "<DEVICE_USERNAME>",
         "PYATS_PASSWORD": "<DEVICE_PASSWORD>",
         "PYATS_AUTH_PASS": "<DEVICE_ENABLE_PASSWORD>",
-        "WSLENV": "CML_URL/u:CML_USERNAME/u:CML_PASSWORD/u:PYATS_USERNAME/u:PYATS_PASSWORD/u:PYATS_AUTH_PASS/u:PYATS_AUTH_PASS/u"
+        "CML_VERIFY_SSL": "false",
+        "DEBUG": "false",
+        "WSLENV": "CML_URL/u:CML_USERNAME/u:CML_PASSWORD/u:CML_VERIFY_SSL/u:PYATS_USERNAME/u:PYATS_PASSWORD/u:PYATS_AUTH_PASS/u:DEBUG/u"
       }
     }
   }
@@ -134,15 +140,21 @@ Windows (and really Mac and Linux users, too) that want CLI command support and 
         "PYATS_PASSWORD",
         "-e",
         "PYATS_AUTH_PASS",
+        "-e",
+        "CML_VERIFY_SSL",
+        "-e",
+        "DEBUG",
         "xorrkaz/cml-mcp:latest"
       ],
       "env": {
         "CML_URL": "<URL_OF_CML_SERVER>",
         "CML_USERNAME": "<USERNAME_ON_CML_SERVER>",
         "CML_PASSWORD": "<PASSWORD_ON_CML_SERVER>",
+        "CML_VERIFY_SSL": "false",
         "PYATS_USERNAME": "<DEVICE_USERNAME>",
         "PYATS_PASSWORD": "<DEVICE_PASSWORD>",
-        "PYATS_AUTH_PASS": "<DEVICE_ENABLE_PASSWORD>"
+        "PYATS_AUTH_PASS": "<DEVICE_ENABLE_PASSWORD>",
+        "DEBUG": "false"
       }
     }
   }
@@ -169,6 +181,8 @@ An alternative is to use FastMCP CLI to install the server into your favorite cl
     CML_URL=<URL_OF_CML_SERVER>
     CML_USERNAME=<USERNAME_ON_CML_SERVER>
     CML_PASSWORD=<PASSWORD_ON_CML_SERVER>
+    CML_VERIFY_SSL=false  # Set to true to verify SSL certificates
+    DEBUG=false  # Set to true to enable debug logging
     # Optional in order to run commands
     PYATS_USERNAME=<DEVICE_USERNAME>
     PYATS_PASSWORD=<DEVICE_PASSWORD>
@@ -221,10 +235,16 @@ uvicorn cml_mcp.server:app --host 0.0.0.0 --port 9000
 Or create a `.env` file with these settings:
 
 ```sh
-CML_URL=<URL_OF_CML_SERVER>
+CML_URL=<URL_OF_CML_SERVER>  # Optional in HTTP mode if using X-CML-URL header
 CML_MCP_TRANSPORT=http
 CML_MCP_BIND=0.0.0.0
 CML_MCP_PORT=9000
+CML_VERIFY_SSL=false  # Set to true to verify SSL certificates
+DEBUG=false  # Set to true to enable debug logging
+# For multiple CML hosts support, use one of:
+CML_ALLOWED_URLS=https://cml1.example.com,https://cml2.example.com  # Comma-separated list
+# OR
+CML_URL_PATTERN=^https://cml\.example\.com  # Regex pattern
 ```
 
 Then run:
@@ -241,6 +261,7 @@ When using HTTP transport, authentication is handled differently than stdio mode
 
 - **CML Credentials**: Instead of being set via environment variables, CML credentials are provided via the `X-Authorization` HTTP header using Basic authentication format.
 - **PyATS Credentials**: For CLI command execution, PyATS credentials can be provided via the `X-PyATS-Authorization` header (Basic auth) and the enable password via the `X-PyATS-Enable` header
+- **Multiple CML Hosts**: When running in HTTP mode, clients can connect to different CML servers by providing the `X-CML-URL` header. For security, you must configure allowed URLs via the `CML_ALLOWED_URLS` environment variable (comma-separated list) or `CML_URL_PATTERN` (regex pattern).
 
 Example headers:
 
@@ -248,6 +269,7 @@ Example headers:
 X-Authorization: Basic <base64_encoded_cml_username:cml_password>
 X-PyATS-Authorization: Basic <base64_encoded_device_username:device_password>
 X-PyATS-Enable: Basic <base64_encoded_enable_password>
+X-CML-URL: https://cml-server.example.com
 ```
 
 #### Configuring MCP Clients for HTTP
@@ -412,4 +434,4 @@ If your LLM tool supports a system prompt, or you want to provide some richer in
 ## License
 
 The MCP server portion of this project is licensed under the [BSD 2-Clause "Simplified" License](LICENSE).  However, it leverages the pydantic
-schema typing code from CML itself, which is covered under a [proprietary Cisco license](src/cml_mcp/schemas/LICENSE).
+schema typing code from CML itself, which is covered under a [proprietary Cisco license](CISCO_LICENSE.md).
