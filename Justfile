@@ -51,6 +51,7 @@ publish: build publish_pypi publish_mcp publish_docker
 
 # Remove temporary files
 [group('lifecycle')]
+[confirm("This will delete .venv, caches, and __pycache__ directories. Continue?")]
 clean:
     rm -rf .venv .pytest_cache .mypy_cache .ruff_cache .coverage htmlcov
     find . -type d -name "__pycache__" -exec rm -r {} +
@@ -61,4 +62,5 @@ distclean:
 
 # Recreate project virtualenv from nothing
 [group('lifecycle')]
+[confirm("This will delete and recreate the entire virtual environment. Continue?")]
 fresh: clean install
