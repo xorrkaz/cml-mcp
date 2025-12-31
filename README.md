@@ -19,10 +19,11 @@ for [Cisco Modeling Labs (CML)](https://www.cisco.com/c/en/us/products/cloud-sys
 
 ## Requirements
 
-- Python 3.12+
-- Cisco Modeling Labs (CML) 2.9 or later
-- PyATS (optional; used for device CLI command execution)
-- The [uv](https://docs.astral.sh/uv/) Python package/project manager
+- **Python 3.12 or later** - Required for the MCP server
+- **Cisco Modeling Labs (CML) 2.9 or later** - The CML server you'll connect to
+- **[uv](https://docs.astral.sh/uv/)** - Python package and project manager (required for installation)
+- **PyATS** (optional) - Automatically installed with `cml-mcp[pyats]` for device CLI command execution
+- **Node.js** (optional) - Required only for HTTP transport mode with `mcp-remote`
 
 ## Windows Requirements
 
@@ -250,6 +251,10 @@ CML_URL_PATTERN=^https://cml\.example\.com  # Regex pattern
 Then run:
 
 ```sh
+# Activate the virtual environment if not already active
+source .venv/bin/activate
+
+# Run the server
 cml-mcp
 ```
 
@@ -259,8 +264,8 @@ The server will start and listen for HTTP connections at `http://0.0.0.0:9000`.
 
 When using HTTP transport, authentication is handled differently than stdio mode:
 
-- **CML Credentials**: Instead of being set via environment variables, CML credentials are provided via the `X-Authorization` HTTP header using Basic authentication format.
-- **PyATS Credentials**: For CLI command execution, PyATS credentials can be provided via the `X-PyATS-Authorization` header (Basic auth) and the enable password via the `X-PyATS-Enable` header
+- **CML Credentials**: Instead of being set via environment variables (`CML_USERNAME`/`CML_PASSWORD`), CML credentials are provided via the `X-Authorization` HTTP header using Basic authentication format.
+- **PyATS Credentials**: For CLI command execution, PyATS credentials can be provided via the `X-PyATS-Authorization` header (Basic auth) instead of `PYATS_USERNAME`/`PYATS_PASSWORD` environment variables, and the enable password via the `X-PyATS-Enable` header instead of `PYATS_AUTH_PASS`.
 - **Multiple CML Hosts**: When running in HTTP mode, clients can connect to different CML servers by providing the `X-CML-URL` header. For security, you must configure allowed URLs via the `CML_ALLOWED_URLS` environment variable (comma-separated list) or `CML_URL_PATTERN` (regex pattern).
 
 Example headers:
@@ -268,9 +273,11 @@ Example headers:
 ```http
 X-Authorization: Basic <base64_encoded_cml_username:cml_password>
 X-PyATS-Authorization: Basic <base64_encoded_device_username:device_password>
-X-PyATS-Enable: Basic <base64_encoded_enable_password>
+X-PyATS-Enable: <base64_encoded_enable_password>
 X-CML-URL: https://cml-server.example.com
 ```
+
+**Note:** The `X-PyATS-Enable` header only needs the Base64-encoded enable password (not Basic auth format with username:password).
 
 #### Configuring MCP Clients for HTTP
 
@@ -355,13 +362,13 @@ To encode your credentials in Base64:
 **Linux/Mac:**
 
 ```sh
-# For CML credentials
+# For CML credentials (X-Authorization header)
 echo -n "username:password" | base64
 
-# For device credentials  
+# For device credentials (X-PyATS-Authorization header)
 echo -n "device_username:device_password" | base64
 
-# For enable password (if needed)
+# For enable password (X-PyATS-Enable header) - just the password
 echo -n "enable_password" | base64
 ```
 
@@ -376,14 +383,22 @@ wsl bash -c 'echo -n "enable_password" | base64'
 Alternatively, you can use online Base64 encoders or PowerShell:
 
 ```powershell
+# For credentials with username:password format
 [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("username:password"))
+
+# For enable password only
+[Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("enable_password"))
 ```
 
-If you need to specify an enable password, add another header:
+When configuring `mcp-remote`, add the headers with the proper format:
 
 ```json
 "--header",
-"X-PyATS-Enable: Basic <base64_encoded_enable_password>"
+"X-Authorization: Basic <base64_encoded_username_colon_password>",
+"--header",
+"X-PyATS-Authorization: Basic <base64_encoded_device_username_colon_password>",
+"--header",
+"X-PyATS-Enable: <base64_encoded_enable_password>"
 ```
 
 #### Docker with HTTP Transport
@@ -430,6 +445,268 @@ If your LLM tool supports a system prompt, or you want to provide some richer in
 >- Creating annotations
 >
 >You have access to tools to access the CML server.
+
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+### Development Setup
+
+For contributors and developers who want to work on the codebase:
+
+#### Prerequisites
+
+- Python 3.12 or later
+- [uv](https://docs.astral.sh/uv/) - Python package/project manager
+- [just](https://github.com/casey/just) - Command runner (optional but recommended)
+- [direnv](https://direnv.net/) - Environment variable manager (optional but recommended)
+
+#### Quick Start for Development
+
+1. Clone the repository:
+
+    ```sh
+    git clone https://github.com/xorrkaz/cml-mcp.git
+    cd cml-mcp
+    ```
+
+2. (Optional) If using direnv, allow it to set up your environment:
+
+    ```sh
+    direnv allow
+    ```
+
+    This will automatically create a virtual environment and install dependencies when you `cd` into the directory.
+
+3. If not using direnv, manually install dependencies:
+
+    ```sh
+    uv sync --all-extras
+    source .venv/bin/activate
+    ```
+
+4. Create a `.env` file with your CML server credentials:
+
+    ```sh
+    CML_URL=https://your-cml-server.example.com
+    CML_USERNAME=your_username
+    CML_PASSWORD=your_password
+    CML_VERIFY_SSL=false
+    DEBUG=true
+    # Optional for CLI command support
+    PYATS_USERNAME=device_username
+    PYATS_PASSWORD=device_password
+    PYATS_AUTH_PASS=enable_password
+    ```
+
+#### Development Tasks with `just`
+
+The project uses `just` as a task runner. Common commands:
+
+```sh
+# Show all available commands
+just
+
+# Run tests with mocks (fast, no CML server needed)
+just test
+
+# Run tests against a live CML server
+just test-live
+
+# Install/update dependencies
+just install
+
+# Update all dependencies to latest versions
+just update
+
+# Build the package
+just build
+
+# Clean temporary files
+just clean
+
+# Full clean and reinstall
+just fresh
+```
+
+#### Testing
+
+The project includes comprehensive tests that can run in two modes:
+
+**Mock Mode (Default)** - Fast tests using pre-recorded API responses:
+
+```sh
+# Using pytest directly
+pytest tests/
+
+# Using just
+just test
+
+# Run specific test file
+just test tests/test_cml_mcp.py
+```
+
+**Live Mode** - Tests against a real CML server:
+
+```sh
+# Requires CML_URL, CML_USERNAME, CML_PASSWORD in environment
+export USE_MOCKS=false
+pytest tests/
+
+# Or using just
+just test-live
+```
+
+See [tests/README.md](tests/README.md) for more details on the testing framework.
+
+#### Code Style
+
+The project uses:
+
+- **black** - Code formatting
+- **isort** - Import sorting
+- **flake8** - Linting
+
+These are configured in [pyproject.toml](pyproject.toml) with a 140-character line length.
+
+Before committing, ensure your code is properly formatted:
+
+```sh
+black src/ tests/
+isort src/ tests/
+flake8 src/ tests/
+```
+
+#### Project Structure
+
+```text
+cml-mcp/
+├── src/cml_mcp/          # Main source code
+│   ├── server.py         # FastMCP server implementation
+│   ├── cml_client.py     # CML API client wrapper
+│   ├── settings.py       # Configuration management
+│   └── cml/              # CML API schema definitions
+├── tests/                # Test suite
+│   ├── conftest.py       # pytest configuration and fixtures
+│   ├── test_cml_mcp.py   # Main test file
+│   └── mocks/            # Mock API responses for testing
+├── Justfile              # Task automation
+├── pyproject.toml        # Python project configuration
+├── Dockerfile            # Container image definition
+└── .envrc                # direnv configuration
+```
+
+#### Publishing and Release (Maintainers)
+
+The project uses `just` to streamline the publishing process:
+
+```sh
+# Build package and Docker images
+just build
+
+# Publish to PyPI (prompts for token)
+just publish_pypi
+
+# Publish to MCP registry
+just publish_mcp
+
+# Publish Docker images
+just publish_docker
+
+# Do all of the above
+just publish
+```
+
+**Note:** Version numbers are defined in [pyproject.toml](pyproject.toml). Update the version before publishing a new release.
+
+## Environment Variables Reference
+
+### Required (stdio mode)
+
+- `CML_URL` - URL of your CML server (e.g., `https://cml.example.com`)
+- `CML_USERNAME` - Username for CML authentication
+- `CML_PASSWORD` - Password for CML authentication
+
+### Optional
+
+- `CML_VERIFY_SSL` - Verify SSL certificates (default: `false`)
+- `DEBUG` - Enable debug logging (default: `false`)
+- `PYATS_USERNAME` - Device username for CLI commands
+- `PYATS_PASSWORD` - Device password for CLI commands
+- `PYATS_AUTH_PASS` - Device enable password for CLI commands
+
+### HTTP Transport Mode
+
+- `CML_MCP_TRANSPORT` - Set to `http` for HTTP mode (default: `stdio`)
+- `CML_MCP_BIND` - IP address to bind HTTP server (default: `0.0.0.0`)
+- `CML_MCP_PORT` - Port for HTTP server (default: `9000`)
+- `CML_ALLOWED_URLS` - Comma-separated list of allowed CML URLs in HTTP mode
+- `CML_URL_PATTERN` - Regex pattern for allowed CML URLs (alternative to `CML_ALLOWED_URLS`)
+
+### Test Environment Variables
+
+- `USE_MOCKS` - Use mock data instead of live CML server (default: `true`)
+
+## Troubleshooting
+
+### Common Issues
+
+#### "Module not found" or import errors
+
+Make sure you've installed the package with all extras if you need PyATS support:
+
+```sh
+uvx cml-mcp[pyats]  # For uvx installations
+# or
+uv sync --all-extras  # For development
+```
+
+#### SSL Certificate Errors
+
+If you're using a self-signed certificate on your CML server, set:
+
+```sh
+CML_VERIFY_SSL=false
+```
+
+For HTTP mode with `mcp-remote`, also set:
+
+```json
+"env": {
+  "NODE_TLS_REJECT_UNAUTHORIZED": "0"
+}
+```
+
+#### Authentication failures in HTTP mode
+
+Ensure your Base64-encoded credentials are correct:
+
+```sh
+# Test encoding (should match what you put in headers)
+echo -n "username:password" | base64
+```
+
+#### PyATS command execution fails
+
+1. Ensure PyATS is installed (`cml-mcp[pyats]` or `uv sync --all-extras`)
+2. Verify `PYATS_USERNAME`, `PYATS_PASSWORD`, and `PYATS_AUTH_PASS` are set correctly
+3. On Windows, use WSL or Docker for PyATS support
+
+#### Tests failing
+
+If tests fail in mock mode, ensure you haven't accidentally enabled live mode:
+
+```sh
+# Explicitly use mocks
+export USE_MOCKS=true
+pytest tests/
+```
+
+### Getting Help
+
+- Check the [Issues](https://github.com/xorrkaz/cml-mcp/issues) page for known problems
+- See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report bugs
+- Review [tests/README.md](tests/README.md) for testing documentation
 
 ## License
 
