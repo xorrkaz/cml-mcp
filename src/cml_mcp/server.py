@@ -140,10 +140,7 @@ class CustomHttpRequestMiddleware(Middleware):
             # Validate the server URL is allowed.
             CustomHttpRequestMiddleware._validate_url(cml_url, settings.cml_allowed_urls, settings.cml_url_pattern)
         verify_ssl_header = headers.get("x-cml-verify-ssl", "").lower()
-        if verify_ssl_header:
-            verify_ssl = verify_ssl_header == "true"
-        else:
-            verify_ssl = False
+        verify_ssl = verify_ssl_header == "true"
 
         auth_header = headers.get("x-authorization")
         if not auth_header or not auth_header.startswith("Basic "):
