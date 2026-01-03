@@ -87,7 +87,6 @@ NodeConfigurationFiles = Annotated[
     Field(description="List of node configuration file objects."),
 ]
 
-
 NodeConfiguration = Annotated[
     NodeConfigurationContent | NodeConfigurationFiles | NodeConfigurationFile,
     Field(
@@ -130,6 +129,12 @@ class NodeBaseExtended(NodeBase):
     boot_disk_size: DiskSpace = Field(default=None)
     hide_links: bool = Field(
         default=False, description="Whether to hide links to/from this node."
+    )
+    priority: int | None = Field(
+        default=None,
+        description="Priority of the node during lab start.",
+        ge=0,
+        le=10000,
     )
 
 

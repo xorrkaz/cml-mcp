@@ -79,7 +79,9 @@ class LinuxNative(BaseModel, extra="forbid"):
     driver: DriverType = Field(..., description="Simulation Driver.")
     disk_driver: DiskDriver = Field(default=None, description="Disk Driver.")
     efi_boot: bool = Field(default=None, description="If set, use EFI boot for the VM.")
-    efi_code: FilePath = Field(default=None, description="EFI code file path; if unset, use default.")
+    efi_code: FilePath = Field(
+        default=None, description="EFI code file path; if unset, use default."
+    )
     efi_vars: FilePath = Field(
         default=None,
         description="EFI NVRAM var template path; if unset, the code file "
@@ -105,9 +107,15 @@ class LinuxNative(BaseModel, extra="forbid"):
         default=None,
         description="Network Driver.",
     )
-    data_volume: int = Field(default=None, description="Data Disk Size in GiB.", ge=0, le=4096)
-    boot_disk_size: int = Field(default=None, description="Boot Disk Size in GiB.", ge=0, le=4096)
-    video: VideoDevice = Field(default=None, description="If present, then VNC can be used with the node VM.")
+    data_volume: int = Field(
+        default=None, description="Data Disk Size in GiB.", ge=0, le=4096
+    )
+    boot_disk_size: int = Field(
+        default=None, description="Boot Disk Size in GiB.", ge=0, le=4096
+    )
+    video: VideoDevice = Field(
+        default=None, description="If present, then VNC can be used with the node VM."
+    )
     enable_rng: bool = Field(
         default=True,
         description="If set, use a random number generator.",
@@ -179,15 +187,21 @@ class Interfaces(BaseModel, extra="forbid"):
         ge=0,
         le=64,
     )
-    default_count: int = Field(default=None, description="Default number of physical interfaces.", ge=1, le=64)
+    default_count: int = Field(
+        default=None, description="Default number of physical interfaces.", ge=1, le=64
+    )
     iol_static_ethernets: Literal[0, 4, 8, 12, 16] = Field(
         default=None,
         description="Only for IOL nodes, the number of static Ethernet interfaces"
         " preceding any serial interface; default 0 means "
         "all interfaces are Ethernet.",
     )
-    loopback: conlist(LoopBackField, min_length=1) = Field(default=None, description="List of loopback interfaces.")
-    management: conlist(ManagementField, min_length=1) = Field(default=None, description="List of management interfaces.")
+    loopback: conlist(LoopBackField, min_length=1) = Field(
+        default=None, description="List of loopback interfaces."
+    )
+    management: conlist(ManagementField, min_length=1) = Field(
+        default=None, description="List of management interfaces."
+    )
 
     @model_validator(mode="after")
     def validate_one_of(self):
@@ -262,7 +276,9 @@ class Simulation(BaseModel, extra="forbid"):
         ..., description="Linux native simulation configuration."
     )
     parameters: NodeParameters
-    usage_estimations: UsageEstimations = Field(default=None, description="Estimated resource usage parameters.")
+    usage_estimations: UsageEstimations = Field(
+        default=None, description="Estimated resource usage parameters."
+    )
 
 
 class General(BaseModel, extra="forbid"):
@@ -364,7 +380,9 @@ class Configuration(BaseModel, extra="forbid"):
     generator: ConfigurationGenerator = Field(
         ..., description="Generator configuration details."
     )
-    provisioning: ConfigurationProvisioning = Field(default=None, description="Provisioning configuration details.")
+    provisioning: ConfigurationProvisioning = Field(
+        default=None, description="Provisioning configuration details."
+    )
 
 
 class Device(BaseModel, extra="forbid"):
@@ -416,7 +434,7 @@ class Ui(BaseModel, extra="forbid"):
         ...,
         description="The icon to use with this node type."
         "Select one from the list or pass custom URI with "
-        "png|jpeg|svg\+xml image encoded to base64 in following "
+        "png|jpeg|svg+xml image encoded to base64 in following "
         "format: data:<MIME_TYPE>;base64,<BASE_64_CONTENT>",
     )
 
@@ -426,7 +444,9 @@ class Ui(BaseModel, extra="forbid"):
     visible: bool = Field(
         ..., description="Determines visibility in the UI for this node type."
     )
-    group: Literal["Cisco", "Others"] = Field(default=None, description="Intended to group similar node types (unused).")
+    group: Literal["Cisco", "Others"] = Field(
+        default=None, description="Intended to group similar node types (unused)."
+    )
     description: str = Field(
         default=None,
         description="The description of the node type (can be Markdown).",

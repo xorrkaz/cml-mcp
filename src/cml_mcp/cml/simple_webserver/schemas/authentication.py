@@ -4,7 +4,7 @@
 # All rights reserved.
 #
 import re
-from typing import Annotated, Literal, Union
+from typing import Annotated, Literal
 
 from fastapi import Body
 from pydantic import BaseModel, Field, model_serializer, model_validator
@@ -99,13 +99,17 @@ class LDAPAuthConfig(BaseModel, extra="forbid"):
         max_length=256,
         description="URI of LDAP server, either LDAP or LDAPS, multiple servers can be specified, separate with space.",
         examples=["ldaps://ad.corp.com:3269"],
-        pattern=re.compile(rf"^(?!.*[\n\r])(?:ldaps?://(?:{DOMAIN_REG})(?::{PORT_REG})?)(?: ldaps?://(?:{DOMAIN_REG})(?::{PORT_REG})?)*$"),
+        pattern=re.compile(
+            rf"^(?!.*[\n\r])(?:ldaps?://(?:{DOMAIN_REG})(?::{PORT_REG})?)(?: ldaps?://(?:{DOMAIN_REG})(?::{PORT_REG})?)*$"
+        ),
     )
     verify_tls: bool | None = Field(
         default=None,
         description="Set to `false` if certificates should not be verified.",
     )
-    cert_data_pem: PublicCertificate | None = Field(default=None, description="Reference to a public certificate.")
+    cert_data_pem: PublicCertificate | None = Field(
+        default=None, description="Reference to a public certificate."
+    )
     use_ntlm: bool | None = Field(
         default=None,
         description="If `true` then password for manager user will be stored as NTLM hash. Only works with ActiveDirectory servers.",
@@ -126,13 +130,17 @@ class LDAPAuthConfig(BaseModel, extra="forbid"):
         default=None,
         max_length=1024,
         description="The filter that will be applied to the user. Must have a placeholder `{0}` replaced with the username.",
-        examples=["(&(uid={0})(memberOf=CN=cmlusers,CN=groups,CN=accounts,DC=corp,DC=com))"],
+        examples=[
+            "(&(uid={0})(memberOf=CN=cmlusers,CN=groups,CN=accounts,DC=corp,DC=com))"
+        ],
     )
     admin_search_filter: str | None = Field(
         default=None,
         max_length=1024,
         description="Same as for the user search filter. Grants admin rights if matched.",
-        examples=["(&(uid={0})(memberOf=CN=cmladmins,CN=groups,CN=accounts,DC=corp,DC=com))"],
+        examples=[
+            "(&(uid={0})(memberOf=CN=cmladmins,CN=groups,CN=accounts,DC=corp,DC=com))"
+        ],
     )
     group_search_base: str | None = Field(
         default=None,
@@ -216,7 +224,9 @@ class RadiusAuthConfigBase(BaseModel, extra="forbid"):
     )
 
     @classmethod
-    def _validate_server_hosts_nullable(cls, server_hosts: str | None, allow_empty: bool) -> None:
+    def _validate_server_hosts_nullable(
+        cls, server_hosts: str | None, allow_empty: bool
+    ) -> None:
         raw = (server_hosts or "").strip()
         if not raw:
             if allow_empty:
@@ -261,11 +271,15 @@ class RadiusAuthConfigRequest(RadiusAuthConfigBase):
             "Entries without ':port' use the global 'port' value."
         ),
     )
-    secret: str = Field(..., max_length=256, description="Shared secret for the RADIUS server(s).")
+    secret: str = Field(
+        ..., max_length=256, description="Shared secret for the RADIUS server(s)."
+    )
 
     @model_validator(mode="after")
     def validate_server_hosts(self):
-        self.__class__._validate_server_hosts_nullable(self.server_hosts, allow_empty=False)
+        self.__class__._validate_server_hosts_nullable(
+            self.server_hosts, allow_empty=False
+        )
         return self
 
 
@@ -286,22 +300,24 @@ class RadiusAuthConfigResponse(RadiusAuthConfigBase):
 
     @model_validator(mode="after")
     def validate_server_hosts(self):
-        self.__class__._validate_server_hosts_nullable(self.server_hosts, allow_empty=True)
+        self.__class__._validate_server_hosts_nullable(
+            self.server_hosts, allow_empty=True
+        )
         return self
 
 
 SystemAuthConfigRequest = Annotated[
-    Union[LocalAuthConfig, LDAPAuthConfig, RadiusAuthConfigRequest],
+    LocalAuthConfig | LDAPAuthConfig | RadiusAuthConfigRequest,
     Field(discriminator="method"),
 ]
 SystemAuthConfigResponse = Annotated[
-    Union[LocalAuthConfig, LDAPAuthConfig, RadiusAuthConfigResponse],
+    LocalAuthConfig | LDAPAuthConfig | RadiusAuthConfigResponse,
     Field(discriminator="method"),
 ]
 
 
 class SystemAuthConfigBase(BaseModel):
-    config: SystemAuthConfigRequest
+    config: LDAPAuthConfig | RadiusAuthConfigResponse
 
     @model_validator(mode="before")
     @classmethod
@@ -420,8 +436,12 @@ class AuthTestGroupResponse(BaseModel, extra="forbid"):
 class AuthTestResponse(BaseModel, extra="forbid"):
     """System Authentication Test response."""
 
-    user: AuthTestUserResponse | None = Field(default=None, description="Results for the user.")
-    group: AuthTestGroupResponse | None = Field(default=None, description="Results for the group.")
+    user: AuthTestUserResponse | None = Field(
+        default=None, description="Results for the user."
+    )
+    group: AuthTestGroupResponse | None = Field(
+        default=None, description="Results for the group."
+    )
 
 
 class AuthenticateResponse(BaseModel, extra="forbid"):

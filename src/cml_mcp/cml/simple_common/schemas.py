@@ -7,9 +7,34 @@
 from enum import StrEnum, auto
 
 
+class AuthMethod(StrEnum):
+    LOCAL = auto()
+    LDAP = auto()
+    RADIUS = auto()
+
+
 class BootEventType(StrEnum):
     MONITOR = "MONITOR"
     BOOTED = "BOOTED"
+
+
+class ComputeState(StrEnum):
+    UNREGISTERED = "UNREGISTERED"
+    REGISTERED = "REGISTERED"
+    ONLINE = "ONLINE"
+    READY = "READY"
+
+    @property
+    def can_connect(self) -> bool:
+        return self is ComputeState.ONLINE or self is ComputeState.READY
+
+    @property
+    def can_launch(self) -> bool:
+        return self is ComputeState.READY
+
+    @property
+    def is_initial(self) -> bool:
+        return self is ComputeState.REGISTERED or self is ComputeState.READY
 
 
 class DefaultPermissions:
@@ -81,9 +106,9 @@ class LabEventElementType(StrEnum):
 
 
 class OptInStatus(StrEnum):
-    UNSET = auto()
     ACCEPTED = auto()
     DECLINED = auto()
+    UNSET = auto()
 
 
 class TelemetryEventCategory(StrEnum):

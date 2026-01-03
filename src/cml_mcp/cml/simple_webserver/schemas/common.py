@@ -8,7 +8,7 @@ from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Annotated
 
-from pydantic import AfterValidator, BaseModel, Field, field_serializer
+from pydantic import AfterValidator, BaseModel, Field, RootModel, field_serializer
 
 from simple_common.schemas import (
     DefaultPermissions,
@@ -46,7 +46,6 @@ FilePath = Annotated[
         pattern=re.compile(r"^(?![.])[^!@#%^&*();$\n\r\t/\\]{1,255}(?![\n\r])$"),
     ),
 ]
-
 
 UUID4Type = Annotated[
     str,
@@ -317,3 +316,9 @@ class DriverType(StrEnum):
     UBUNTU = "ubuntu"
     UNMANAGED_SWITCH = "unmanaged_switch"
     WAN_EMULATOR = "wan_emulator"
+
+
+class StringDict(RootModel[dict[str, str]]):
+    """A generic dictionary containing string keys and string values."""
+
+    pass

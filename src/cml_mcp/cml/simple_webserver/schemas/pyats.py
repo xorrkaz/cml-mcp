@@ -11,6 +11,7 @@ from simple_webserver.schemas.common import (
     DeviceNature,
     DriverType,
     IPAddress,
+    StringDict,
     UUID4Type,
 )
 from simple_webserver.schemas.interfaces import InterfaceLabel
@@ -69,7 +70,7 @@ class PyAtsConnectionDetails(BaseModel, extra="forbid"):
 class Connections(BaseModel, extra="forbid"):
     a: PyAtsConnectionDetails | None = Field(default=None)
     cli: PyAtsConnectionDetails | None = Field(default=None)
-    defaults: dict[str, str] | None = Field(default=None)
+    defaults: StringDict | None = Field(default=None)
 
 
 class PyAtsCredentials(BaseModel, extra="forbid"):

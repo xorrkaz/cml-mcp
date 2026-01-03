@@ -14,7 +14,6 @@ from simple_webserver.schemas.links import LinkLabel
 from simple_webserver.schemas.node_definitions import LibvirtDomainDriver
 from simple_webserver.schemas.nodes import NodeLabel
 
-
 UpperLibvirtDomainDrivers = Enum(
     "UpperLibvirtDomainDrivers",
     {member.name: member.name.upper() for member in LibvirtDomainDriver},

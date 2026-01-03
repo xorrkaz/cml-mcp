@@ -29,10 +29,7 @@ class DomainDriver(Enum):
 
     @property
     def custom_mac(self) -> bool:
-        return (
-            self is DomainDriver.KVM
-            or self is DomainDriver.DOCKER
-        )
+        return self is DomainDriver.KVM or self is DomainDriver.DOCKER
 
     @property
     def interface_state(self) -> bool:

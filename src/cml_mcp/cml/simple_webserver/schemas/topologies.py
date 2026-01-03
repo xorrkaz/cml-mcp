@@ -16,7 +16,12 @@ from simple_webserver.schemas.interfaces import (
     InterfaceSlot,
     InterfaceType,
 )
-from simple_webserver.schemas.labs import LabDescription, LabNotes, LabTitle
+from simple_webserver.schemas.labs import (
+    LabDescription,
+    LabNotes,
+    LabTitle,
+    NodeStagingMixin,
+)
 from simple_webserver.schemas.links import (
     LinkConditionConfiguration,
     LinkLabel,
@@ -44,6 +49,7 @@ class TopologySchemaVersionEnum(StrEnum):
     v0_2_1 = "0.2.1"
     v0_2_2 = "0.2.2"
     v0_3_0 = "0.3.0"
+    v0_3_1 = "0.3.1"
 
 
 TopologySchemaVersion = Annotated[
@@ -57,6 +63,7 @@ class LabTopology(BaseModel, extra="forbid"):
     title: LabTitle = Field(default=None)
     description: LabDescription = Field(default=None)
     notes: LabNotes = Field(default=None)
+    node_staging: NodeStagingMixin = Field(...)
 
 
 class LabTopologyWithOwner(LabTopology, extra="forbid"):

@@ -10,6 +10,7 @@ from typing import Annotated
 from fastapi import Body
 from pydantic import BaseModel, Field
 
+from simple_common.schemas import ComputeState
 from simple_webserver.schemas.common import (
     Hostname,
     IPNetwork,
@@ -158,15 +159,8 @@ class ExternalConnectorsSync(BaseModel):
     )
 
 
-class ComputeStates(StrEnum):
-    UNREGISTERED = "UNREGISTERED"
-    REGISTERED = "REGISTERED"
-    ONLINE = "ONLINE"
-    READY = "READY"
-
-
-ComputeState = Annotated[
-    ComputeStates,
+ComputeStateField = Annotated[
+    ComputeState,
     Field(
         description="""
     Compute host administrative admission state.
@@ -175,7 +169,7 @@ ComputeState = Annotated[
     * `ONLINE` - host is part of cluster but does not allow to start nodes.
     * `READY` - host is part of cluster and allowed to start nodes.
     """,
-        examples=[ComputeStates.READY],
+        examples=[ComputeState.READY],
     ),
 ]
 
@@ -183,7 +177,7 @@ ComputeState = Annotated[
 class ComputeHostConfig(BaseModel, extra="forbid"):
     """Compute host configurable attributes."""
 
-    admission_state: ComputeState = Field(...)
+    admission_state: ComputeStateField
 
 
 class NodeCountsBase(BaseModel):
@@ -222,10 +216,10 @@ class ComputeHostBase(BaseModel, extra="forbid"):
         ...,
         description="Host is used for external connector and unmanaged switch nodes.",
     )
-    admission_state: ComputeState = Field(
-        ..., description="The admission state of the compute host."
+    admission_state: ComputeStateField
+    nodes: UUID4ArrayType = Field(
+        ..., description="List of node ID's deployed on the host."
     )
-    nodes: UUID4ArrayType = Field(..., description="List of node ID's deployed on the host.")
     node_counts: NodeCounts = Field(
         ..., description="Count of nodes and orphans deployed and running on the host."
     )
@@ -527,7 +521,7 @@ class ComputeHealth(BaseModel, extra="forbid"):
     refplat_images_available: bool | None = Field(...)
     docker_shim: bool | None = Field(...)
     valid: bool | None = Field(...)
-    admission_state: ComputeStates = Field(...)
+    admission_state: ComputeState = Field(...)
     is_controller: bool = Field(...)
     hostname: Hostname = Field(...)
 

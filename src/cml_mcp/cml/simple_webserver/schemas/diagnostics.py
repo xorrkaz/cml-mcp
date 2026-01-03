@@ -18,6 +18,7 @@ from simple_webserver.schemas.common import (
     LinkStateModel,
     NodeStateModel,
     PinnedComputeID,
+    StringDict,
     TagArray,
     UUID4Type,
 )
@@ -48,7 +49,7 @@ from simple_webserver.schemas.nodes import (
 )
 from simple_webserver.schemas.system import (
     ComputeHostStatsWithDomInfo,
-    ComputeState,
+    ComputeStateField,
 )
 from simple_webserver.schemas.users import UserResponse
 
@@ -75,7 +76,7 @@ class FabricResponse(BaseModel, extra="forbid"):
 
 
 class NodeDiagnostics(Node, extra="forbid"):
-    configuration: list[dict[str, str]] = Field(
+    configuration: list[StringDict] = Field(
         default_factory=list,
         description="A list of anonynimized node configurations.",
     )
@@ -99,7 +100,7 @@ class ComputeDiagnostics(BaseModel, extra="forbid"):
     interfaces: dict[UUID4Type, InterfaceResponse] = Field(default_factory=dict)
     fabric: list[FabricResponse] = Field(default_factory=list)
     statistics: ComputeHostStatsWithDomInfo
-    admission_state: ComputeState
+    admission_state: ComputeStateField
 
 
 ComputeDiagnosticsResponse = dict[UUID4Type, ComputeDiagnostics]

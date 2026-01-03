@@ -115,8 +115,39 @@ class LabAutostart(BaseModel, extra="forbid"):
         default=None,
         description="Delay before the lab with next priority is autostarted.",
         ge=0,
-        le=84600,
+        le=86400,
     )
+
+
+LabAutostartMixin = Annotated[
+    # XXX: This is only set to None for CML 2.9 backward compatibility.
+    LabAutostart | None,
+    Field(
+        default=None,
+        description="The lab's autostart configuration.",
+    ),
+]
+
+
+class NodeStaging(BaseModel, extra="forbid"):
+    enabled: bool = Field(default=False, description="Whether the node staging is enabled.")
+    start_remaining: bool = Field(
+        default=True,
+        description="Whether nodes with unset priority should be started.",
+    )
+    abort_on_failure: bool = Field(
+        default=False,
+        description="""
+            Whether remaining nodes should be skipped once a node fails to start.
+        """,
+    )
+
+
+NodeStagingMixin = Annotated[
+    # XXX: This is only set to None for CML 2.9 backward compatibility.
+    NodeStaging | None,
+    Field(default=None, description="The lab's node staging configuration."),
+]
 
 
 class LabRequest(BaseModel, extra="forbid"):
@@ -134,11 +165,8 @@ class LabRequest(BaseModel, extra="forbid"):
         default=None,
         description="Object of lab/group and lab/user associations.",
     )
-    # XXX: This is only done for CML 2.9 compatibility.
-    autostart: LabAutostart | None = Field(
-        default=None,
-        description="The lab's autostart configuration. None if disabled.",
-    )
+    autostart: LabAutostartMixin = Field(...)
+    node_staging: NodeStagingMixin = Field(...)
 
 
 class Lab(BaseDBModel, extra="forbid"):
@@ -161,16 +189,13 @@ class Lab(BaseDBModel, extra="forbid"):
         description="Number of connections between nodes in the lab.",
         ge=0,
     )
-
     groups: list[LabGroup] = Field(
         default=None,
         description="Array of LabGroup objects - mapping from group ID to permissions.",
     )
     effective_permissions: EffectivePermissions = Field(...)
-    autostart: LabAutostart = Field(
-        default_factory=dict,
-        description="The lab's autostart configuration. None if disabled.",
-    )
+    autostart: LabAutostartMixin = Field(default=...)
+    node_staging: NodeStagingMixin = Field(default=...)
 
 
 LabGroupsBody = Annotated[
