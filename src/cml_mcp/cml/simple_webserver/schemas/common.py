@@ -22,6 +22,7 @@ LINT_REG = r"[\da-z-]{1,15}"
 UUID4_REG = (
     r"^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}(?![\n\r])$"
 )
+UUID4_REG_EXP = re.compile(UUID4_REG)
 
 IPV4_REG = r"(\d{1,3}.){3}\d{1,3}"
 IPV6_REG = r"[\da-fA-F:]{3,39}" + f"(%{LINT_REG})?"
@@ -52,7 +53,7 @@ UUID4Type = Annotated[
     Field(
         description="A UUID4",
         examples=["90f84e38-a71c-4d57-8d90-00fa8a197385"],
-        pattern=re.compile(UUID4_REG),
+        pattern=UUID4_REG_EXP,
     ),
 ]
 
