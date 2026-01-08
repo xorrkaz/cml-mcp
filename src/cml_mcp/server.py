@@ -41,7 +41,13 @@ from mcp.types import INVALID_REQUEST, METHOD_NOT_FOUND, ErrorData  # Icon
 from pydantic import AnyHttpUrl
 from virl2_client.models.cl_pyats import ClPyats, PyatsNotInstalled
 
-from cml_mcp.cml.simple_webserver.schemas.annotations import EllipseAnnotation, LineAnnotation, RectangleAnnotation, TextAnnotation
+from cml_mcp.cml.simple_webserver.schemas.annotations import (
+    EllipseAnnotation,
+    LineAnnotation,
+    RectangleAnnotation,
+    TextAnnotation,
+    AnnotationResponse,
+)
 from cml_mcp.cml.simple_webserver.schemas.common import DefinitionID, UserName, UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.groups import GroupCreate, GroupResponse
 from cml_mcp.cml.simple_webserver.schemas.interfaces import InterfaceCreate
@@ -798,6 +804,26 @@ async def add_node_to_cml_lab(lid: UUID4Type, node: NodeCreate | dict) -> UUID4T
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:
         logger.error(f"Error adding CML node to lab {lid}: {str(e)}", exc_info=True)
+        raise ToolError(e)
+
+
+@server_mcp.tool(
+    annotations={
+        "title": "Get all annotations for a CML Lab",
+        "readOnlyHint": True,
+    }
+)
+async def get_annotations_for_cml_lab(lid: UUID4Type) -> list[AnnotationResponse]:
+    """
+    Get all visual annotations for a lab by lab UUID. Returns list of AnnotationResponse objects.
+    """
+    try:
+        resp = await cml_client.get(f"/labs/{lid}/annotations")
+        return [AnnotationResponse(**annotation).model_dump(exclude_unset=True) for annotation in resp]
+    except httpx.HTTPStatusError as e:
+        raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+    except Exception as e:
+        logger.error(f"Error getting annotations for lab {lid}: {str(e)}", exc_info=True)
         raise ToolError(e)
 
 
