@@ -50,7 +50,7 @@ extend-ignore = ["E203", "W503"]
 cml-mcp = { workspace = true }
 
 [dependency-groups]
-dev = ["pytest", "pytest-asyncio", "inline-snapshot"]
+dev = ["pytest", "pytest-asyncio", "inline-snapshot[black]"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
