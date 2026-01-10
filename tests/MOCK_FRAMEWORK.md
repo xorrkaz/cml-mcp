@@ -2,7 +2,7 @@
 
 ## Overview
 
-I've successfully created an optional mock framework for the CML MCP server tests. Tests can now run in two modes:
+An optional mock framework has been created for the CML MCP server tests. Tests can run in two modes:
 
 1. **Mock Mode (default)**: Uses pre-recorded API responses from `tests/mocks/` directory
 2. **Live Mode**: Runs against a real CML server
@@ -114,21 +114,22 @@ pytest -m live_only tests/
 
 The following mock data files are used:
 
-| File | Endpoint | Description |
-|------|----------|-------------|
-| `get_labs.json` | `/labs` | List of labs |
-| `get_users.json` | `/users` | List of users |
-| `get_groups.json` | `/groups` | List of groups |
-| `get_cml_info.json` | `/system_information` | System information |
-| `get_cml_status.json` | `/system_health` | System health status |
-| `get_cml_statistics.json` | `/system_stats` | System statistics |
-| `get_node_defs.json` | `/simplified_node_definitions` | Node definitions |
-| `get_node_def_detail.json` | `/node_definitions/{id}` | Detailed node definition |
-| `get_nodes_for_cml_lab.json` | `/labs/{id}/nodes` | Nodes in a lab |
-| `get_interfaces_for_node.json` | `/labs/{id}/nodes/{nid}/interfaces` | Node interfaces |
-| `get_all_links_for_lab.json` | `/labs/{id}/links` | Links in a lab |
-| `get_cml_lab_by_title.json` | `/labs/{id}` | Lab details |
-| `get_cml_licensing_details.json` | `/licensing` | Licensing information |
+| File                              | Endpoint                             | Description           |
+| --------------------------------- | ------------------------------------ | --------------------- |
+| `get_labs.json`                   | `/labs`                              | List of labs          |
+| `get_users.json`                  | `/users`                             | List of users         |
+| `get_groups.json`                 | `/groups`                            | List of groups        |
+| `get_cml_info.json`               | `/system_information`                | System information    |
+| `get_cml_status.json`             | `/system_health`                     | System health status  |
+| `get_cml_statistics.json`         | `/system_stats`                      | System statistics     |
+| `get_node_defs.json`              | `/simplified_node_definitions`       | Node definitions      |
+| `get_node_def_detail.json`        | `/node_definitions/{id}`             | Node definition       |
+| `get_nodes_for_cml_lab.json`      | `/labs/{id}/nodes`                   | Nodes in a lab        |
+| `get_interfaces_for_node.json`    | `/labs/{id}/nodes/{nid}/interfaces`  | Node interfaces       |
+| `get_all_links_for_lab.json`      | `/labs/{id}/links`                   | Links in a lab        |
+| `get_cml_lab_by_title.json`       | `/labs/{id}`                         | Lab details           |
+| `get_cml_licensing_details.json`  | `/licensing`                         | Licensing info        |
+| `get_annotations_for_cml_lab.json`| `/labs/{id}/annotations`             | Lab annotations       |
 
 ## Key Features
 

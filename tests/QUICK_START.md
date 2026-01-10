@@ -24,7 +24,7 @@ USE_MOCKS=false pytest -m live_only tests/
 ## Environment Variables
 
 | Variable | Default | Description |
-|----------|---------|-------------|
+| --- | --- | --- |
 | `USE_MOCKS` | `true` | Enable/disable mock mode |
 | `CML_URL` | Required for live | URL of CML server |
 | `CML_USERNAME` | Required for live | CML username |
