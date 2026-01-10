@@ -119,7 +119,7 @@ pytest tests/
 just test-live
 ```
 
-See [tests/README.md](tests/README.md) for more details on the testing framework.
+See [tests/README.md](https://github.com/xorrkaz/cml-mcp/blob/main/tests/README.md) for more details on the testing framework.
 
 ## Code Style
 

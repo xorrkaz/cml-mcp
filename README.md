@@ -43,7 +43,7 @@ The easiest way to get started is using `uvx` with Claude Desktop. Add this to y
 }
 ```
 
-For CLI command support, use `cml-mcp[pyats]` instead. See [INSTALLATION.md](INSTALLATION.md) for detailed installation instructions including Docker, WSL, and HTTP transport options.
+For CLI command support, use `cml-mcp[pyats]` instead. See [INSTALLATION.md](https://github.com/xorrkaz/cml-mcp/blob/main/INSTALLATION.md) for detailed installation instructions including Docker, WSL, and HTTP transport options.
 
 ### Requirements
 
@@ -144,9 +144,9 @@ If your LLM tool supports a system prompt, or you want to provide some richer in
 
 ## Contributing
 
-Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+Contributions are welcome! Please see [CONTRIBUTING.md](https://github.com/xorrkaz/cml-mcp/blob/main/CONTRIBUTING.md) for guidelines.
 
-For development setup, testing, and code style information, see [DEVELOPMENT.md](DEVELOPMENT.md).
+For development setup, testing, and code style information, see [DEVELOPMENT.md](https://github.com/xorrkaz/cml-mcp/blob/main/DEVELOPMENT.md).
 
 ## Troubleshooting
 
@@ -170,20 +170,20 @@ If you're using a self-signed certificate on your CML server, set `CML_VERIFY_SS
 2. Verify `PYATS_USERNAME`, `PYATS_PASSWORD`, and `PYATS_AUTH_PASS` are set correctly
 3. On Windows, use WSL or Docker for PyATS support
 
-For more troubleshooting help, see [INSTALLATION.md](INSTALLATION.md).
+For more troubleshooting help, see [INSTALLATION.md](https://github.com/xorrkaz/cml-mcp/blob/main/INSTALLATION.md).
 
 ### Getting Help
 
 - Check the [Issues](https://github.com/xorrkaz/cml-mcp/issues) page for known problems
-- See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report bugs
+- See [CONTRIBUTING.md](https://github.com/xorrkaz/cml-mcp/blob/main/CONTRIBUTING.md) for how to report bugs
 
 ## Documentation
 
-- **[INSTALLATION.md](INSTALLATION.md)** - Detailed installation instructions for all platforms and transport modes
-- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development setup, testing, and contribution guidelines
-- **[CONTRIBUTING.md](CONTRIBUTING.md)** - How to contribute to the project
+- **[INSTALLATION.md](https://github.com/xorrkaz/cml-mcp/blob/main/INSTALLATION.md)** - Detailed installation instructions for all platforms and transport modes
+- **[DEVELOPMENT.md](https://github.com/xorrkaz/cml-mcp/blob/main/DEVELOPMENT.md)** - Development setup, testing, and contribution guidelines
+- **[CONTRIBUTING.md](https://github.com/xorrkaz/cml-mcp/blob/main/CONTRIBUTING.md)** - How to contribute to the project
 
 ## License
 
-The MCP server portion of this project is licensed under the [BSD 2-Clause "Simplified" License](LICENSE).  However, it leverages the pydantic
-schema typing code from CML itself, which is covered under a [proprietary Cisco license](CISCO_LICENSE.md).
+The MCP server portion of this project is licensed under the [BSD 2-Clause "Simplified" License](https://github.com/xorrkaz/cml-mcp/blob/main/LICENSE).  However, it leverages the pydantic
+schema typing code from CML itself, which is covered under a [proprietary Cisco license](https://github.com/xorrkaz/cml-mcp/blob/main/CISCO_LICENSE.md).

@@ -4,8 +4,8 @@ This directory contains tests for the CML MCP server. Tests can run in two modes
 
 ## Quick Links
 
-- **[Quick Start Guide](QUICK_START.md)** - Fast reference for common testing tasks
-- **[Mock Framework Details](MOCK_FRAMEWORK.md)** - Implementation details and architecture
+- **[Quick Start Guide](https://github.com/xorrkaz/cml-mcp/blob/main/tests/QUICK_START.md)** - Fast reference for common testing tasks
+- **[Mock Framework Details](https://github.com/xorrkaz/cml-mcp/blob/main/tests/MOCK_FRAMEWORK.md)** - Implementation details and architecture
 
 ## Test Modes
 
