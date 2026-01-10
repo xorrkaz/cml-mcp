@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 ADD . /app
 WORKDIR /app
-RUN uv sync --all-extras --locked && \
+RUN uv sync --all-extras --no-dev --locked && \
     uv build
 
 ENTRYPOINT ["/app/entrypoint.sh"]

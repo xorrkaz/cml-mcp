@@ -23,9 +23,14 @@ build:
 update:
     uv sync --upgrade --all-extras
 
-# Ensure project virtualenv is up to date
+# Ensure project virtualenv is up to date (production only)
 [group('lifecycle')]
 install:
+    uv sync --all-extras --no-dev
+
+# Install with development dependencies
+[group('lifecycle')]
+dev-install:
     uv sync --all-extras
 
 [group('lifecycle')]
@@ -63,4 +68,4 @@ distclean:
 # Recreate project virtualenv from nothing
 [group('lifecycle')]
 [confirm("This will delete and recreate the entire virtual environment. Continue?")]
-fresh: clean install
+fresh: clean dev-install
