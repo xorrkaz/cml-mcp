@@ -317,7 +317,8 @@ async def create_cml_user(user: UserCreate | dict) -> UUID4Type:
 )
 async def delete_cml_user(user_id: UUID4Type, ctx: Context) -> bool:
     """
-    Delete user by UUID. Requires admin. IMPORTANT: Ask user for confirmation before executing.
+    Delete user by UUID. Requires admin. CRITICAL: Always confirm
+    deletion with user first, unless user is responding "yes" to your confirmation prompt.
     """
     try:
         if not await cml_client.is_admin():
@@ -399,7 +400,8 @@ async def create_cml_group(group: GroupCreate | dict) -> UUID4Type:
 )
 async def delete_cml_group(group_id: UUID4Type, ctx: Context) -> bool:
     """
-    Delete group by UUID. Requires admin. IMPORTANT: Ask user for confirmation before executing.
+    Delete group by UUID. Requires admin. CRITICAL: Always confirm
+    deletion with user first, unless user is responding "yes" to your confirmation prompt.
     """
     try:
         if not await cml_client.is_admin():
@@ -709,7 +711,8 @@ async def stop_cml_lab(lid: UUID4Type) -> bool:
 )
 async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> bool:
     """
-    Wipe lab by UUID. Erases all node data/configurations. IMPORTANT: Ask user for confirmation before executing.
+    Wipe lab by UUID. Erases all node data/configurations. CRITICAL: Always confirm
+    wipe with user first, unless user is responding "yes" to your confirmation prompt.
     """
     try:
         elicit_supported = True
@@ -741,7 +744,8 @@ async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> bool:
 )
 async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> bool:
     """
-    Delete lab by UUID. Auto-stops and wipes if needed. IMPORTANT: Ask user for confirmation before executing.
+    Delete lab by UUID. Auto-stops and wipes if needed. CRITICAL: Always confirm
+    deletion with user first, unless user is responding "yes" to your confirmation prompt.
     """
     try:
 
@@ -858,11 +862,17 @@ async def add_annotation_to_cml_lab(
 ) -> UUID4Type:
     """
     Add visual annotation to lab. Returns annotation UUID.
-    Types: text (with text_content, text_font, text_size), rectangle (with border_radius), ellipse,
-    line (with line_start/line_end: arrow/square/circle).
-    Common: type, x1, y1 (coords -15000 to 15000), color, border_color, border_style (""/"2,2"/"4,2"),
+    Required field: type ("text"/"rectangle"/"ellipse"/"line").
+
+    Common fields: x1, y1 (coords -15000 to 15000), color, border_color, border_style (""/"2,2"/"4,2"),
     thickness (1-32), z_index (-10240 to 10240).
-    Rectangle/ellipse: x2, y2. Text: rotation (0-360), text_bold, text_italic. Line: x2, y2.
+
+    Rectangle/Ellipse: x2, y2 are WIDTH and HEIGHT from x1,y1, NOT corners! For box (-200,-100) to (200,-50),
+    use x1=-200, y1=-100, x2=400, y2=50. Also: rotation (0-360), border_radius (0-128, rectangles only).
+
+    Line: x2, y2 are absolute endpoint coords (unlike rectangles). line_start/line_end: "arrow"/"square"/"circle"/null.
+
+    Text: text_content (max 8192 chars), text_size (1-128), text_unit ("pt"/"px"/"em"), text_bold/text_italic (bool), rotation (0-360).
     """
     try:
         # XXX The dict usage is a workaround for some LLMs that pass a JSON string
@@ -898,7 +908,8 @@ async def add_annotation_to_cml_lab(
 )
 async def delete_annotation_from_lab(lid: UUID4Type, annotation_id: UUID4Type, ctx: Context) -> bool:
     """
-    Delete annotation by lab and annotation UUID. IMPORTANT: Ask user for confirmation before executing.
+    Delete annotation by lab and annotation UUID. CRITICAL: Always confirm
+    deletion with user first, unless user is responding "yes" to your confirmation prompt.
     """
     try:
         elicit_supported = True
@@ -1158,7 +1169,8 @@ async def start_cml_node(lid: UUID4Type, nid: UUID4Type, wait_for_convergence: b
 @server_mcp.tool(annotations={"title": "Wipe a CML Node", "readOnlyHint": False, "destructiveHint": True, "idempotentHint": True})
 async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
     """
-    Wipe node by lab and node UUID. Erases all node data. Node must be stopped first. IMPORTANT: Ask user for confirmation before executing.
+    Wipe node by lab and node UUID. Erases all node data. Node must be stopped first. CRITICAL: Always confirm
+    wipe with user first, unless user is responding "yes" to your confirmation prompt.
     """
     try:
         elicit_supported = True
@@ -1184,7 +1196,8 @@ async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
 @server_mcp.tool(annotations={"title": "Delete a node from a CML lab.", "readOnlyHint": False, "destructiveHint": True})
 async def delete_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
     """
-    Delete node by lab and node UUID. Auto-stops and wipes if needed. IMPORTANT: Ask user for confirmation before executing.
+    Delete node by lab and node UUID. Auto-stops and wipes if needed. CRITICAL: Always confirm
+    deletion with user first, unless user is responding "yes" to your confirmation prompt.
     """
     try:
         elicit_supported = True
@@ -1291,7 +1304,7 @@ async def send_cli_command(
 ) -> str:
     """
     Send CLI commands to running node by lab UUID and node label. Node must be in BOOTED state.
-    IMPORTANT: Can modify device state. Review commands before executing, especially with config_command=true.
+    CRITICAL: Can modify device state. Review commands before executing, especially with config_command=true.
     Separate multiple commands with newlines.
     config_command=false: exec/operational mode (default). config_command=true: config mode only
     (don't include "configure terminal" or "end").
