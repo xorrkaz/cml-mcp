@@ -2,6 +2,11 @@
 
 This directory contains tests for the CML MCP server. Tests can run in two modes: **mock mode** (using pre-recorded API responses) or **live mode** (against a real CML server).
 
+## Quick Links
+
+- **[Quick Start Guide](QUICK_START.md)** - Fast reference for common testing tasks
+- **[Mock Framework Details](MOCK_FRAMEWORK.md)** - Implementation details and architecture
+
 ## Test Modes
 
 ### Mock Mode (Default)
