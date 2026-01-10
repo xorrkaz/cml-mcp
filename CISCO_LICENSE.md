@@ -2,7 +2,7 @@
 
 These schema files are part of VIRL 2 / Cisco Modeling Labs (CML)
 
-Copyright (c) 2019-2025, Cisco Systems, Inc.
+Copyright (c) 2019-2026, Cisco Systems, Inc.
 
 All rights reserved.
 
