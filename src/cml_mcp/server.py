@@ -191,7 +191,7 @@ class CustomHttpRequestMiddleware(Middleware):
 
         cml_client.update_client(cml_url, username, password, verify_ssl)
         try:
-            await cml_client.check_authentication()
+            await cml_client.login()
         except Exception as e:
             logger.error("Authentication failed: %s", str(e), exc_info=True)
             raise McpError(ErrorData(message=f"Unauthorized: {str(e)}", code=-31002))
@@ -837,7 +837,7 @@ async def get_annotations_for_cml_lab(lid: UUID4Type) -> list[AnnotationResponse
                 raise ValueError(
                     f"Invalid annotation type: {annotation.get('type')}. Must be one of 'text', 'rectangle', 'ellipse', or 'line'."
                 )
-            ann_list.append(annotation_obj)
+            ann_list.append(annotation_obj.model_dump(exclude_unset=True))
         return ann_list
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
