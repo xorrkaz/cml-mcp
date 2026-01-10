@@ -104,6 +104,8 @@ class MockCMLClient:
                 return self._load_mock_file("get_nodes_for_cml_lab.json") or []
             elif endpoint.endswith("/links"):
                 return self._load_mock_file("get_all_links_for_lab.json") or []
+            elif endpoint.endswith("/annotations"):
+                return self._load_mock_file("get_annotations_for_cml_lab.json") or []
             elif "/nodes/" in endpoint and endpoint.endswith("/interfaces"):
                 return self._load_mock_file("get_interfaces_for_node.json") or []
             elif len(parts) == 3:

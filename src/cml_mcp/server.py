@@ -47,6 +47,10 @@ from cml_mcp.cml.simple_webserver.schemas.annotations import (
     RectangleAnnotation,
     TextAnnotation,
     AnnotationResponse,
+    EllipseAnnotationResponse,
+    LineAnnotationResponse,
+    RectangleAnnotationResponse,
+    TextAnnotationResponse,
 )
 from cml_mcp.cml.simple_webserver.schemas.common import DefinitionID, UserName, UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.groups import GroupCreate, GroupResponse
@@ -819,7 +823,22 @@ async def get_annotations_for_cml_lab(lid: UUID4Type) -> list[AnnotationResponse
     """
     try:
         resp = await cml_client.get(f"/labs/{lid}/annotations")
-        return [AnnotationResponse(**annotation).model_dump(exclude_unset=True) for annotation in resp]
+        ann_list = []
+        for annotation in resp:
+            if annotation.get("type") == "text":
+                annotation_obj = TextAnnotationResponse(**annotation)
+            elif annotation.get("type") == "rectangle":
+                annotation_obj = RectangleAnnotationResponse(**annotation)
+            elif annotation.get("type") == "ellipse":
+                annotation_obj = EllipseAnnotationResponse(**annotation)
+            elif annotation.get("type") == "line":
+                annotation_obj = LineAnnotationResponse(**annotation)
+            else:
+                raise ValueError(
+                    f"Invalid annotation type: {annotation.get('type')}. Must be one of 'text', 'rectangle', 'ellipse', or 'line'."
+                )
+            ann_list.append(annotation_obj)
+        return ann_list
     except httpx.HTTPStatusError as e:
         raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
     except Exception as e:

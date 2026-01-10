@@ -31,10 +31,19 @@ import yaml
 from pathlib import Path
 from fastmcp.client import Client
 from fastmcp.client.transports import FastMCPTransport
-from inline_snapshot import snapshot  # , outsource
+from inline_snapshot import snapshot, outsource
 from mcp.types import TextContent
 
-from cml_mcp.cml.simple_webserver.schemas.annotations import EllipseAnnotation, LineAnnotation, RectangleAnnotation, TextAnnotation
+from cml_mcp.cml.simple_webserver.schemas.annotations import (
+    EllipseAnnotation,
+    LineAnnotation,
+    RectangleAnnotation,
+    TextAnnotation,
+    EllipseAnnotationResponse,
+    LineAnnotationResponse,
+    RectangleAnnotationResponse,
+    TextAnnotationResponse,
+)
 from cml_mcp.cml.simple_webserver.schemas.common import DefinitionID, UserName, UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.groups import GroupCreate, GroupResponse
 from cml_mcp.cml.simple_webserver.schemas.interfaces import InterfaceCreate
@@ -51,7 +60,7 @@ from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefini
 async def test_list_tools(main_mcp_client: Client[FastMCPTransport]):
     list_tools = await main_mcp_client.list_tools()
 
-    assert len(list_tools) == snapshot(39)
+    assert len(list_tools) == snapshot(40)
 
 
 async def test_get_cml_labs(main_mcp_client: Client[FastMCPTransport]):
@@ -422,6 +431,27 @@ async def test_add_annotation_to_cml_lab(main_mcp_client: Client[FastMCPTranspor
     assert isinstance(text_result.content[0], TextContent)
     _ = UUID4Type(text_result.content[0].text)
 
+    # Retrieve all annotations for the lab
+    ann_result = await main_mcp_client.call_tool(
+        name="get_annotations_for_cml_lab",
+        arguments={"lid": lab_id},
+    )
+    assert isinstance(ann_result.data, list)
+    assert len(ann_result.data) == snapshot(4)
+    outsource(ann_result.data, ".json")
+    for annotation in ann_result.data:
+        if isinstance(annotation, dict):
+            ann_type = annotation.get("type")
+            if ann_type == "ellipse":
+                annotation = EllipseAnnotationResponse(**annotation)
+            elif ann_type == "line":
+                annotation = LineAnnotationResponse(**annotation)
+            elif ann_type == "rectangle":
+                annotation = RectangleAnnotationResponse(**annotation)
+            elif ann_type == "text":
+                annotation = TextAnnotationResponse(**annotation)
+            assert annotation.type in {"ellipse", "line", "rectangle", "text"}
+
     # Clean up - delete the lab
     del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": lab_id})
     assert del_result.data is True
@@ -558,3 +588,68 @@ async def test_get_nodes_for_cml_lab(main_mcp_client: Client[FastMCPTransport]):
     # Clean up - delete the lab
     del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": lab_id})
     assert del_result.data is True
+
+
+async def test_get_annotations_for_cml_lab(main_mcp_client: Client[FastMCPTransport]):
+    """
+    Test retrieving annotations for a CML lab.
+    This test works in both mock and live modes.
+    In mock mode, it uses get_annotations_for_cml_lab.json.
+    """
+    # Get labs to extract a lab_id (in mock mode, this returns mock data)
+    labs_result = await main_mcp_client.call_tool(name="get_cml_labs", arguments={})
+    assert isinstance(labs_result.data, list)
+    assert len(labs_result.data) > 0
+
+    # Use the first lab's ID
+    lab = labs_result.data[0]
+    if isinstance(lab, dict):
+        lab = Lab(**lab)
+    lab_id = lab.id
+
+    # Retrieve all annotations for the lab
+    ann_result = await main_mcp_client.call_tool(
+        name="get_annotations_for_cml_lab",
+        arguments={"lid": lab_id},
+    )
+    assert isinstance(ann_result.data, list)
+    # In mock mode, we expect 4 annotations from the mock file
+    assert len(ann_result.data) == snapshot(4)
+    # outsource(ann_result.data, ".json")
+
+    # Validate each annotation type
+    annotation_types = {"ellipse", "line", "rectangle", "text"}
+    found_types = set()
+
+    for annotation in ann_result.data:
+        if isinstance(annotation, dict):
+            ann_type = annotation.get("type")
+            found_types.add(ann_type)
+
+            # Validate the structure based on type
+            if ann_type == "ellipse":
+                annotation = EllipseAnnotationResponse(**annotation)
+                assert annotation.type == "ellipse"
+                assert annotation.x1 == snapshot(150.0)
+                assert annotation.y1 == snapshot(150.0)
+                assert annotation.rotation == snapshot(15)
+            elif ann_type == "line":
+                annotation = LineAnnotationResponse(**annotation)
+                assert annotation.type == "line"
+                assert annotation.line_start == snapshot("arrow")
+                assert annotation.line_end == snapshot("circle")
+            elif ann_type == "rectangle":
+                annotation = RectangleAnnotationResponse(**annotation)
+                assert annotation.type == "rectangle"
+                assert annotation.border_radius == snapshot(10)
+            elif ann_type == "text":
+                annotation = TextAnnotationResponse(**annotation)
+                assert annotation.type == "text"
+                assert annotation.text_content == snapshot("This is a test annotation")
+                assert annotation.text_bold is True
+                assert annotation.text_italic is False
+            else:
+                pytest.fail(f"Unknown annotation type: {ann_type}")
+
+    # Verify all annotation types are present in mock data
+    assert found_types == annotation_types, f"Expected {annotation_types}, but found {found_types}"
