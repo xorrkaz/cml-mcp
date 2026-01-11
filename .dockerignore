@@ -21,3 +21,4 @@ tests/
 .env.example
 server.json
 Justfile
+.git
