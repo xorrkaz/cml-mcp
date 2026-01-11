@@ -30,6 +30,6 @@ else
   exec uvicorn cml_mcp.server:app \
     --host "${CML_MCP_BIND}" \
     --port "${CML_MCP_PORT}" \
-    --workers 4 \
+    --workers 1 \
     --access-log
 fi

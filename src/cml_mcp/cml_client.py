@@ -243,4 +243,11 @@ class CMLClient(object):
             raise e
 
     async def close(self) -> None:
-        await self.client.aclose()
+        """Close the HTTP client and clean up all resources."""
+        try:
+            # Close the httpx async client which should clean up connection pools and semaphores
+            await self.client.aclose()
+            logger.debug("HTTP client closed successfully")
+        except Exception as e:
+            logger.error(f"Error closing HTTP client: {e}", exc_info=True)
+            raise

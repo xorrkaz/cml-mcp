@@ -228,7 +228,7 @@ export CML_MCP_BIND=0.0.0.0  # Optional, defaults to 0.0.0.0
 export CML_MCP_PORT=9000     # Optional, defaults to 9000
 
 # Run the server with uvicorn
-uvicorn cml_mcp.server:app --host 0.0.0.0 --port 9000
+uvicorn cml_mcp.server:app --host 0.0.0.0 --port 9000 --workers 1
 ```
 
 Or create a `.env` file with these settings:

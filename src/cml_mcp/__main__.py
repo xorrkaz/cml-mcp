@@ -26,12 +26,16 @@ import asyncio
 
 import uvicorn
 
-from cml_mcp.server import app, server_mcp
+from cml_mcp.server import app, cleanup_global_client, server_mcp
 from cml_mcp.settings import settings
 
 
 async def run():
-    await server_mcp.run_async()
+    try:
+        await server_mcp.run_async()
+    finally:
+        # Cleanup resources before event loop shutdown to prevent semaphore leaks
+        await cleanup_global_client()
 
 
 def main():
@@ -42,6 +46,7 @@ def main():
             app,
             host=str(settings.cml_mcp_bind),
             port=settings.cml_mcp_port,
+            workers=1,  # Disable multiprocessing workers to prevent semaphore leaks
         )
 
 

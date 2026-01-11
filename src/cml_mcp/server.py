@@ -250,6 +250,20 @@ if settings.cml_mcp_transport == "http":
     app = server_mcp.http_app()
 
 
+async def cleanup_global_client() -> None:
+    """Cleanup global CML client resources. Must be called before event loop shutdown."""
+    global cml_client
+    if cml_client is not None and settings.cml_mcp_transport == "stdio":
+        logger.info("Cleaning up global CML client...")
+        try:
+            await cml_client.close()
+            logger.info("Successfully closed global CML client")
+        except Exception as e:
+            logger.error(f"Error closing global CML client: {e}", exc_info=True)
+    else:
+        logger.debug("No global CML client to clean up (HTTP mode or client is None)")
+
+
 def get_cml_client_dep() -> CMLClient:
     """
     Dependency function to get the appropriate CML client.
