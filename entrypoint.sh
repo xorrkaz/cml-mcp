@@ -23,11 +23,11 @@ if [ "$CML_MCP_TRANSPORT" = "stdio" ]; then
     exit 1
   fi
   echo "Starting CML-MCP in stdio mode..."
-  exec uv run cml-mcp
+  exec cml-mcp
 else
   # HTTP mode - credentials provided per-request via headers
   echo "Starting CML-MCP HTTP server on ${CML_MCP_BIND}:${CML_MCP_PORT}..."
-  exec $(realpath .)/.venv/bin/uvicorn cml_mcp.server:app \
+  exec uvicorn cml_mcp.server:app \
     --host "${CML_MCP_BIND}" \
     --port "${CML_MCP_PORT}" \
     --workers 4 \
