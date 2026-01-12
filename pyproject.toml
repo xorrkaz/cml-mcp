@@ -6,7 +6,7 @@ build-backend = "uv_build"
 name = "cml-mcp"
 version = "0.21.3"
 license = "BSD-2-Clause AND LicenseRef-Proprietary"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "CISCO_LICENSE.md"]
 authors = [{ name = "Joe Clarke", email = "jclarke@cisco.com" }]
 description = "Cisco Modeling Labs (CML) MCP Server"
 requires-python = ">=3.12,<4.0"
