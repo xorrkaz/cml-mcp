@@ -72,6 +72,10 @@ class Settings(BaseSettings):
         default=None,
         description="Regex pattern that the CML server URL must match when transport is HTTP (e.g., '^https://cml\\.example\\.com').",
     )
+    cml_mcp_acl_file: str | None = Field(
+        default=None,
+        description="Path to an YAML file specifying access control lists for various MCP capabilities (only used in HTTP transport mode).",
+    )
 
 
 settings = Settings()

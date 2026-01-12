@@ -8,3 +8,4 @@ dist/
 *.tar
 .inline-snapshot
 .pytest_cache
+acl.yaml
