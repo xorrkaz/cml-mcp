@@ -33,7 +33,6 @@ from typing import Any, Optional
 
 import httpx
 from fastmcp import Context, FastMCP
-from fastmcp import settings as fastmcp_settings
 from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
 from fastmcp.server.middleware import Middleware, MiddlewareContext
@@ -236,9 +235,6 @@ class CustomHttpRequestMiddleware(Middleware):
                 _request_client.set(None)
 
 
-if settings.cml_mcp_transport == "http":
-    fastmcp_settings.stateless_http = True
-
 server_mcp = FastMCP(
     name="Cisco Modeling Labs (CML)",
     website_url="https://www.cisco.com/go/cml",
@@ -401,23 +397,21 @@ async def delete_cml_user(user_id: UUID4Type, ctx: Context) -> bool:
     try:
         if not await client.is_admin():
             raise ValueError("Only admin users can delete users.")
-        # In HTTP transport, skip elicit as it's not compatible with stateless mode
-        if client.transport != "http":
-            elicit_supported = True
-            try:
-                result = await ctx.elicit("Are you sure you want to delete this user?", response_type=None)
-            except McpError as me:
-                if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
-                    elicit_supported = False
-                else:
-                    raise me
-            except Exception as e:
-                # Handle stream closure errors (common in stateless HTTP when client disconnects)
-                # Treat as if elicit is not supported and proceed without confirmation
-                logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
+        elicit_supported = True
+        try:
+            result = await ctx.elicit("Are you sure you want to delete this user?", response_type=None)
+        except McpError as me:
+            if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
                 elicit_supported = False
-            if elicit_supported and result.action != "accept":
-                raise Exception("Delete operation cancelled by user.")
+            else:
+                raise me
+        except Exception as e:
+            # Handle stream closure errors (common in stateless HTTP when client disconnects)
+            # Treat as if elicit is not supported and proceed without confirmation
+            logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
+            elicit_supported = False
+        if elicit_supported and result.action != "accept":
+            raise Exception("Delete operation cancelled by user.")
         await client.delete(f"/users/{user_id}")
         return True
     except httpx.HTTPStatusError as e:
@@ -493,23 +487,21 @@ async def delete_cml_group(group_id: UUID4Type, ctx: Context) -> bool:
     try:
         if not await client.is_admin():
             raise ValueError("Only admin users can delete groups.")
-        # In HTTP transport, skip elicit as it's not compatible with stateless mode
-        if client.transport != "http":
-            elicit_supported = True
-            try:
-                result = await ctx.elicit("Are you sure you want to delete this group?", response_type=None)
-            except McpError as me:
-                if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
-                    elicit_supported = False
-                else:
-                    raise me
-            except Exception as e:
-                # Handle stream closure errors (common in stateless HTTP when client disconnects)
-                # Treat as if elicit is not supported and proceed without confirmation
-                logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
+        elicit_supported = True
+        try:
+            result = await ctx.elicit("Are you sure you want to delete this group?", response_type=None)
+        except McpError as me:
+            if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
                 elicit_supported = False
-            if elicit_supported and result.action != "accept":
-                raise Exception("Delete operation cancelled by user.")
+            else:
+                raise me
+        except Exception as e:
+            # Handle stream closure errors (common in stateless HTTP when client disconnects)
+            # Treat as if elicit is not supported and proceed without confirmation
+            logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
+            elicit_supported = False
+        if elicit_supported and result.action != "accept":
+            raise Exception("Delete operation cancelled by user.")
         await client.delete(f"/groups/{group_id}")
         return True
     except httpx.HTTPStatusError as e:
@@ -825,23 +817,21 @@ async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> bool:
     """
     client = get_cml_client_dep()
     try:
-        # In HTTP transport, skip elicit as it's not compatible with stateless mode
-        if client.transport != "http":
-            elicit_supported = True
-            try:
-                result = await ctx.elicit("Are you sure you want to wipe the lab?", response_type=None)
-            except McpError as me:
-                if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
-                    elicit_supported = False
-                else:
-                    raise me
-            except Exception as e:
-                # Handle stream closure errors (common in stateless HTTP when client disconnects)
-                # Treat as if elicit is not supported and proceed without confirmation
-                logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
+        elicit_supported = True
+        try:
+            result = await ctx.elicit("Are you sure you want to wipe the lab?", response_type=None)
+        except McpError as me:
+            if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
                 elicit_supported = False
-            if elicit_supported and result.action != "accept":
-                raise Exception("Wipe operation cancelled by user.")
+            else:
+                raise me
+        except Exception as e:
+            # Handle stream closure errors (common in stateless HTTP when client disconnects)
+            # Treat as if elicit is not supported and proceed without confirmation
+            logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
+            elicit_supported = False
+        if elicit_supported and result.action != "accept":
+            raise Exception("Wipe operation cancelled by user.")
         await wipe_lab(lid, client)
         return True
     except httpx.HTTPStatusError as e:
@@ -865,23 +855,21 @@ async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> bool:
     """
     client = get_cml_client_dep()
     try:
-        # In HTTP transport, skip elicit as it's not compatible with stateless mode
-        if client.transport != "http":
-            elicit_supported = True
-            try:
-                result = await ctx.elicit("Are you sure you want to delete the lab?", response_type=None)
-            except McpError as me:
-                if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
-                    elicit_supported = False
-                else:
-                    raise me
-            except Exception as e:
-                # Handle stream closure errors (common in stateless HTTP when client disconnects)
-                # Treat as if elicit is not supported and proceed without confirmation
-                logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
+        elicit_supported = True
+        try:
+            result = await ctx.elicit("Are you sure you want to delete the lab?", response_type=None)
+        except McpError as me:
+            if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
                 elicit_supported = False
-            if elicit_supported and result.action != "accept":
-                raise Exception("Delete operation cancelled by user.")
+            else:
+                raise me
+        except Exception as e:
+            # Handle stream closure errors (common in stateless HTTP when client disconnects)
+            # Treat as if elicit is not supported and proceed without confirmation
+            logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
+            elicit_supported = False
+        if elicit_supported and result.action != "accept":
+            raise Exception("Delete operation cancelled by user.")
         await stop_lab(lid, client)  # Ensure the lab is stopped before deletion
         await wipe_lab(lid, client)  # Ensure the lab is wiped before deletion
         await client.delete(f"/labs/{lid}")
@@ -1048,23 +1036,21 @@ async def delete_annotation_from_lab(
     """
     client = get_cml_client_dep()
     try:
-        # In HTTP transport, skip elicit as it's not compatible with stateless mode
-        if client.transport != "http":
-            elicit_supported = True
-            try:
-                result = await ctx.elicit("Are you sure you want to delete the annotation?", response_type=None)
-            except McpError as me:
-                if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
-                    elicit_supported = False
-                else:
-                    raise me
-            except Exception as e:
-                # Handle stream closure errors (common in stateless HTTP when client disconnects)
-                # Treat as if elicit is not supported and proceed without confirmation
-                logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
+        elicit_supported = True
+        try:
+            result = await ctx.elicit("Are you sure you want to delete the annotation?", response_type=None)
+        except McpError as me:
+            if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
                 elicit_supported = False
-            if elicit_supported and result.action != "accept":
-                raise Exception("Delete operation cancelled by user.")
+            else:
+                raise me
+        except Exception as e:
+            # Handle stream closure errors (common in stateless HTTP when client disconnects)
+            # Treat as if elicit is not supported and proceed without confirmation
+            logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
+            elicit_supported = False
+        if elicit_supported and result.action != "accept":
+            raise Exception("Delete operation cancelled by user.")
         await client.delete(f"/labs/{lid}/annotations/{annotation_id}")
         return True
     except httpx.HTTPStatusError as e:
@@ -1349,23 +1335,21 @@ async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
     """
     client = get_cml_client_dep()
     try:
-        # In HTTP transport, skip elicit as it's not compatible with stateless mode
-        if client.transport != "http":
-            elicit_supported = True
-            try:
-                result = await ctx.elicit("Are you sure you want to wipe the node?", response_type=None)
-            except McpError as me:
-                if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
-                    elicit_supported = False
-                else:
-                    raise me
-            except Exception as e:
-                # Handle stream closure errors (common in stateless HTTP when client disconnects)
-                # Treat as if elicit is not supported and proceed without confirmation
-                logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
+        elicit_supported = True
+        try:
+            result = await ctx.elicit("Are you sure you want to wipe the node?", response_type=None)
+        except McpError as me:
+            if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
                 elicit_supported = False
-            if elicit_supported and result.action != "accept":
-                raise Exception("Wipe operation cancelled by user.")
+            else:
+                raise me
+        except Exception as e:
+            # Handle stream closure errors (common in stateless HTTP when client disconnects)
+            # Treat as if elicit is not supported and proceed without confirmation
+            logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
+            elicit_supported = False
+        if elicit_supported and result.action != "accept":
+            raise Exception("Wipe operation cancelled by user.")
         await wipe_node(lid, nid, client)
         return True
     except httpx.HTTPStatusError as e:
@@ -1383,23 +1367,21 @@ async def delete_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
     """
     client = get_cml_client_dep()
     try:
-        # In HTTP transport, skip elicit as it's not compatible with stateless mode
-        if client.transport != "http":
-            elicit_supported = True
-            try:
-                result = await ctx.elicit("Are you sure you want to delete the node?", response_type=None)
-            except McpError as me:
-                if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
-                    elicit_supported = False
-                else:
-                    raise me
-            except Exception as e:
-                # Handle stream closure errors (common in stateless HTTP when client disconnects)
-                # Treat as if elicit is not supported and proceed without confirmation
-                logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
+        elicit_supported = True
+        try:
+            result = await ctx.elicit("Are you sure you want to delete the node?", response_type=None)
+        except McpError as me:
+            if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
                 elicit_supported = False
-            if elicit_supported and result.action != "accept":
-                raise Exception("Delete operation cancelled by user.")
+            else:
+                raise me
+        except Exception as e:
+            # Handle stream closure errors (common in stateless HTTP when client disconnects)
+            # Treat as if elicit is not supported and proceed without confirmation
+            logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
+            elicit_supported = False
+        if elicit_supported and result.action != "accept":
+            raise Exception("Delete operation cancelled by user.")
         await stop_node(lid, nid, client)  # Ensure the node is stopped before deletion
         await wipe_node(lid, nid, client)
         await client.delete(f"/labs/{lid}/nodes/{nid}")
