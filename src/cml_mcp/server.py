@@ -165,6 +165,9 @@ class CustomHttpRequestMiddleware(Middleware):
             return True  # No ACLs defined, all tools enabled
         client = get_cml_client_dep()
         default_enabled = acl_data.get("default_enabled", True)
+        if not isinstance(default_enabled, bool):
+            logger.warning("Invalid default_enabled value in ACLs; defaulting to True")
+            default_enabled = True
         users = acl_data.get("users", {})
         if client.username in users:
             enabled_tools = users[client.username].get("enabled_tools")
