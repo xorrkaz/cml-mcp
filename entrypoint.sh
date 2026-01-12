@@ -22,11 +22,9 @@ if [ "$CML_MCP_TRANSPORT" = "stdio" ]; then
     echo "       In HTTP mode, credentials are provided via X-Authorization header."
     exit 1
   fi
-  echo "Starting CML-MCP in stdio mode..."
   exec cml-mcp
 else
   # HTTP mode - credentials provided per-request via headers
-  echo "Starting CML-MCP HTTP server on ${CML_MCP_BIND}:${CML_MCP_PORT}..."
   exec uvicorn cml_mcp.server:app \
     --host "${CML_MCP_BIND}" \
     --port "${CML_MCP_PORT}" \
