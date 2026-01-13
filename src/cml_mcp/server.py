@@ -157,13 +157,12 @@ class CustomHttpRequestMiddleware(Middleware):
                 )
 
     @staticmethod
-    async def check_tool_enabled(tool_name: str) -> bool:
+    async def check_tool_enabled(tool_name: str, client: CMLClient) -> bool:
         """
         Check if a tool is enabled based on ACL configuration.
         """
         if not acl_data:
             return True  # No ACLs defined, all tools enabled
-        client = get_cml_client_dep()
         default_enabled = acl_data.get("default_enabled", True)
         if not isinstance(default_enabled, bool):
             logger.warning("Invalid default_enabled value in ACLs; defaulting to True")
@@ -288,13 +287,15 @@ class CustomHttpRequestMiddleware(Middleware):
     async def on_list_tools(self, context: MiddlewareContext, call_next) -> list:
         result = await call_next(context)
 
-        filtered_tools = [tool for tool in result if await CustomHttpRequestMiddleware.check_tool_enabled(tool.name)]
+        client = get_cml_client_dep()
+        filtered_tools = [tool for tool in result if await CustomHttpRequestMiddleware.check_tool_enabled(tool.name, client)]
 
         return filtered_tools
 
     async def on_call_tool(self, context: MiddlewareContext, call_next) -> Any:
 
-        if not await CustomHttpRequestMiddleware.check_tool_enabled(context.message.name):
+        client = get_cml_client_dep()
+        if not await CustomHttpRequestMiddleware.check_tool_enabled(context.message.name, client):
             raise ToolError(f"Tool '{context.message.name}' is disabled by server configuration")
 
         return await call_next(context)
