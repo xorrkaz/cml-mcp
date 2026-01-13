@@ -169,9 +169,15 @@ class CustomHttpRequestMiddleware(Middleware):
             logger.warning("Invalid default_enabled value in ACLs; defaulting to True")
             default_enabled = True
         users = acl_data.get("users", {})
+        if not isinstance(users, dict):
+            logger.warning("Invalid users structure in ACLs; using default settings")
+            return default_enabled
         if client.username in users:
             enabled_tools = users[client.username].get("enabled_tools")
             disabled_tools = users[client.username].get("disabled_tools")
+            if not isinstance(enabled_tools, list) or not isinstance(disabled_tools, list):
+                logger.warning(f"Invalid tool lists in ACLs for user {client.username}; using default settings")
+                return default_enabled
             # Prefer allow list over block list.
             if enabled_tools is not None and tool_name in enabled_tools:
                 return True
