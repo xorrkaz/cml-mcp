@@ -313,7 +313,6 @@ if settings.cml_mcp_transport == "http":
 
 async def cleanup_global_client() -> None:
     """Cleanup global CML client resources. Must be called before event loop shutdown."""
-    global cml_client
     if cml_client is not None and settings.cml_mcp_transport == "stdio":
         logger.info("Cleaning up global CML client...")
         try:
