@@ -163,7 +163,7 @@ def _validate_acl_data(raw_acl_data: dict | None) -> dict | None:
     }
 
 
-acl_data = None
+acl_data: dict | None = None
 if settings.cml_mcp_transport == "http":
     if settings.cml_mcp_acl_file:
         aclf = Path(settings.cml_mcp_acl_file)
