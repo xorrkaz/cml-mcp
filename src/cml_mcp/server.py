@@ -108,6 +108,61 @@ _pyats_username: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
 _pyats_password: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("pyats_password", default=None)
 _pyats_auth_pass: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("pyats_auth_pass", default=None)
 
+
+def _validate_acl_data(raw_acl_data: dict | None) -> dict | None:
+    """
+    Validate and normalize ACL configuration data.
+
+    Args:
+        raw_acl_data: Raw ACL data loaded from YAML file
+
+    Returns:
+        Validated/normalized ACL data or None if invalid
+    """
+    if not raw_acl_data:
+        return None
+
+    # Validate default_enabled
+    default_enabled = raw_acl_data.get("default_enabled", True)
+    if not isinstance(default_enabled, bool):
+        logger.warning("Invalid default_enabled value in ACLs; defaulting to True")
+        default_enabled = True
+
+    # Validate users structure
+    users = raw_acl_data.get("users", {})
+    if not isinstance(users, dict):
+        logger.warning("Invalid users structure in ACLs; using default_enabled with no user-specific rules")
+        users = {}
+
+    # Validate each user's tool lists
+    validated_users = {}
+    for username, user_config in users.items():
+        if not isinstance(user_config, dict):
+            logger.warning(f"Invalid configuration for user {username} in ACLs; skipping user")
+            continue
+
+        enabled_tools = user_config.get("enabled_tools")
+        disabled_tools = user_config.get("disabled_tools")
+
+        # Validate tool lists if present
+        if enabled_tools is not None and not isinstance(enabled_tools, list):
+            logger.warning(f"Invalid enabled_tools for user {username} in ACLs; skipping user")
+            continue
+        if disabled_tools is not None and not isinstance(disabled_tools, list):
+            logger.warning(f"Invalid disabled_tools for user {username} in ACLs; skipping user")
+            continue
+
+        validated_users[username] = {
+            "enabled_tools": enabled_tools,
+            "disabled_tools": disabled_tools,
+        }
+
+    return {
+        "default_enabled": default_enabled,
+        "users": validated_users,
+    }
+
+
 acl_data = None
 if settings.cml_mcp_transport == "http":
     if settings.cml_mcp_acl_file:
@@ -115,7 +170,8 @@ if settings.cml_mcp_transport == "http":
         if aclf.is_file():
             try:
                 with aclf.open("r", encoding="utf-8") as f:
-                    acl_data = yaml.safe_load(f)
+                    raw_acl_data = yaml.safe_load(f)
+                    acl_data = _validate_acl_data(raw_acl_data)
             except Exception as e:
                 logger.error(f"Failed to load ACL file {str(aclf)}: {e}", exc_info=True)
                 acl_data = None
@@ -160,23 +216,19 @@ class CustomHttpRequestMiddleware(Middleware):
     async def check_tool_enabled(tool_name: str, client: CMLClient) -> bool:
         """
         Check if a tool is enabled based on ACL configuration.
+        ACL data is pre-validated at startup, so this method can trust the structure.
         """
         if not acl_data:
             return True  # No ACLs defined, all tools enabled
-        default_enabled = acl_data.get("default_enabled", True)
-        if not isinstance(default_enabled, bool):
-            logger.warning("Invalid default_enabled value in ACLs; defaulting to True")
-            default_enabled = True
-        users = acl_data.get("users", {})
-        if not isinstance(users, dict):
-            logger.warning("Invalid users structure in ACLs; using default settings")
-            return default_enabled
+
+        default_enabled = acl_data["default_enabled"]
+        users = acl_data["users"]
+
         if client.username in users:
-            enabled_tools = users[client.username].get("enabled_tools")
-            disabled_tools = users[client.username].get("disabled_tools")
-            if not isinstance(enabled_tools, list) or not isinstance(disabled_tools, list):
-                logger.warning(f"Invalid tool lists in ACLs for user {client.username}; using default settings")
-                return default_enabled
+            user_config = users[client.username]
+            enabled_tools = user_config["enabled_tools"]
+            disabled_tools = user_config["disabled_tools"]
+
             # Prefer allow list over block list.
             if enabled_tools is not None and tool_name in enabled_tools:
                 return True
