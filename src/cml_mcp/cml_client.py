@@ -51,34 +51,24 @@ class CMLClient(object):
 
     def __init__(
         self,
-        host: str | None,
-        username: str | None,
-        password: str | None,
+        host: str,
+        username: str,
+        password: str,
         transport: str = "stdio",
         verify_ssl: bool = False,
     ) -> None:
-        if transport == "stdio":
-            assert host is not None, "Host must be provided for stdio transport"
-            assert username is not None, "Username must be provided for stdio transport"
-            assert password is not None, "Password must be provided for stdio transport"
-
-        # Initialize base URLs and vclient for both transport modes
-        if host and username and password:
-            self.base_url = host.rstrip("/")
-            self.api_base = f"{self.base_url}/api/v0"
-            self.vclient = virl2_client.ClientLibrary(host, username, password, ssl_verify=verify_ssl)
-        else:
-            self.base_url = ""
-            self.api_base = ""
-            self.vclient = None
-
-        self.client = httpx.AsyncClient(verify=verify_ssl, timeout=API_TIMEOUT)
-        self._token = None
         self.username = username
         self.password = password
-        self.admin = None
         self.transport = transport
         self.verify_ssl = verify_ssl
+
+        self._token = None
+        self.admin = None
+
+        self.base_url = host.rstrip("/")
+        self.api_base = f"{self.base_url}/api/v0"
+        self.vclient = virl2_client.ClientLibrary(host, username, password, ssl_verify=verify_ssl)
+        self.client = httpx.AsyncClient(verify=verify_ssl, timeout=API_TIMEOUT)
 
     @property
     def token(self) -> str | None:
