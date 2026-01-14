@@ -15,6 +15,8 @@ ENV PYTHONUNBUFFERED=1
 ENV CML_URL=https://cml.host.internal
 ENV CML_MCP_TRANSPORT=stdio
 ENV DEBUG=false
+# This should not need to change.  Just bind mount it if needed.
+ENV CML_MCP_ACL_FILE=/app/acl.yaml
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     openssh-client \

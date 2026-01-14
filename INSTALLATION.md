@@ -244,6 +244,8 @@ DEBUG=false  # Set to true to enable debug logging
 CML_ALLOWED_URLS=https://cml1.example.com,https://cml2.example.com  # Comma-separated list
 # OR
 CML_URL_PATTERN=^https://cml\.example\.com  # Regex pattern
+# Optional: Enable access control lists for tool restrictions
+CML_MCP_ACL_FILE=/path/to/acl.yaml  # Path to ACL configuration file
 ```
 
 Then run:
@@ -383,6 +385,133 @@ docker run -d \
 
 This exposes the HTTP server on port 9000, allowing external MCP clients to connect.
 
+#### Using ACLs with Docker
+
+To use ACLs in Docker, mount your ACL file to `/app/acl.yaml`:
+
+```sh
+docker run -d \
+  --rm \
+  --name cml-mcp \
+  -p 9000:9000 \
+  -v /path/to/your/acl.yaml:/app/acl.yaml:ro \
+  -e CML_URL=<URL_OF_CML_SERVER> \
+  -e CML_MCP_TRANSPORT=http \
+  xorrkaz/cml-mcp:latest
+```
+
+The Dockerfile sets `CML_MCP_ACL_FILE` to `/app/acl.yaml` by default, so you just need to mount your ACL configuration file to that path.
+
+## Access Control Lists (HTTP Mode Only)
+
+When running the MCP server in HTTP transport mode, you can implement fine-grained access control using a YAML-based ACL configuration file. This allows you to restrict which CML users can access which tools.
+
+### ACL Configuration
+
+To enable ACLs, set the `CML_MCP_ACL_FILE` environment variable to point to your ACL YAML file:
+
+```sh
+export CML_MCP_ACL_FILE=/path/to/acl.yaml
+```
+
+Or add it to your `.env` file:
+
+```sh
+CML_MCP_ACL_FILE=/path/to/acl.yaml
+```
+
+### ACL File Format
+
+The ACL file uses the following structure:
+
+```yaml
+---
+# If a user is not explicitly mentioned in the file, they are denied tool use when
+# default_enabled is False. By default (when default_enabled is True or omitted),
+# users not explicitly named in the file are allowed to call all tools.
+default_enabled: False
+users:
+    # Admin is allowed to call all tools.
+    admin: {}
+    # jdoe is allowed all tools but delete_cml_lab and delete_cml_node.
+    jdoe:
+        disabled_tools:
+            - delete_cml_lab
+            - delete_cml_node
+    # jsmith is only allowed to call send_cli_command.
+    jsmith:
+        enabled_tools:
+            - send_cli_command
+```
+
+### Configuration Options
+
+- **`default_enabled`** (boolean, default: `true`): Controls the default behavior for users not explicitly listed in the ACL file.
+  - `true`: Users not in the ACL file can access all tools (permissive default)
+  - `false`: Users not in the ACL file cannot access any tools (restrictive default)
+
+- **`users`** (object): A mapping of CML usernames to their tool access rules. Each user can have:
+  - **`enabled_tools`** (list): An allow list of tool names the user can access. If specified, the user can only access these tools.
+  - **`disabled_tools`** (list): A block list of tool names the user cannot access. The user can access all other tools.
+  - If both lists are specified, `enabled_tools` takes precedence
+  - An empty user configuration (`{}`) allows access to all tools regardless of `default_enabled`
+
+### ACL Behavior
+
+The ACL system follows this evaluation order:
+
+1. If no ACL file is configured, all users can access all tools
+2. If a user has an `enabled_tools` list, they can only access those specific tools
+3. If a user has a `disabled_tools` list (and no `enabled_tools`), they can access all tools except those listed
+4. If a user is not in the ACL file, the `default_enabled` setting determines their access
+5. If a user is in the ACL file with an empty configuration, they can access all tools
+
+### Example Use Cases
+
+**Restrictive Environment** - Only allow specific users:
+
+```yaml
+default_enabled: False
+users:
+    admin: {}  # Admin has full access
+    developer:
+        enabled_tools:
+            - get_cml_labs
+            - get_nodes_for_cml_lab
+            - send_cli_command
+```
+
+**Permissive Environment** - Block specific actions:
+
+```yaml
+default_enabled: True
+users:
+    intern:
+        disabled_tools:
+            - delete_cml_lab
+            - delete_cml_node
+            - delete_cml_user
+            - delete_cml_group
+```
+
+For a complete example, see [acl.yaml.example](https://github.com/xorrkaz/cml-mcp/blob/main/acl.yaml.example) in the repository.
+
+### Tool Names Reference
+
+To configure ACLs, you'll need to know the exact tool names. Here are all available tools:
+
+**Lab Management:** `get_cml_labs`, `create_empty_lab`, `create_full_lab_topology`, `modify_cml_lab`, `start_cml_lab`, `stop_cml_lab`, `wipe_cml_lab`, `delete_cml_lab`, `get_cml_lab_by_title`
+
+**Node Management:** `get_cml_node_definitions`, `get_node_definition_detail`, `add_node_to_cml_lab`, `get_nodes_for_cml_lab`, `configure_cml_node`, `start_cml_node`, `stop_cml_node`, `wipe_cml_node`, `delete_cml_node`, `get_console_log`, `send_cli_command`
+
+**Interface & Link Management:** `add_interface_to_node`, `get_interfaces_for_node`, `connect_two_nodes`, `get_all_links_for_lab`, `apply_link_conditioning`, `start_cml_link`, `stop_cml_link`
+
+**Annotations:** `get_annotations_for_cml_lab`, `add_annotation_to_cml_lab`, `delete_annotation_from_lab`
+
+**User & Group Management:** `get_cml_users`, `create_cml_user`, `delete_cml_user`, `get_cml_groups`, `create_cml_group`, `delete_cml_group`
+
+**System Information:** `get_cml_information`, `get_cml_status`, `get_cml_statistics`, `get_cml_licensing_details`
+
 ## Environment Variables Reference
 
 ### Required (stdio mode)
@@ -406,6 +535,7 @@ This exposes the HTTP server on port 9000, allowing external MCP clients to conn
 - `CML_MCP_PORT` - Port for HTTP server (default: `9000`)
 - `CML_ALLOWED_URLS` - Comma-separated list of allowed CML URLs in HTTP mode
 - `CML_URL_PATTERN` - Regex pattern for allowed CML URLs (alternative to `CML_ALLOWED_URLS`)
+- `CML_MCP_ACL_FILE` - Path to YAML file for access control lists (tool restrictions per user)
 
 ### Test Environment Variables
 

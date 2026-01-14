@@ -19,6 +19,7 @@ mcp-name: io.github.xorrkaz/cml-mcp
 - **Node Configuration:** Configure node startup configurations and send CLI commands to running devices.
 - **Run Commands on Devices:** Using [PyATS](https://developer.cisco.com/pyats/), MCP clients can execute commands on virtual devices within CML labs.
 - **Console Log Access:** Retrieve console logs from running nodes for troubleshooting and monitoring.
+- **Access Control Lists (HTTP Mode):** When running in HTTP transport mode, you can restrict which users can access which tools using a YAML-based ACL configuration file.
 
 ## Quick Start
 

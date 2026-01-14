@@ -1,0 +1,16 @@
+---
+# If a user is not explicitly mentioned in the file, they are denied tool use.  By default, users not explicitly
+# named in the file are allowed to call all tools.
+default_enabled: False
+users:
+    # Admin is allowed to call all tools.
+    admin: {}
+    # jdoe is allowed all tools but delete_cml_lab and delete_cml_node.
+    jdoe:
+        disabled_tools:
+            - delete_cml_lab
+            - delete_cml_node
+    # jsmith is only allowed to call send_cli_command.
+    jsmith:
+        enabled_tools:
+            - send_cli_command
