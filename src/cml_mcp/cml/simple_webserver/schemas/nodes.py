@@ -143,13 +143,10 @@ class NodeUpdate(NodeBaseExtended, extra="forbid"):
     pinned_compute_id: PinnedComputeID = Field(default=None)
 
 
-class BootProgresses(StrEnum):
+class BootProgress(StrEnum):
     NOT_RUNNING = "Not running"
     BOOTING = "Booting"
     BOOTED = "Booted"
-
-
-BootProgress = Annotated[BootProgresses, Field(description="Node boot progress.")]
 
 
 class NodeDefinedBase(NodeBaseExtended):

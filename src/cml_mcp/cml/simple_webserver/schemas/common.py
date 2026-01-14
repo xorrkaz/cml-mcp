@@ -5,7 +5,7 @@
 #
 import re
 from datetime import UTC, datetime
-from enum import StrEnum
+from enum import StrEnum, auto
 from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, Field, RootModel, field_serializer
@@ -287,36 +287,37 @@ class BaseDBModel(BaseModel):
 
 
 class DeviceNature(StrEnum):
-    ROUTER = "router"
-    SWITCH = "switch"
-    SERVER = "server"
-    HOST = "host"
-    CLOUD = "cloud"
-    FIREWALL = "firewall"
-    EXTERNAL_CONNECTOR = "external_connector"
+    ROUTER = auto()
+    SWITCH = auto()
+    SERVER = auto()
+    CLOUD = auto()
+    HOST = auto()
+    FIREWALL = auto()
+    EXTERNAL_CONNECTOR = auto()
 
 
 class DriverType(StrEnum):
-    ASAV = "asav"
-    ALPINE = "alpine"
-    CAT9K = "cat9k"
-    COREOS = "coreos"
-    CSR1000V = "csr1000v"
-    EXTERNAL_CONNECTOR = "external_connector"
-    IOL = "iol"
-    IOL_L2 = "iol-l2"
-    IOSV = "iosv"
-    IOSVL2 = "iosvl2"
-    IOSXRV = "iosxrv"
-    IOSXRV9000 = "iosxrv9000"
-    NXOSV = "nxosv"
-    NXOSV9000 = "nxosv9000"
-    PAGENT = "pagent"
-    SERVER = "server"
-    TREX = "trex"
-    UBUNTU = "ubuntu"
-    UNMANAGED_SWITCH = "unmanaged_switch"
-    WAN_EMULATOR = "wan_emulator"
+    ASAV = auto()
+    ALPINE = auto()
+    CAT9K = auto()
+    COREOS = auto()
+    CSR1000V = auto()
+    EXTERNAL_CONNECTOR = auto()
+    IOL = auto()
+    IOL_L2 = auto()
+    IOSV = auto()
+    IOSVL2 = auto()
+    IOSXRV = auto()
+    IOSXRV9000 = auto()
+    LXC = auto()
+    NXOSV = auto()
+    NXOSV9000 = auto()
+    PAGENT = auto()
+    SERVER = auto()
+    TREX = auto()
+    UBUNTU = auto()
+    UNMANAGED_SWITCH = auto()
+    WAN_EMULATOR = auto()
 
 
 class StringDict(RootModel[dict[str, str]]):

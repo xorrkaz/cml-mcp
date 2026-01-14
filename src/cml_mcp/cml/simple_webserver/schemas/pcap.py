@@ -4,7 +4,7 @@
 # All rights reserved.
 #
 from datetime import datetime
-from enum import StrEnum
+from enum import StrEnum, auto
 from typing import Annotated
 
 from fastapi import Body, Path
@@ -30,16 +30,16 @@ PacketIdPathParameter = Annotated[
 ]
 
 
-class LinkEncaps(StrEnum):
-    ethernet = "ethernet"
-    frelay = "frelay"
-    ppp = "ppp"
-    ppp_hdlc = "ppp_hdlc"
-    pppoe = "pppoe"
-    c_hdlc = "c_hdlc"
-    slip = "slip"
-    ax25 = "ax25"
-    ieee802_11 = "ieee802_11"
+class LinkEncap(StrEnum):
+    ETHERNET = auto()
+    FRELAY = auto()
+    PPP = auto()
+    PPP_HDLC = auto()
+    PPPOE = auto()
+    C_HLDC = auto()
+    SLIP = auto()
+    AX25 = auto()
+    IEEE802_11 = auto()
 
 
 class PCAPStart(BaseModel, extra="forbid"):
@@ -64,7 +64,9 @@ class PCAPStart(BaseModel, extra="forbid"):
         max_length=128,
         examples=["src 0.0.0.0"],
     )
-    encap: LinkEncaps = Field(default="ethernet", description=LINK_ENCAP_DESCRIPTION)
+    encap: LinkEncap = Field(
+        default=LinkEncap.ETHERNET, description=LINK_ENCAP_DESCRIPTION
+    )
 
     @model_validator(mode="after")
     def check_at_least_one(self):
@@ -100,7 +102,7 @@ class PCAPConfigStatus(BaseModel, extra="forbid"):
         max_length=128,
         examples=["src 0.0.0.0"],
     )
-    encap: LinkEncaps | None = Field(default=None, description=LINK_ENCAP_DESCRIPTION)
+    encap: LinkEncap | None = Field(default=None, description=LINK_ENCAP_DESCRIPTION)
     link_capture_key: UUID4Type | None = Field(
         ...,
         description="Key or ID for the packet capture running on the specified link.",

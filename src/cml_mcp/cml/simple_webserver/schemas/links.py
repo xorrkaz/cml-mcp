@@ -95,7 +95,9 @@ class LinkCondition(BaseModel):
 
 
 class LinkConditionConfiguration(LinkCondition, extra="forbid"):
-    enabled: bool = Field(default=True, description="The link conditioning is enabled.")
+    enabled: bool = Field(
+        default=False, description="The link conditioning is enabled."
+    )
 
 
 class LinkWithConditionConfig(LinkConnectionInfo, extra="forbid"):

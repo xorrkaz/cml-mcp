@@ -3,7 +3,7 @@
 # Copyright (c) 2019-2025, Cisco Systems, Inc.
 # All rights reserved.
 #
-from enum import StrEnum
+from enum import StrEnum, auto
 from typing import Annotated, Literal
 
 from fastapi import Body
@@ -22,21 +22,21 @@ CoordinateFloat = Annotated[
 ]
 
 
-class AnnotationTypeEnum(StrEnum):
-    text = "text"
-    rectangle = "rectangle"
-    ellipse = "ellipse"
-    line = "line"
+class AnnotationType(StrEnum):
+    TEXT = auto()
+    RECTANGLE = auto()
+    ELLIPSE = auto()
+    LINE = auto()
 
 
 class LineStyle(StrEnum):
-    ARROW = "arrow"
-    SQUARE = "square"
-    CIRCLE = "circle"
+    ARROW = auto()
+    SQUARE = auto()
+    CIRCLE = auto()
 
 
 class AnnotationBase(BaseModel):
-    type: AnnotationTypeEnum = Field(..., description="Annotation element type.")
+    type: AnnotationType = Field(..., description="Annotation element type.")
     border_color: AnnotationColor = Field(
         ..., description=f"Border color, of the annotation {COLOR_EXAMPLES_STR}."
     )
@@ -72,7 +72,7 @@ class RotationMixin(BaseModel):
 
 
 class TextAnnotation(AnnotationBase, RotationMixin, extra="forbid"):
-    type: Literal[AnnotationTypeEnum.text]
+    type: Literal[AnnotationType.TEXT]
     text_bold: bool = Field(..., description="Text style bold.")
     text_content: str = Field(
         ..., min_length=0, max_length=8192, description="Text element content."
@@ -90,18 +90,18 @@ class TextAnnotation(AnnotationBase, RotationMixin, extra="forbid"):
 
 
 class RectangleAnnotation(AnnotationBase, RotationMixin, X2Y2Mixin, extra="forbid"):
-    type: Literal[AnnotationTypeEnum.rectangle]
+    type: Literal[AnnotationType.RECTANGLE]
     border_radius: int = Field(
         ..., ge=0, le=128, description="Border radius for rectangles"
     )
 
 
 class EllipseAnnotation(AnnotationBase, RotationMixin, X2Y2Mixin, extra="forbid"):
-    type: Literal[AnnotationTypeEnum.ellipse]
+    type: Literal[AnnotationType.ELLIPSE]
 
 
 class LineAnnotation(AnnotationBase, X2Y2Mixin, extra="forbid"):
-    type: Literal[AnnotationTypeEnum.line]
+    type: Literal[AnnotationType.LINE]
     line_start: LineStyle | None = Field(..., description="Line arrow start style.")
     line_end: LineStyle | None = Field(..., description="Line arrow end style.")
 

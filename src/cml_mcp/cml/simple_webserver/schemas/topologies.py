@@ -38,28 +38,26 @@ TopologyID = Annotated[
 ]
 
 
-class TopologySchemaVersionEnum(StrEnum):
+class TopologySchemaVersion(StrEnum):
     v0_0_1 = "0.0.1"
     v0_0_2 = "0.0.2"
-    v0_0_3 = "0.0.3"
-    v0_0_4 = "0.0.4"
-    v0_0_5 = "0.0.5"
-    v0_1_0 = "0.1.0"
-    v0_2_0 = "0.2.0"
-    v0_2_1 = "0.2.1"
-    v0_2_2 = "0.2.2"
-    v0_3_0 = "0.3.0"
-    v0_3_1 = "0.3.1"
-
-
-TopologySchemaVersion = Annotated[
-    TopologySchemaVersionEnum,
-    Field(description="Topology schema version.", examples=["0.2.2"]),
-]
+    v0_0_3 = "0.0.3"  # CML 2.0
+    v0_0_4 = "0.0.4"  # CML 2.1
+    v0_0_5 = "0.0.5"  # CML 2.3
+    v0_1_0 = "0.1.0"  # CML 2.4
+    v0_2_0 = "0.2.0"  # CML 2.5
+    v0_2_1 = "0.2.1"  # CML 2.6
+    v0_2_2 = "0.2.2"  # CML 2.7
+    v0_3_0 = "0.3.0"  # CML 2.8
+    v0_3_1 = "0.3.1"  # CML 2.10
 
 
 class LabTopology(BaseModel, extra="forbid"):
-    version: TopologySchemaVersion = Field(...)
+    version: TopologySchemaVersion = Field(
+        ...,
+        description="Topology schema version.",
+        examples=[TopologySchemaVersion.v0_2_2],
+    )
     title: LabTitle = Field(default=None)
     description: LabDescription = Field(default=None)
     notes: LabNotes = Field(default=None)

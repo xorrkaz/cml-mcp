@@ -4,19 +4,19 @@
 # All rights reserved.
 #
 
-from enum import Enum
+
+from enum import StrEnum
 
 from pydantic import BaseModel, Field, RootModel
 
+from simple_common.schemas import DomainDriver
 from simple_webserver.schemas.common import IPAddress, UUID4Type
 from simple_webserver.schemas.labs import LabTitle
 from simple_webserver.schemas.links import LinkLabel
-from simple_webserver.schemas.node_definitions import LibvirtDomainDriver
 from simple_webserver.schemas.nodes import NodeLabel
 
-UpperLibvirtDomainDrivers = Enum(
-    "UpperLibvirtDomainDrivers",
-    {member.name: member.name.upper() for member in LibvirtDomainDriver},
+UpperDomainDriver = StrEnum(
+    "UpperDomainDriver", {member.name: member.name for member in DomainDriver}
 )
 
 
@@ -28,7 +28,7 @@ class BaseLabDetails(BaseModel):
 
 
 class ConsoleLabDetails(BaseLabDetails, extra="forbid"):
-    driver: UpperLibvirtDomainDrivers
+    driver: UpperDomainDriver
     line: int = Field(..., ge=0)
 
 

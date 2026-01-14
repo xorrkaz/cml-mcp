@@ -23,24 +23,10 @@ from simple_webserver.schemas.common import (
 from simple_webserver.schemas.external_connector import ExternalConnectorDeviceName
 
 
-class ExternalConnectorForwardingItems(StrEnum):
+class ExternalConnectorForwarding(StrEnum):
     BRIDGE = "BRIDGE"
     NAT = "NAT"
     OFF = "OFF"
-
-
-ExternalConnectorForwarding = Annotated[
-    ExternalConnectorForwardingItems,
-    Field(
-        description="""
-    External connector bridge forwarding mode.
-    * `BRIDGE` - forwards to a member L2 interface (physical, vlan, etc.)
-    * `NAT` - forwards using the controller host's routing tables with NAT.
-    * `OFF` - isolated private network for labs on the same CML instance.
-    """,
-        examples=[ExternalConnectorForwardingItems.NAT],
-    ),
-]
 
 
 class ExternalConnectorBase(BaseModel):
@@ -92,7 +78,13 @@ class ExternalConnectorState(ExternalConnectorBase, extra="forbid"):
     label: ExternalConnectorLabel | None = Field(...)
     interface: str | None = Field(...)
     forwarding: ExternalConnectorForwarding = Field(
-        ..., description="Forwarding mode for the bridge."
+        description="""
+            External connector bridge forwarding mode.
+            * `BRIDGE` - forwards to a member L2 interface (physical, vlan, etc.)
+            * `NAT` - forwards using the controller host's routing tables with NAT.
+            * `OFF` - isolated private network for labs on the same CML instance.
+        """,
+        examples=[ExternalConnectorForwarding.NAT],
     )
     mtu: int = Field(default=None, description="MTU on the bridge device.")
     exists: bool = Field(
@@ -231,7 +223,7 @@ class ComputeHostBase(BaseModel, extra="forbid"):
     )
 
 
-class SystemNoticeLevels(StrEnum):
+class SystemNoticeLevel(StrEnum):
     INFO = "INFO"
     SUCCESS = "SUCCESS"
     WARNING = "WARNING"
@@ -239,7 +231,7 @@ class SystemNoticeLevels(StrEnum):
 
 
 SystemNoticeLevel = Annotated[
-    SystemNoticeLevels,
+    SystemNoticeLevel,
     Field(
         description="""
     System notice importance level.
@@ -248,7 +240,7 @@ SystemNoticeLevel = Annotated[
     * `WARNING` - notice warning about potential issues or actions to take.
     * `ERROR` - notice reporting a negative outcome or required actions.
     """,
-        examples=[SystemNoticeLevels.WARNING],
+        examples=[SystemNoticeLevel.WARNING],
     ),
 ]
 
@@ -282,7 +274,7 @@ class SystemNoticeBase(BaseModel):
     Basic information about an administrative notice to users.
     """
 
-    level: SystemNoticeLevel = Field(default=SystemNoticeLevels.INFO)
+    level: SystemNoticeLevel = Field(default=SystemNoticeLevel.INFO)
     label: SystemNoticeLabel = Field(default=None)
     content: SystemNoticeContent = Field(default=None)
     enabled: SystemNoticeEnabled = Field(default=None)

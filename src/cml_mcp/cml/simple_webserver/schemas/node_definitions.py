@@ -4,11 +4,12 @@
 # All rights reserved.
 #
 import re
-from enum import StrEnum
+from enum import StrEnum, auto
 from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, Field, conlist, model_validator
 
+from simple_common.schemas import ConfigurationMediaType, DomainDriver
 from simple_webserver.schemas.common import (
     DefinitionID,
     DeviceNature,
@@ -20,49 +21,42 @@ from simple_webserver.schemas.pyats import PyAtsCredentials, PyAtsModel, PyAtsOs
 
 
 class NicDriver(StrEnum):
-    VIRTIO = "virtio"
-    E1000 = "e1000"
-    RTL8139 = "rtl8139"
-    VMXNET3 = "vmxnet3"
-    E1000E = "e1000e"
+    VIRTIO = auto()
+    E1000 = auto()
+    RTL8139 = auto()
+    VMXNET3 = auto()
+    E1000E = auto()
     E1000_82544GC = "e1000-82544gc"
     E1000_82545EM = "e1000-82545em"
-    I82550 = "i82550"
-    I82551 = "i82551"
-    I82557A = "i82557a"
-    I82557B = "i82557b"
-    I82557C = "i82557c"
-    I82558A = "i82558a"
-    I82558B = "i82558b"
-    I82559A = "i82559a"
-    I82559B = "i82559b"
-    I82559C = "i82559c"
-    I82559ER = "i82559er"
-    I82562 = "i82562"
-    I82801 = "i82801"
-
-
-class LibvirtDomainDriver(StrEnum):
-    DOCKER = "docker"
-    IOL = "iol"
-    KVM = "kvm"
-    NONE = "none"
+    I82550 = auto()
+    I82551 = auto()
+    I82557A = auto()
+    I82557B = auto()
+    I82557C = auto()
+    I82558A = auto()
+    I82558B = auto()
+    I82559A = auto()
+    I82559B = auto()
+    I82559C = auto()
+    I82559ER = auto()
+    I82562 = auto()
+    I82801 = auto()
 
 
 class DiskDriver(StrEnum):
-    IDE = "ide"
-    SATA = "sata"
-    VIRTIO = "virtio"
+    IDE = auto()
+    SATA = auto()
+    VIRTIO = auto()
 
 
 class VideoModel(StrEnum):
-    VGA = "vga"
-    CIRRUS = "cirrus"
-    VMVGA = "vmvga"
-    QXL = "qxl"
-    XEN = "xen"
-    VIRTIO = "virtio"
-    NONE = "none"
+    VGA = auto()
+    CIRRUS = auto()
+    VMVGA = auto()
+    QXL = auto()
+    XEN = auto()
+    VIRTIO = auto()
+    NONE = auto()
 
 
 class VideoDevice(BaseModel, extra="forbid"):
@@ -73,9 +67,7 @@ class VideoDevice(BaseModel, extra="forbid"):
 class LinuxNative(BaseModel, extra="forbid"):
     """Base for simulation objects."""
 
-    libvirt_domain_driver: LibvirtDomainDriver = Field(
-        ..., description="Domain Driver."
-    )
+    libvirt_domain_driver: DomainDriver = Field(..., description="Domain Driver.")
     driver: DriverType = Field(..., description="Simulation Driver.")
     disk_driver: DiskDriver = Field(default=None, description="Disk Driver.")
     efi_boot: bool = Field(default=None, description="If set, use EFI boot for the VM.")
@@ -128,9 +120,9 @@ class LinuxNative(BaseModel, extra="forbid"):
     @model_validator(mode="after")
     def validate(self):
         required: list[str] = []
-        if self.libvirt_domain_driver is LibvirtDomainDriver.KVM:
+        if self.libvirt_domain_driver is DomainDriver.KVM:
             required = ["cpus", "ram", "nic_driver", "disk_driver"]
-        elif self.libvirt_domain_driver is not LibvirtDomainDriver.NONE:
+        elif self.libvirt_domain_driver.is_simulated:
             required = ["ram"]
         for key in required:
             if not getattr(self, key, None):
@@ -147,13 +139,6 @@ LoopBackField = Annotated[str, Field(min_length=1, max_length=32)]
 
 ManagementField = Annotated[str, Field(min_length=1, max_length=32)]
 
-SERIAL_PORTS_LIMITS = {
-    LibvirtDomainDriver.DOCKER: 2,
-    LibvirtDomainDriver.IOL: 2,
-    LibvirtDomainDriver.KVM: 4,
-    LibvirtDomainDriver.NONE: 0,
-}
-
 
 class Interfaces(BaseModel, extra="forbid"):
     """
@@ -162,9 +147,9 @@ class Interfaces(BaseModel, extra="forbid"):
 
     serial_ports: int = Field(
         ...,
-        description=f"""
-            Number of serial ports (console, aux, ...). Maximum value depends on
-            simulation libvirt domain driver type: {SERIAL_PORTS_LIMITS}.
+        description="""
+            Number of serial ports (console, aux, ...). Maximum value is 4 for KVM
+            and 2 for Docker/IOL nodes.
         """,
         ge=0,
         le=4,
@@ -299,35 +284,29 @@ class General(BaseModel, extra="forbid"):
 
 
 class ConfigurationDriver(StrEnum):
-    asav = "asav"
-    alpine = "alpine"
-    cat9000v = "cat9000v"
-    coreos = "coreos"
-    csr1000v = "csr1000v"
-    desktop = "desktop"
-    fmcv = "fmcv"
-    ftdv = "ftdv"
-    iosv = "iosv"
-    iosvl2 = "iosvl2"
-    iosxrv = "iosxrv"
-    iosxrv9000 = "iosxrv9000"
-    nxosv = "nxosv"
-    nxosv9000 = "nxosv9000"
-    pagent = "pagent"
-    sdwan = "sdwan"
-    sdwan_edge = "sdwan_edge"
-    sdwan_manager = "sdwan_manager"
-    server = "server"
-    trex = "trex"
-    ubuntu = "ubuntu"
-    wan_emulator = "wan_emulator"
-
-
-class ConfigurationMediaType(StrEnum):
-    iso = "iso"
-    fat = "fat"
-    raw = "raw"
-    ext4 = "ext4"
+    ASAV = auto()
+    ALPINE = auto()
+    CAT9000V = auto()
+    COREOS = auto()
+    CSR1000v = auto()
+    DESKTOP = auto()
+    FMCV = auto()
+    FTDV = auto()
+    IOSV = auto()
+    IOSVL2 = auto()
+    IOSXRV = auto()
+    IOSXRV9000 = auto()
+    LXC = auto()
+    NXOSV = auto()
+    NXOSV9000 = auto()
+    PAGENT = auto()
+    SDWAN = auto()
+    SDWAN_EDGE = auto()
+    SDWAN_MANAGER = auto()
+    SERVER = auto()
+    TREX = auto()
+    UBUNTU = auto()
+    WAN_EMULATOR = auto()
 
 
 class ConfigurationGenerator(BaseModel, extra="forbid"):
@@ -390,14 +369,14 @@ class Device(BaseModel, extra="forbid"):
 
 
 class Icon(StrEnum):
-    router = "router"
-    switch = "switch"
-    server = "server"
-    host = "host"
-    cloud = "cloud"
-    firewall = "firewall"
-    access_point = "access_point"
-    wlc = "wlc"
+    router = auto()
+    switch = auto()
+    server = auto()
+    host = auto()
+    cloud = auto()
+    firewall = auto()
+    access_point = auto()
+    wlc = auto()
 
 
 URI_BASE64_IMAGE_CONTENT_REGEX = re.compile(
@@ -530,7 +509,7 @@ class NodeDefinition(BaseModel, extra="forbid"):
         serial_ports = self.device.interfaces.serial_ports
         domain_driver = self.sim.linux_native.libvirt_domain_driver
 
-        max_limit = SERIAL_PORTS_LIMITS.get(domain_driver)
+        max_limit = domain_driver.serial_port_limit
 
         if serial_ports > max_limit:
             raise ValueError(
