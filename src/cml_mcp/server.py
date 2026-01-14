@@ -108,6 +108,9 @@ _pyats_username: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar(
 _pyats_password: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("pyats_password", default=None)
 _pyats_auth_pass: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("pyats_auth_pass", default=None)
 
+# ACL data
+acl_data: dict | None = None
+
 
 def _validate_acl_data(raw_acl_data: dict | None) -> dict | None:
     """
@@ -163,7 +166,6 @@ def _validate_acl_data(raw_acl_data: dict | None) -> dict | None:
     }
 
 
-acl_data: dict | None = None
 if settings.cml_mcp_transport == "http":
     if settings.cml_mcp_acl_file:
         aclf = Path(settings.cml_mcp_acl_file)
