@@ -35,7 +35,15 @@ class SimplifiedInterfaces(BaseModel, extra="ignore"):
     Interface configurations.
     """
 
-    serial_ports: int = Field(..., description="Number of serial Ports (console, aux, ...).", ge=0, le=4)
+    serial_ports: int = Field(
+        ...,
+        description="""
+            Number of serial ports (console, aux, ...). Maximum value is 4 for KVM
+            and 2 for Docker/IOL nodes.
+        """,
+        ge=0,
+        le=4,
+    )
     default_console: int | None = Field(
         default=None,
         description="Default serial port for console connections.",
@@ -43,14 +51,14 @@ class SimplifiedInterfaces(BaseModel, extra="ignore"):
         le=4,
     )
     has_loopback_zero: bool = Field(..., description="Has `loopback0` interface (used with ANK).")
-    min_count: int | None = Field(
+    min_count: int = Field(
         default=None,
         description="Minimal number of physical interfaces needed to start a node.",
         ge=0,
         le=64,
     )
-    default_count: int | None = Field(default=None, description="Default number of physical interfaces.", ge=1, le=64)
-    iol_static_ethernets: Literal[0, 4, 8, 12, 16] | None = Field(
+    default_count: int = Field(default=None, description="Default number of physical interfaces.", ge=1, le=64)
+    iol_static_ethernets: Literal[0, 4, 8, 12, 16] = Field(
         default=None,
         description="Only for IOL nodes, the number of static Ethernet interfaces"
         " preceding any serial interface; default 0 means "
@@ -72,7 +80,7 @@ class SuperSimplifiedNodeDefinitionResponse(BaseModel, extra="ignore"):
     )
     general: General = Field(...)
     device: SimplifiedDevice = Field(...)
-    image_definitions: list[DefinitionID] = Field(default=None)
+    image_definitions: list[DefinitionID] = Field(default_factory=list)
 
 
 class SimplifiedInterfaceBase(BaseModel, extra="ignore"):
