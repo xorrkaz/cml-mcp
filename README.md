@@ -6,7 +6,11 @@ mcp-name: io.github.xorrkaz/cml-mcp
 
 ## Overview
 
-`cml-mcp` is a server implementation of the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/docs/getting-started/intro) designed for [Cisco Modeling Labs (CML)](https://www.cisco.com/c/en/us/products/cloud-systems-management/modeling-labs/index.html). It is built using [FastMCP 2.0](https://gofastmcp.com/getting-started/welcome) and designed to provide a set of tools for LLM apps like Claude Desktop, Claude Code, and Cursor to interact with CML.
+`cml-mcp` brings the power of AI assistants to your network lab! This tool allows you to interact with [Cisco Modeling Labs (CML)](https://www.cisco.com/c/en/us/products/cloud-systems-management/modeling-labs/index.html) using natural language through AI applications like Claude Desktop, Claude Code, and Cursor.
+
+Instead of clicking through menus or writing scripts, simply tell the AI what you want to do in plain English—like "Create a new lab with two routers and configure OSPF" or "Show me the running config on Router1"—and watch it happen automatically.
+
+This is accomplished through the [Model Context Protocol (MCP)](https://modelcontextprotocol.io/docs/getting-started/intro), a standard way for AI applications to interact with external tools and services. Think of it as giving your AI assistant a direct connection to your CML server.
 
 ## Features
 
@@ -16,16 +20,20 @@ mcp-name: io.github.xorrkaz/cml-mcp
 - **Manage CML Users and Groups:** Tools to list, create, and delete local users and groups (requires admin privileges).
 - **Visual Annotations:** Add visual elements (text, rectangles, ellipses, lines) to lab topologies for documentation and organization.
 - **Link Management:** Connect nodes, configure link conditioning (bandwidth, latency, jitter, loss), and control link states.
+- **Packet Capture:** Start, stop, and retrieve packet captures (PCAP) from network links for traffic analysis with Wireshark or other tools.
 - **Node Configuration:** Configure node startup configurations and send CLI commands to running devices.
 - **Run Commands on Devices:** Using [PyATS](https://developer.cisco.com/pyats/), MCP clients can execute commands on virtual devices within CML labs.
 - **Console Log Access:** Retrieve console logs from running nodes for troubleshooting and monitoring.
+- **Modular Architecture:** Tools are organized into logical modules (labs, nodes, links, pcap, etc.) for maintainability and extensibility.
 - **Access Control Lists (HTTP Mode):** When running in HTTP transport mode, you can restrict which users can access which tools using a YAML-based ACL configuration file.
 
 ## Quick Start
 
 ### Installation
 
-The easiest way to get started is using `uvx` with Claude Desktop. Add this to your `claude_desktop_config.json`:
+The easiest way to get started is using `uvx` with Claude Desktop (or other MCP-compatible clients). The `uvx` tool automatically downloads and runs the server without manual installation steps.
+
+**Configuration:** Find and edit your Claude Desktop configuration file (`claude_desktop_config.json`). Add the following:
 
 ```json
 {
@@ -44,7 +52,22 @@ The easiest way to get started is using `uvx` with Claude Desktop. Add this to y
 }
 ```
 
-For CLI command support, use `cml-mcp[pyats]` instead. See [INSTALLATION.md](https://github.com/xorrkaz/cml-mcp/blob/main/INSTALLATION.md) for detailed installation instructions including Docker, WSL, and HTTP transport options.
+**Important:** Replace the placeholder values with your actual CML server details:
+
+- `CML_URL`: Your CML server address (e.g., `https://cml.example.com` or `https://10.10.20.50`)
+- `CML_USERNAME` and `CML_PASSWORD`: Your CML login credentials
+- Set `CML_VERIFY_SSL` to `"false"` if using self-signed certificates (common in lab environments)
+
+**Need more capabilities?**
+
+- For **device CLI command execution**, use `cml-mcp[pyats]` instead of `cml-mcp` in the args
+- For **Docker, Windows (WSL), or HTTP server mode**, see [INSTALLATION.md](https://github.com/xorrkaz/cml-mcp/blob/main/INSTALLATION.md)
+
+**Where to find your configuration file:**
+
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+- **Linux:** `~/.config/Claude/claude_desktop_config.json`
 
 ### Requirements
 
@@ -54,7 +77,7 @@ For CLI command support, use `cml-mcp[pyats]` instead. See [INSTALLATION.md](htt
 
 ## Available MCP Tools
 
-The server provides 40 MCP tools organized into the following categories:
+The server provides 45 MCP tools organized into the following categories:
 
 ### Lab Management
 
@@ -98,6 +121,14 @@ The server provides 40 MCP tools organized into the following categories:
 - **add_annotation_to_cml_lab** - Add text, rectangle, ellipse, or line annotations
 - **delete_annotation_from_lab** - Delete an annotation (requires confirmation)
 
+### Packet Capture (PCAP)
+
+- **start_packet_capture** - Start capturing packets on a link
+- **stop_packet_capture** - Stop an active packet capture
+- **check_packet_capture_status** - Check capture status and packet count
+- **get_captured_packet_overview** - Get summary of captured packets
+- **get_packet_capture_data** - Download full PCAP file (base64-encoded for Wireshark/tcpdump)
+
 ### User & Group Management
 
 - **get_cml_users** - List all CML users
@@ -116,14 +147,41 @@ The server provides 40 MCP tools organized into the following categories:
 
 ## Usage
 
-The tools show up automatically in your MCP client, and you can chat with the LLM to invoke them as needed. For example,
-the following sequence of prompts demonstrates the server's capabilities:
+Once configured, restart your MCP client (e.g., Claude Desktop) and start chatting! The AI assistant now has direct access to your CML server and can help you build and manage network labs through natural conversation.
 
-- Create a new CML lab called "Joe's MCP Lab".
-- Add two IOL nodes, a unmanaged switch, and an external connector to this lab.
-- Connect the two IOL nodes to the unmanaged switch and the unmanaged switch to the external connector.
-- Configure the routers so that their connected interfaces have IPs in the 192.0.2.0/24 subnet. Configure OSPF on them. Then start the lab and validate OSPF is working correctly.
-- Add a box annotation around the two IOL nodes that indicates they speak OSPF. Make it a green box.
+### What Can You Do?
+
+Here are some example prompts to try:
+
+**Getting Started:**
+
+- "Show me all my CML labs"
+- "What node types are available in CML?"
+- "Tell me about my CML server status and licensing"
+
+**Building Labs:**
+
+- "Create a new lab called 'OSPF Test Lab'"
+- "Add two CSR1000v routers and an external connector to my lab"
+- "Connect Router1's GigabitEthernet1 to Router2's GigabitEthernet1"
+
+**Configuration & Testing:**
+
+- "Configure OSPF area 0 on both routers"
+- "Start all nodes in the lab"
+- "Show me the OSPF neighbors on Router1"
+- "Start a packet capture on the link between the routers"
+
+**Complete Workflow Example:**
+
+Here's a sequence of prompts that demonstrates building and testing a complete lab:
+
+1. "Create a new CML lab called 'My Network Lab'"
+2. "Add two IOL routers, an unmanaged switch, and an external connector to this lab"
+3. "Connect the two IOL routers to the unmanaged switch and connect the switch to the external connector"
+4. "Configure the routers so that their connected interfaces have IPs in the 192.0.2.0/24 subnet and configure OSPF on them"
+5. "Start the lab and validate that OSPF is working correctly"
+6. "Add a green box annotation around the two IOL routers with the label 'OSPF Area 0'"
 
 Here's a demo showing it working in Claude Desktop:
 

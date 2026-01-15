@@ -18,8 +18,8 @@ USE_MOCKS=false pytest -m live_only tests/
 
 ## Test Results Summary
 
-- **Mock Mode**: 9 passed, 9 skipped (live_only tests)
-- **Live Mode**: All 18 tests run against real server
+- **Mock Mode**: 10 passed, 9 skipped (live_only tests)
+- **Live Mode**: All 19 tests run against real server
 
 ## Environment Variables
 

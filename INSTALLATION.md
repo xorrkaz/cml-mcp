@@ -1,6 +1,13 @@
 # Installation Guide
 
-This guide covers all installation options for the CML MCP server.
+This guide will help you set up the CML MCP server so you can control Cisco Modeling Labs using AI assistants like Claude Desktop. Whether you're new to CML or an experienced power user, we'll get you up and running.
+
+**Choose Your Installation Method:**
+
+- **Just want to try it out?** → Use the [uvx quick start](#using-uvx-easiest) (easiest, no manual installation needed)
+- **Want to run CLI commands on devices?** → See [With CLI Command Support](#with-cli-command-support-linuxmac)
+- **Need to share with your team?** → Try [HTTP Transport mode](#http-transport)
+- **Running on Windows?** → Check out [Windows-specific options](#with-cli-command-support-windowswsl)
 
 ## Table of Contents
 
@@ -15,27 +22,59 @@ This guide covers all installation options for the CML MCP server.
 
 ## Requirements
 
-- **Python 3.12 or later** - Required for the MCP server
-- **Cisco Modeling Labs (CML) 2.9 or later** - The CML server you'll connect to
-- **[uv](https://docs.astral.sh/uv/)** - Python package and project manager (required for installation)
-- **PyATS** (optional) - Automatically installed with `cml-mcp[pyats]` for device CLI command execution
-- **Node.js** (optional) - Required only for HTTP transport mode with `mcp-remote`
+### What You'll Need
 
-### Windows Requirements
+**On Your Computer:**
 
-If you do not want to run CLI commands on devices running in CML, you don't need to do anything else other than install the base `cml-mcp` package. However, if you want full support, Windows users also require either Windows Subsystem for Linux (WSL) with Python and `uv` installed within WSL or a Docker environment running on the Windows machine.
+- **Python 3.12 or later** - The programming language runtime ([download here](https://www.python.org/downloads/) if needed)
+- **[uv](https://docs.astral.sh/uv/)** - A modern Python package manager that makes installation easy ([install instructions](https://docs.astral.sh/uv/getting-started/installation/))
+
+**Your CML Server:**
+
+- **Cisco Modeling Labs (CML) 2.9 or later** - You'll need access to a running CML server with valid credentials
+
+**Optional Enhancements:**
+
+- **PyATS support** - Automatically included when you install `cml-mcp[pyats]` - enables sending CLI commands directly to your network devices
+- **Node.js** - Only needed for [HTTP Transport mode](#http-transport) with shared deployments
+
+### Windows Users - Special Notes
+
+**Good news:** Basic functionality (creating labs, adding nodes, configuring devices) works great on Windows!
+
+**The catch:** If you want to execute CLI commands directly on running devices (using the `send_cli_command` tool), you'll need one of these options:
+
+1. **Windows Subsystem for Linux (WSL)** - Recommended for most users
+   - Install WSL2 and Ubuntu from the Microsoft Store
+   - Install Python and `uv` inside WSL
+   - Follow the [Windows/WSL instructions](#with-cli-command-support-windowswsl) below
+
+2. **Docker Desktop** - Good if you already use containers
+   - Install Docker Desktop for Windows
+   - Follow the [Docker instructions](#with-cli-command-support-docker) below
+
+3. **Basic installation without CLI** - Simplest option
+   - Everything works except `send_cli_command`
+   - You can still configure devices, just not execute show commands interactively
+   - Follow the [basic installation](#basic-installation-no-cli-support) below
 
 ## Standard I/O (stdio) Transport
 
-This is the traditional way to run the server, where it communicates directly with the MCP client via standard input/output streams.
+This is the standard way to connect your AI assistant (like Claude Desktop) directly to the CML MCP server. Think of it like a direct phone line between the AI and your CML server.
+
+**When to use this:** For personal use on your own computer, or when your AI client is on the same machine where you want to run the server.
 
 ### Using uvx (Easiest)
 
-The easiest way is to use `uvx`, which downloads the server from PyPI and runs it in a standalone environment.
+**What is uvx?** It's a tool that automatically downloads and runs Python packages without manual installation steps. Perfect for getting started quickly!
 
 #### Basic Installation (No CLI Support)
 
-This works for Linux, Mac, and Windows users but does **not** provide CLI command support. Edit your client's config (e.g., Claude Desktop's `claude_desktop_config.json`):
+This configuration gives you most features and works on any platform (Linux, Mac, Windows). You'll be able to create labs, add devices, configure them, and more. The only thing you won't be able to do is execute show commands directly on running devices.
+
+**Step 1:** Locate your MCP client's configuration file (e.g., for Claude Desktop, it's `claude_desktop_config.json`)
+
+**Step 2:** Add this configuration:
 
 ```json
 {
@@ -57,9 +96,19 @@ This works for Linux, Mac, and Windows users but does **not** provide CLI comman
 }
 ```
 
+**Remember to customize:**
+
+- Replace `<URL_OF_CML_SERVER>` with your actual CML server URL (e.g., `https://cml.mylab.com` or `https://10.10.20.50`)
+- Use your actual CML username and password
+- Set `DEBUG` to `"true"` if you need troubleshooting information (keeps it in logs)
+
+**Restart required:** After saving the configuration file, restart your MCP client for changes to take effect.
+
 #### With CLI Command Support (Linux/Mac)
 
-To execute CLI commands on devices, Linux and Mac users should use `cml-mcp[pyats]`:
+**What's different?** This installation includes PyATS, Cisco's Python testing framework. With it enabled, you can ask the AI to execute show commands on your routers and switches, like "Show me the OSPF neighbors on Router1" or "What's the interface status on Switch2?"
+
+**Note:** The key difference here is `cml-mcp[pyats]` instead of just `cml-mcp`, plus three additional environment variables for device authentication.
 
 ```json
 {
@@ -83,6 +132,18 @@ To execute CLI commands on devices, Linux and Mac users should use `cml-mcp[pyat
   }
 }
 ```
+
+**Understanding PyATS credentials:**
+
+- `PYATS_USERNAME` and `PYATS_PASSWORD`: The username/password to log into your network devices (not your CML credentials)
+- `PYATS_AUTH_PASS`: The enable password for privileged EXEC mode on your devices
+- These are typically the credentials you configured in your device startup configs
+
+**Tip for new users:** If you haven't set up device credentials yet, common defaults in lab environments are:
+
+- Username: `admin` or `cisco`
+- Password: `cisco` or `C1sco12345`
+- Enable: same as password or leave blank if no enable secret is configured
 
 #### With CLI Command Support (Windows/WSL)
 
@@ -196,13 +257,27 @@ An alternative is to use FastMCP CLI to install the server into your favorite cl
 
 ## HTTP Transport
 
-The server supports HTTP streaming transport, which is useful for running the MCP server as a standalone service that can be accessed by multiple clients or when you want to run it in a containerized or remote environment. This mode uses HTTP Server-Sent Events (SSE) for real-time communication.
+HTTP transport mode runs the MCP server as a standalone web service that multiple people can connect to. Instead of each person running their own server, you run one central server that everyone shares.
+
+**When to use HTTP mode:**
+
+- ✅ You want to run the server on a dedicated machine (not your laptop)
+- ✅ Multiple team members need to connect to the same CML environment
+- ✅ You want to deploy in a containerized environment (Kubernetes, Docker Swarm)
+- ✅ You need centralized control and logging
+- ✅ You want to implement access control lists (who can delete labs, create users, etc.)
+
+**When to use stdio mode instead:**
+
+- ✅ You're the only user
+- ✅ You want the simplest setup
+- ✅ You're just trying out the tool
 
 ### Running the HTTP Server
 
-To run the server in HTTP mode, set the `CML_MCP_TRANSPORT` environment variable to `http`. You can also configure the bind address and port.
+**Quick start:** To run the server in HTTP mode, you'll set some environment variables and then start the server with `uvicorn` (a Python web server).
 
-First, install the package:
+#### Step 1: Install the package
 
 ```sh
 uv venv
@@ -218,7 +293,9 @@ cd cml-mcp
 uv sync # add --all-extras to get CLI command support
 ```
 
-Then run the server using `uvicorn`:
+#### Step 2: Set environment variables
+
+You can either export these directly in your shell or create a `.env` file (recommended for persistence):
 
 ```sh
 # Set environment variables
@@ -262,7 +339,14 @@ The server will start and listen for HTTP connections at `http://0.0.0.0:9000`.
 
 ### Authentication in HTTP Mode
 
-When using HTTP transport, authentication is handled differently than stdio mode:
+**Important security note:** In HTTP mode, credentials work differently than stdio mode to keep your passwords secure.
+
+**How it works:**
+
+- Instead of storing CML passwords in environment variables (where they could be visible), each client sends their credentials securely with each request using HTTP headers
+- This means different users can connect to the same server with their own CML credentials
+
+**What you need to know:**
 
 - **CML Credentials**: Instead of being set via environment variables (`CML_USERNAME`/`CML_PASSWORD`), CML credentials are provided via the `X-Authorization` HTTP header using Basic authentication format.
 - **PyATS Credentials**: For CLI command execution, PyATS credentials can be provided via the `X-PyATS-Authorization` header (Basic auth) instead of `PYATS_USERNAME`/`PYATS_PASSWORD` environment variables, and the enable password via the `X-PyATS-Enable` header instead of `PYATS_AUTH_PASS`.
@@ -281,38 +365,21 @@ X-CML-URL: https://cml-server.example.com
 
 ### Configuring MCP Clients
 
-To use the HTTP server with an MCP client, you'll need to use the `mcp-remote` tool to connect to the HTTP endpoint. Most MCP clients like Claude Desktop don't natively support HTTP streaming, so `mcp-remote` acts as a bridge between the client (which expects stdio) and the HTTP server. This bridge requires [Node.js](https://nodejs.org/en/download/) to be installed on your client machine. Node.js includes the `npx` utility that allows you to run Javascript/Typescript applications in a dedicated environment.
+**The challenge:** Most AI clients (like Claude Desktop) expect a direct connection to the MCP server, but your server is now running as a web service.
 
-Add the following configuration to your MCP client config (e.g., Claude Desktop's `claude_desktop_config.json`):
+**The solution:** Use `mcp-remote`, a small bridge program that connects your AI client to the HTTP server. It translates between the client's expected format and HTTP.
 
-```json
-{
-  "mcpServers": {
-    "Cisco Modeling Labs (CML)": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote",
-        "http://<server_host>:9000/mcp",
-        "--header",
-        "X-Authorization: Basic <base64_encoded_cml_credentials>",
-        "--header",
-        "X-PyATS-Authorization: Basic <base64_encoded_device_credentials>"
-      ]
-    }
-  }
-}
-```
+**What you need:** Node.js installed on your computer (includes the `npx` command that runs `mcp-remote`)
 
-Replace the placeholders with your actual values:
+- [Download Node.js](https://nodejs.org/en/download/) if you don't have it
 
-- `<server_host>`: The hostname or IP address where your HTTP server is running
-- `<base64_encoded_cml_credentials>`: Base64-encoded `username:password` for CML
-- `<base64_encoded_device_credentials>`: Base64-encoded `username:password` for device access
+**Step 1:** Prepare your credentials (you'll need them Base64-encoded)
 
 #### Encoding Credentials
 
-**Linux/Mac:**
+**Why Base64?** It's a standard way to safely transmit credentials in HTTP headers. Don't worry—it's easy to generate!
+
+**Linux/Mac - Use the terminal:**
 
 ```sh
 # For CML credentials (X-Authorization header)
@@ -342,6 +409,37 @@ wsl bash -c 'echo -n "enable_password" | base64'
 # For enable password only
 [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes("enable_password"))
 ```
+
+**Step 2:** Configure your MCP client
+
+Now that you have your Base64-encoded credentials, add this to your MCP client configuration (e.g., Claude Desktop's `claude_desktop_config.json`):
+
+```json
+{
+  "mcpServers": {
+    "Cisco Modeling Labs (CML)": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "http://<server_host>:9000/mcp",
+        "--header",
+        "X-Authorization: Basic <base64_encoded_cml_credentials>",
+        "--header",
+        "X-PyATS-Authorization: Basic <base64_encoded_device_credentials>"
+      ]
+    }
+  }
+}
+```
+
+**Customize your configuration:**
+
+- `<server_host>`: The hostname or IP address where your HTTP server is running (e.g., `192.168.1.100` or `cml-mcp.mycompany.com`)
+- `<base64_encoded_cml_credentials>`: Paste the Base64 string you generated for your CML username:password
+- `<base64_encoded_device_credentials>`: Paste the Base64 string you generated for your device username:password
+
+**Tip:** Keep the `Basic` keyword before your Base64 credentials—it's required for HTTP authentication!
 
 #### HTTPS with Self-Signed Certificates
 
@@ -404,7 +502,17 @@ The Dockerfile sets `CML_MCP_ACL_FILE` to `/app/acl.yaml` by default, so you jus
 
 ## Access Control Lists (HTTP Mode Only)
 
-When running the MCP server in HTTP transport mode, you can implement fine-grained access control using a YAML-based ACL configuration file. This allows you to restrict which CML users can access which tools.
+**What are ACLs and why would I use them?**
+
+Access Control Lists let you control who can do what in your CML environment when running in HTTP mode. Think of it like permissions in a file system—you can decide which team members can delete labs, create users, or just view information.
+
+**Real-world scenarios:**
+
+- 🎓 **Training environment:** Students can create and manage their own labs, but can't delete other users' labs or modify system settings
+- 👥 **Team environment:** Junior engineers can view and work with labs, but only senior staff can delete resources
+- 🔒 **Controlled access:** Contractors can execute show commands but can't modify configurations or delete anything
+
+**Important:** ACLs only work in HTTP transport mode. If you're using stdio mode (direct connection), everyone has full access.
 
 ### ACL Configuration
 

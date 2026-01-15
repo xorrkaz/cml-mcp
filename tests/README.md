@@ -118,13 +118,16 @@ Mock data is stored in `tests/mocks/` as JSON files. Each file corresponds to a 
 - `get_cml_info.json` - System information
 - `get_cml_status.json` - System health status
 - `get_cml_statistics.json` - System statistics
+- `get_cml_licensing_details.json` - Licensing information
 - `get_node_defs.json` - Available node definitions
 - `get_node_def_detail.json` - Detailed node definition
 - `get_nodes_for_cml_lab.json` - Nodes in a lab
 - `get_interfaces_for_node.json` - Interfaces for a node
 - `get_all_links_for_lab.json` - Links in a lab
+- `get_annotations_for_cml_lab.json` - Visual annotations in a lab
 - `get_cml_lab_by_title.json` - Lab details by title
-- `get_cml_licensing_details.json` - Licensing information
+- `check_packet_capture_status.json` - Packet capture status
+- `get_captured_packet_overview.json` - Packet capture overview/summary
 
 ### Updating Mock Data
 
@@ -159,6 +162,7 @@ mv .inline-snapshot/external/<hash>.json tests/mocks/get_labs.json
 - `test_get_cml_statistics` - Get system stats
 - `test_get_cml_licensing_details` - Get licensing info
 - `test_node_defs` - List and get node definitions
+- `test_packet_capture_operations` - Packet capture status and overview (mock mode only)
 
 ### State-Modifying Tests (Require Live Server)
 

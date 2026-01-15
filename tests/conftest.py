@@ -53,6 +53,7 @@ class MockCMLClient:
             "interfaces": {},
             "links": {},
             "annotations": {},
+            "packet_captures": {},
         }
         self._next_id = 1000
 
@@ -70,7 +71,7 @@ class MockCMLClient:
                 return json.load(f)
         return None
 
-    async def get(self, endpoint: str, params: dict | None = None) -> Any:
+    async def get(self, endpoint: str, params: dict | None = None, is_binary: bool = False) -> Any:
         """Mock GET request handler."""
         # Map endpoints to mock files
         endpoint_map = {
@@ -108,6 +109,12 @@ class MockCMLClient:
                 return self._load_mock_file("get_annotations_for_cml_lab.json") or []
             elif "/nodes/" in endpoint and endpoint.endswith("/interfaces"):
                 return self._load_mock_file("get_interfaces_for_node.json") or []
+            elif "/links/" in endpoint and "/capture/status" in endpoint:
+                # Handle packet capture status check
+                return self._load_mock_file("check_packet_capture_status.json") or {}
+            elif "/links/" in endpoint and "/capture/key" in endpoint:
+                # Return a mock capture key
+                return "3464b046-c8ab-4624-af57-4bfc66429139"
             elif len(parts) == 3:
                 # /labs/{lab_id} - return individual lab details
                 # Load all labs and find the matching one
@@ -126,6 +133,15 @@ class MockCMLClient:
         # Handle lab title lookup
         if "/populate?title=" in endpoint:
             return self._load_mock_file("get_cml_lab_by_title.json")
+
+        # Handle pcap endpoints
+        if "/pcap/" in endpoint and "/packets" in endpoint:
+            # Get captured packet overview
+            return self._load_mock_file("get_captured_packet_overview.json") or []
+        elif "/pcap/" in endpoint:
+            # Get full packet capture data (binary)
+            # Return empty bytes for now
+            return b""
 
         # Return empty response for unknown endpoints
         return {}
@@ -179,7 +195,13 @@ class MockCMLClient:
         """Mock PUT request handler."""
         # Handle update operations
         if "/labs/" in endpoint:
-            if "/lab" in endpoint:
+            if "/capture/start" in endpoint:
+                # Start packet capture
+                return None
+            elif "/capture/stop" in endpoint:
+                # Stop packet capture
+                return None
+            elif "/lab" in endpoint:
                 # Update lab
                 return None
             elif "/link_conditions" in endpoint:

@@ -22,34 +22,11 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
-import asyncio
+"""
+Tools package for CML MCP server.
+This package organizes all MCP tools into logical modules.
+"""
 
-import uvicorn
-
-from cml_mcp.server import app, server_mcp
-from cml_mcp.settings import settings
-from cml_mcp.tools.dependencies import cleanup_global_client
-
-
-async def run():
-    try:
-        await server_mcp.run_async()
-    finally:
-        # Cleanup resources before event loop shutdown to prevent semaphore leaks
-        await cleanup_global_client()
-
-
-def main():
-    if settings.cml_mcp_transport == "stdio":
-        asyncio.run(run())
-    else:
-        uvicorn.run(
-            app,
-            host=str(settings.cml_mcp_bind),
-            port=settings.cml_mcp_port,
-            workers=1,  # Disable multiprocessing workers to prevent semaphore leaks
-        )
-
-
-if __name__ == "__main__":
-    main()
+__all__ = [
+    # Re-export for convenience if needed
+]

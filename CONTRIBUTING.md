@@ -31,17 +31,26 @@ Install [direnv](https://direnv.net/docs/installation.html) and [just](https://g
 
 ### Code Style
 
-The code should follow any stylistic and architectural guidelines prescribed by the project.  The project now uses [black](https://black.readthedocs.io/) and [isort](https://pycqa.github.io/isort/) to ensure consistent code formatting.  When you installed the requirements_dev.txt in your virtual environment, it installed the `black` and `isort` commands.  For each file that you are modifying, run the following before you commit the file or submit a pull request:
+The code should follow any stylistic and architectural guidelines prescribed by the project. The project uses [black](https://black.readthedocs.io/), [isort](https://pycqa.github.io/isort/), and [flake8](https://flake8.pycqa.org/) to ensure consistent code formatting and linting.
+
+These tools are automatically installed with the development dependencies. Before committing changes, format and check your code:
 
 ```sh
-black ./virl/path/to/file.py
-isort ./virl/path/to/file.py
+# Format code with black
+black src/ tests/
+
+# Sort imports with isort
+isort src/ tests/
+
+# Lint with flake8
+flake8 src/ tests/
 ```
 
-### Linting
-
-We use flake 8 to lint our code. Please keep the repository clean by running:
+Alternatively, use the `just` command runner (see [DEVELOPMENT.md](DEVELOPMENT.md)):
 
 ```sh
-flake8
+# Run all checks
+just check
 ```
+
+The project configuration (line length, import ordering, etc.) is defined in [pyproject.toml](pyproject.toml).

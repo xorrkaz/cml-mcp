@@ -48,7 +48,7 @@ The mock framework is implemented in `tests/conftest.py` and consists of:
 
 ### Mock Mode (USE_MOCKS=true)
 
-- **9/9 read-only tests PASSING**
+- **10/10 read-only tests PASSING**
 - Tests run in ~3 seconds
 - No network calls, no external dependencies
 - Safe for CI/CD pipelines
@@ -66,6 +66,7 @@ The mock framework is implemented in `tests/conftest.py` and consists of:
 - ✅ test_get_cml_statistics
 - ✅ test_get_cml_licensing_details
 - ✅ test_node_defs
+- ✅ test_packet_capture_operations
 
 **State-Modifying Tests (Require Live Server)**:
 
@@ -114,22 +115,24 @@ pytest -m live_only tests/
 
 The following mock data files are used:
 
-| File                              | Endpoint                             | Description           |
-| --------------------------------- | ------------------------------------ | --------------------- |
-| `get_labs.json`                   | `/labs`                              | List of labs          |
-| `get_users.json`                  | `/users`                             | List of users         |
-| `get_groups.json`                 | `/groups`                            | List of groups        |
-| `get_cml_info.json`               | `/system_information`                | System information    |
-| `get_cml_status.json`             | `/system_health`                     | System health status  |
-| `get_cml_statistics.json`         | `/system_stats`                      | System statistics     |
-| `get_node_defs.json`              | `/simplified_node_definitions`       | Node definitions      |
-| `get_node_def_detail.json`        | `/node_definitions/{id}`             | Node definition       |
-| `get_nodes_for_cml_lab.json`      | `/labs/{id}/nodes`                   | Nodes in a lab        |
-| `get_interfaces_for_node.json`    | `/labs/{id}/nodes/{nid}/interfaces`  | Node interfaces       |
-| `get_all_links_for_lab.json`      | `/labs/{id}/links`                   | Links in a lab        |
-| `get_cml_lab_by_title.json`       | `/labs/{id}`                         | Lab details           |
-| `get_cml_licensing_details.json`  | `/licensing`                         | Licensing info        |
-| `get_annotations_for_cml_lab.json`| `/labs/{id}/annotations`             | Lab annotations       |
+| File                                | Endpoint                                     | Description             |
+| ----------------------------------- | -------------------------------------------- | ----------------------- |
+| `get_labs.json`                     | `/labs`                                      | List of labs            |
+| `get_users.json`                    | `/users`                                     | List of users           |
+| `get_groups.json`                   | `/groups`                                    | List of groups          |
+| `get_cml_info.json`                 | `/system_information`                        | System information      |
+| `get_cml_status.json`               | `/system_health`                             | System health status    |
+| `get_cml_statistics.json`           | `/system_stats`                              | System statistics       |
+| `get_node_defs.json`                | `/simplified_node_definitions`               | Node definitions        |
+| `get_node_def_detail.json`          | `/node_definitions/{id}`                     | Node definition         |
+| `get_nodes_for_cml_lab.json`        | `/labs/{id}/nodes`                           | Nodes in a lab          |
+| `get_interfaces_for_node.json`      | `/labs/{id}/nodes/{nid}/interfaces`          | Node interfaces         |
+| `get_all_links_for_lab.json`        | `/labs/{id}/links`                           | Links in a lab          |
+| `get_cml_lab_by_title.json`         | `/labs/{id}`                                 | Lab details             |
+| `get_cml_licensing_details.json`    | `/licensing`                                 | Licensing info          |
+| `get_annotations_for_cml_lab.json`  | `/labs/{id}/annotations`                     | Lab annotations         |
+| `check_packet_capture_status.json`  | `/labs/{id}/links/{lid}/capture/status`      | Packet capture status   |
+| `get_captured_packet_overview.json` | `/pcap/{key}/packets`                        | Packet capture overview |
 
 ## Key Features
 

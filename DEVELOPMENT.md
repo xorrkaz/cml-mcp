@@ -144,18 +144,68 @@ flake8 src/ tests/
 ```text
 cml-mcp/
 ├── src/cml_mcp/          # Main source code
-│   ├── server.py         # FastMCP server implementation
+│   ├── server.py         # FastMCP server initialization and tool registration
 │   ├── cml_client.py     # CML API client wrapper
 │   ├── settings.py       # Configuration management
-│   └── cml/              # CML API schema definitions
+│   ├── types.py          # Type definitions
+│   ├── cml/              # CML API schema definitions (Pydantic models)
+│   └── tools/            # Modular tool implementations
+│       ├── __init__.py
+│       ├── dependencies.py    # Shared dependencies (CML client)
+│       ├── middleware.py      # HTTP middleware and ACL support
+│       ├── system.py          # System information tools
+│       ├── users_groups.py    # User and group management
+│       ├── node_definitions.py # Node type queries
+│       ├── labs.py            # Lab lifecycle management
+│       ├── nodes.py           # Node operations
+│       ├── interfaces.py      # Interface management
+│       ├── links.py           # Link operations
+│       ├── annotations.py     # Visual annotations
+│       ├── pcap.py            # Packet capture tools
+│       └── cli.py             # CLI command execution (PyATS)
 ├── tests/                # Test suite
 │   ├── conftest.py       # pytest configuration and fixtures
 │   ├── test_cml_mcp.py   # Main test file
-│   └── mocks/            # Mock API responses for testing
+│   ├── mocks/            # Mock API responses for testing
+│   ├── input_data/       # Test input files
+│   ├── README.md         # Test documentation
+│   ├── QUICK_START.md    # Quick testing guide
+│   └── MOCK_FRAMEWORK.md # Mock framework details
 ├── Justfile              # Task automation
 ├── pyproject.toml        # Python project configuration
 ├── Dockerfile            # Container image definition
 └── .envrc                # direnv configuration
+```
+
+### Modular Tool Architecture
+
+The server uses a modular architecture where tools are organized by functional category:
+
+- **Each module** (e.g., `labs.py`, `nodes.py`) contains related tools
+- **Each module** exports a `register_tools(mcp)` function that registers its tools with the FastMCP server
+- **Dependencies** are centralized in `dependencies.py` (e.g., CML client singleton)
+- **Middleware** in `middleware.py` provides HTTP transport support and ACL enforcement
+
+This design allows for:
+
+- Easy addition of new tools in appropriate modules
+- Clear separation of concerns
+- Simplified testing of individual tool categories
+- Better code organization and maintainability
+
+Example module structure:
+
+```python
+# src/cml_mcp/tools/example.py
+from fastmcp import FastMCP
+from cml_mcp.tools.dependencies import get_cml_client_dep
+
+def register_tools(mcp: FastMCP):
+    @mcp.tool()
+    async def my_tool(param: str) -> dict:
+        client = get_cml_client_dep()
+        # Tool implementation
+        ...
 ```
 
 ## Publishing and Release

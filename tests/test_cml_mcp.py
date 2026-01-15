@@ -54,13 +54,14 @@ from cml_mcp.cml.simple_webserver.schemas.nodes import Node, NodeCreate
 from cml_mcp.cml.simple_webserver.schemas.system import SystemHealth, SystemInformation, SystemStats
 from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
 from cml_mcp.cml.simple_webserver.schemas.users import UserCreate, UserResponse
+from cml_mcp.cml.simple_webserver.schemas.pcap import PCAPItem, PCAPStart, PCAPStatusResponse
 from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse
 
 
 async def test_list_tools(main_mcp_client: Client[FastMCPTransport]):
     list_tools = await main_mcp_client.list_tools()
 
-    assert len(list_tools) == snapshot(40)
+    assert len(list_tools) == snapshot(45)
 
 
 async def test_get_cml_labs(main_mcp_client: Client[FastMCPTransport]):
@@ -264,6 +265,94 @@ async def test_get_annotations_for_cml_lab(main_mcp_client: Client[FastMCPTransp
 
     # Verify all annotation types are present in mock data
     assert found_types == annotation_types, f"Expected {annotation_types}, but found {found_types}"
+
+
+@pytest.mark.mock_only
+async def test_packet_capture_operations(main_mcp_client: Client[FastMCPTransport]):
+    """
+    Test packet capture operations in mock mode.
+    This test only works in mock mode using packet capture mock files.
+    For live packet capture testing, see test_connect_two_nodes.
+    """
+    # Get labs to extract a lab_id (in mock mode, this returns mock data)
+    labs_result = await main_mcp_client.call_tool(name="get_cml_labs", arguments={})
+    assert isinstance(labs_result.data, list)
+    assert len(labs_result.data) > 0
+
+    # Use the first lab's ID
+    lab = labs_result.data[0]
+    if isinstance(lab, dict):
+        lab = Lab(**lab)
+    lab_id = lab.id
+
+    # Get links for the lab
+    links_result = await main_mcp_client.call_tool(
+        name="get_all_links_for_lab",
+        arguments={"lid": lab_id},
+    )
+    assert isinstance(links_result.data, list)
+    assert len(links_result.data) > 0
+    link = links_result.data[0]
+    if isinstance(link, dict):
+        link = LinkResponse(**link)
+    link_id = link.id
+
+    # Start packet capture
+    capture_result = await main_mcp_client.call_tool(
+        name="start_packet_capture",
+        arguments={
+            "lid": lab_id,
+            "link_id": link_id,
+            "pcap": PCAPStart(maxpackets=100, bpfilter="icmp"),
+        },
+    )
+    assert capture_result.data is True
+
+    # Check packet capture status
+    pcap_status = await main_mcp_client.call_tool(
+        name="check_packet_capture_status",
+        arguments={
+            "lid": lab_id,
+            "link_id": link_id,
+        },
+    )
+    if isinstance(pcap_status.structured_content, dict):
+        pcap_status.structured_content = PCAPStatusResponse(**pcap_status.structured_content)
+    assert isinstance(pcap_status.structured_content, PCAPStatusResponse)
+    assert pcap_status.structured_content.packetscaptured == snapshot(8)
+    assert pcap_status.structured_content.config.maxpackets == snapshot(100)
+    assert pcap_status.structured_content.config.bpfilter == snapshot("icmp")
+
+    # Stop packet capture
+    stop_result = await main_mcp_client.call_tool(
+        name="stop_packet_capture",
+        arguments={
+            "lid": lab_id,
+            "link_id": link_id,
+        },
+    )
+    assert stop_result.data is True
+
+    # Get packet overview
+    packet_overview = await main_mcp_client.call_tool(
+        name="get_captured_packet_overview",
+        arguments={
+            "lid": lab_id,
+            "link_id": link_id,
+        },
+    )
+    assert isinstance(packet_overview.data, list)
+    assert len(packet_overview.data) > 0
+
+    # Verify packet structure
+    found_icmp = False
+    for item in packet_overview.data:
+        if isinstance(item, dict):
+            item = PCAPItem(**item)
+        assert isinstance(item, PCAPItem)
+        if item.protocol.lower() == "icmp":
+            found_icmp = True
+    assert found_icmp is True
 
 
 @pytest.mark.live_only
@@ -542,7 +631,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport]):
         label="MCP Test Node 1",
         x=100,
         y=100,
-        configuration="hostname MCP-Test-Node-1\n!end\n",
+        configuration="hostname MCP-Test-Node-1\ninterface Ethernet0/0\nip address 192.0.2.1 255.255.255.0\nno shut\n!end\n",
     )
     node1_result = await main_mcp_client.call_tool(name="add_node_to_cml_lab", arguments={"lid": lab_id, "node": node1_create})
     assert isinstance(node1_result.content, list)
@@ -555,7 +644,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport]):
         label="MCP Test Node 2",
         x=300,
         y=100,
-        configuration="hostname MCP-Test-Node-2\n!end\n",
+        configuration="hostname MCP-Test-Node-2\ninterface Ethernet0/0\nip address 192.0.2.2 255.255.255.0\nno shut\n!end\n",
     )
     node2_result = await main_mcp_client.call_tool(name="add_node_to_cml_lab", arguments={"lid": lab_id, "node": node2_create})
     assert isinstance(node2_result.content, list)
@@ -592,6 +681,67 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport]):
         if isinstance(link, dict):
             link = LinkResponse(**link)
         assert isinstance(link, LinkResponse)
+
+    _ = await main_mcp_client.call_tool(
+        name="start_cml_lab",
+        arguments={"lid": lab_id, "wait_for_convergence": True},
+    )
+
+    capture_result = await main_mcp_client.call_tool(
+        name="start_packet_capture",
+        arguments={
+            "lid": lab_id,
+            "link_id": LinkResponse(**link_result.data[0]).id,
+            "pcap": PCAPStart(maxpackets=100, bpfilter="icmp"),  # we don't need 100, but we don't want it to stop too early either
+        },
+    )
+    assert capture_result.data is True
+
+    _ = await main_mcp_client.call_tool(
+        name="send_cli_command",
+        arguments={"lid": lab_id, "label": "MCP Test Node 1", "commands": "ping 192.0.2.2"},
+    )
+
+    pcap_status = await main_mcp_client.call_tool(
+        name="check_packet_capture_status",
+        arguments={
+            "lid": lab_id,
+            "link_id": LinkResponse(**link_result.data[0]).id,
+        },
+    )
+    # outsource(pcap_status.structured_content, ".json")
+    if isinstance(pcap_status.structured_content, dict):
+        pcap_status.structured_content = PCAPStatusResponse(**pcap_status.structured_content)
+    assert isinstance(pcap_status.structured_content, PCAPStatusResponse)
+    assert pcap_status.structured_content.packetscaptured >= 5  # should be at least 5 packets from the ping
+
+    stop_result = await main_mcp_client.call_tool(
+        name="stop_packet_capture",
+        arguments={
+            "lid": lab_id,
+            "link_id": LinkResponse(**link_result.data[0]).id,
+        },
+    )
+    assert stop_result.data is True
+
+    packet_overview = await main_mcp_client.call_tool(
+        name="get_captured_packet_overview",
+        arguments={
+            "lid": lab_id,
+            "link_id": LinkResponse(**link_result.data[0]).id,
+        },
+    )
+    # outsource(packet_overview.data, ".json")
+    assert isinstance(packet_overview.data, list)
+    assert len(packet_overview.data) >= 5
+    found_icmp = False
+    for item in packet_overview.data:
+        if isinstance(item, dict):
+            item = PCAPItem(**item)
+        assert isinstance(item, PCAPItem)
+        if item.protocol.lower() == "icmp":
+            found_icmp = True
+    assert found_icmp is True
 
     cond_result = await main_mcp_client.call_tool(
         name="apply_link_conditioning",

@@ -149,7 +149,7 @@ class CMLClient(object):
             logger.error(f"Error checking admin status: {e}", exc_info=True)
             return False
 
-    async def get(self, endpoint: str, params: dict | None = None) -> Any:
+    async def get(self, endpoint: str, params: dict | None = None, is_binary: bool = False) -> Any:
         """
         Make a GET request to the CML API.
         """
@@ -159,7 +159,7 @@ class CMLClient(object):
         try:
             resp = await self.client.get(url, params=params)
             resp.raise_for_status()
-            return resp.json()
+            return resp.json() if not is_binary else resp.content
         except httpx.RequestError as e:
             logger.error(f"Error making GET request to {url}: {e}", exc_info=True)
             raise e
