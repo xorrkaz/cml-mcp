@@ -46,7 +46,7 @@ from cml_mcp.settings import settings
 logger = logging.getLogger("cml-mcp.middleware")
 
 # ACL data
-acl_data: dict | None = None
+acl_data: dict[str, Any] = {}
 
 
 def _validate_acl_data(raw_acl_data: dict | None) -> dict | None:
@@ -105,7 +105,6 @@ def _validate_acl_data(raw_acl_data: dict | None) -> dict | None:
 
 def load_acl_data() -> None:
     """Load ACL configuration from file if configured."""
-    global acl_data
     if settings.cml_mcp_transport == "http":
         if settings.cml_mcp_acl_file:
             aclf = Path(settings.cml_mcp_acl_file)
@@ -113,10 +112,12 @@ def load_acl_data() -> None:
                 try:
                     with aclf.open("r", encoding="utf-8") as f:
                         raw_acl_data = yaml.safe_load(f)
-                        acl_data = _validate_acl_data(raw_acl_data)
+                        validated_data = _validate_acl_data(raw_acl_data)
+                        if validated_data:
+                            acl_data.update(validated_data)
                 except Exception as e:
                     logger.error(f"Failed to load ACL file {str(aclf)}: {e}", exc_info=True)
-                    acl_data = None
+                    acl_data.clear()
             else:
                 logger.warning(f"ACL file {str(aclf)} does not exist or is not a file. Continuing without ACLs.")
 
