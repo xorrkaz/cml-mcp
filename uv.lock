@@ -687,7 +687,7 @@ wheels = [
 
 [[package]]
 name = "cyclopts"
-version = "4.4.5"
+version = "4.4.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
@@ -695,18 +695,18 @@ dependencies = [
     { name = "rich" },
     { name = "rich-rst" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/4f/31/0c2526868b1454f2e7aaac5b05f262df4513917942beef9c0040415c7664/cyclopts-4.4.5.tar.gz", hash = "sha256:02c2c9375c57bb7622a4aab3511cdeb9d762dd0579b13ab467535e34f6be3c54", size = 160428, upload-time = "2026-01-13T14:03:38.355Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/dd/6d/0e0f03214f6a5fae79d934d1de8a570bda37235d991d1b6dee9cd99c8e44/cyclopts-4.4.6.tar.gz", hash = "sha256:ffeef064d867b8a567b5efdfc09e3295b2774735ea1df33e5230e818d52d9942", size = 160439, upload-time = "2026-01-15T01:37:51.365Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/54/2a/662ac280907bb2ea378681b83528e54e3d4b24ed48f07d2d6b52d5cbd057/cyclopts-4.4.5-py3-none-any.whl", hash = "sha256:d0f7584282c33796614bbb5fe7f5c86520802f028453a2180ead68c8630635f8", size = 197794, upload-time = "2026-01-13T14:03:39.724Z" },
+    { url = "https://files.pythonhosted.org/packages/3f/f7/3c861e6aa5ba70f61b70ce61e979bc8d60a324149c8974e639020f374ca8/cyclopts-4.4.6-py3-none-any.whl", hash = "sha256:9d06febb128b765b7fd283b55820db282f209a0cb166125f43345b4809dbee62", size = 197810, upload-time = "2026-01-15T01:37:52.267Z" },
 ]
 
 [[package]]
 name = "dict2xml"
-version = "1.7.7"
+version = "1.7.8"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/65/f8/2744b5c94698eacacb29df4037a927cdfe649a3716f6327f6978acb12291/dict2xml-1.7.7.tar.gz", hash = "sha256:ae47873a584921430d3b74f0f63db98b59f6cafc038b14619c65e83cf717608f", size = 15033, upload-time = "2025-07-10T05:12:06.999Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/20/47/abde6e5c4456f7074ddd2e0dd8bbf111d6de40ff5bb5761a5f6b20ad474b/dict2xml-1.7.8.tar.gz", hash = "sha256:6638da9ad32b0f8be8336d16e0f36a9c3821145e34ed3ef4889822a9b980fb28", size = 15644, upload-time = "2026-01-14T22:28:07.767Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2c/ec/784796c1c43e35fbfaa7a0025125df4065b33af461f15171da2fb85e9f7a/dict2xml-1.7.7-py3-none-any.whl", hash = "sha256:f7330fbd4cd82cbec0c21f1a1bd283175c2e596f1f9a76716a711426c5da1c94", size = 7865, upload-time = "2025-07-10T05:12:05.851Z" },
+    { url = "https://files.pythonhosted.org/packages/a3/59/99390417ab1c8c118f6dad436aa9e85509b66ce1a80e130c8b61cf3b15bc/dict2xml-1.7.8-py3-none-any.whl", hash = "sha256:0da9213d78496322a9befaa4f934652315973fbf5437f0c0f70f14fc6d16acc5", size = 9460, upload-time = "2026-01-14T22:28:06.542Z" },
 ]
 
 [[package]]
