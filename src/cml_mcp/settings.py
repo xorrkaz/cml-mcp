@@ -74,7 +74,7 @@ class Settings(BaseSettings):
     )
     cml_mcp_acl_file: str | None = Field(
         default=None,
-        description="Path to an YAML file specifying access control lists for various MCP capabilities (only used in HTTP transport mode).",
+        description="Path to a YAML file specifying access control lists for various MCP capabilities (only used in HTTP transport mode).",
     )
 
 
