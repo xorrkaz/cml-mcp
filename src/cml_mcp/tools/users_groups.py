@@ -81,8 +81,8 @@ def register_tools(mcp):  # noqa: C901
     )
     async def delete_cml_user(user_id: UUID4Type, ctx: Context) -> bool:
         """
-        Delete user by UUID. Requires admin. CRITICAL: Always confirm
-        deletion with user first, unless user is responding "yes" to your confirmation prompt.
+        Delete user by UUID. Requires admin. CRITICAL: Always ask "Confirm deletion of [item]?" and wait for
+        user's "yes" before deleting.
         """
         client = get_cml_client_dep()
         try:
@@ -168,8 +168,8 @@ def register_tools(mcp):  # noqa: C901
     )
     async def delete_cml_group(group_id: UUID4Type, ctx: Context) -> bool:
         """
-        Delete group by UUID. Requires admin. CRITICAL: Always confirm
-        deletion with user first, unless user is responding "yes" to your confirmation prompt.
+        Delete group by UUID. Requires admin. CRITICAL: Always ask "Confirm deletion of [item]?" and wait for
+        user's "yes" before deleting.
         """
         client = get_cml_client_dep()
         try:

@@ -61,7 +61,7 @@ from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefini
 async def test_list_tools(main_mcp_client: Client[FastMCPTransport]):
     list_tools = await main_mcp_client.list_tools()
 
-    assert len(list_tools) == snapshot(45)
+    assert len(list_tools) == snapshot(47)
 
 
 async def test_get_cml_labs(main_mcp_client: Client[FastMCPTransport]):
