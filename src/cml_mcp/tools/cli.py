@@ -19,6 +19,7 @@ from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.nodes import NodeLabel
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import _pyats_auth_pass, _pyats_password, _pyats_username, get_cml_client_dep
+from cml_mcp.tools.unicon_cli import unicon_send_cli_command_sync
 from cml_mcp.types import ConsoleLogOutput
 
 logger = logging.getLogger("cml-mcp.tools.cli")
@@ -74,6 +75,10 @@ def _send_cli_command_sync(
         return output
     finally:
         os.chdir(cwd)  # Restore the original working directory
+
+
+if os.environ.get("RUN_CONTROLLER"):
+    _send_cli_command_sync = unicon_send_cli_command_sync
 
 
 def register_tools(mcp):
