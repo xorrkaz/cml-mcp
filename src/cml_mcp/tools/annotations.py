@@ -132,8 +132,8 @@ def register_tools(mcp):
         ctx: Context,
     ) -> bool:
         """
-        Delete annotation by lab and annotation UUID. CRITICAL: Always confirm
-        deletion with user first, unless user is responding "yes" to your confirmation prompt.
+        Delete annotation by lab and annotation UUID. CRITICAL: Always ask "Confirm deletion of [item]?" and wait for
+        user's "yes" before deleting.
         """
         client = get_cml_client_dep()
         try:

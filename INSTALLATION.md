@@ -608,13 +608,15 @@ For a complete example, see [acl.yaml.example](https://github.com/xorrkaz/cml-mc
 
 To configure ACLs, you'll need to know the exact tool names. Here are all available tools:
 
-**Lab Management:** `get_cml_labs`, `create_empty_lab`, `create_full_lab_topology`, `modify_cml_lab`, `start_cml_lab`, `stop_cml_lab`, `wipe_cml_lab`, `delete_cml_lab`, `get_cml_lab_by_title`
+**Lab Management:** `get_cml_labs`, `create_empty_lab`, `create_full_lab_topology`, `modify_cml_lab`, `start_cml_lab`, `stop_cml_lab`, `wipe_cml_lab`, `delete_cml_lab`, `get_cml_lab_by_title`, `download_lab_topology`, `clone_cml_lab`
 
 **Node Management:** `get_cml_node_definitions`, `get_node_definition_detail`, `add_node_to_cml_lab`, `get_nodes_for_cml_lab`, `configure_cml_node`, `start_cml_node`, `stop_cml_node`, `wipe_cml_node`, `delete_cml_node`, `get_console_log`, `send_cli_command`
 
 **Interface & Link Management:** `add_interface_to_node`, `get_interfaces_for_node`, `connect_two_nodes`, `get_all_links_for_lab`, `apply_link_conditioning`, `start_cml_link`, `stop_cml_link`
 
 **Annotations:** `get_annotations_for_cml_lab`, `add_annotation_to_cml_lab`, `delete_annotation_from_lab`
+
+**Packet Capture:** `start_packet_capture`, `stop_packet_capture`, `check_packet_capture_status`, `get_captured_packet_overview`, `get_packet_capture_data`
 
 **User & Group Management:** `get_cml_users`, `create_cml_user`, `delete_cml_user`, `get_cml_groups`, `create_cml_group`, `delete_cml_group`
 
