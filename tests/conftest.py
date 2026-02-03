@@ -123,6 +123,7 @@ class MockCMLClient:
                 data = self._load_mock_file("download_lab_topology.json") or {}
                 if is_binary:
                     import yaml
+
                     return yaml.dump(data).encode("utf-8")
                 return data
             elif "/nodes/" in endpoint and endpoint.endswith("/interfaces"):

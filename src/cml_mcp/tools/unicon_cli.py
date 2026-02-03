@@ -1,6 +1,9 @@
 import logging
 import traceback
 
+import yaml
+from simple_webserver.schemas.common import UUID4Type
+from simple_webserver.schemas.nodes import NodeLabel
 from unicon import Connection
 
 from cml_mcp.cml_client import CMLClient
@@ -10,10 +13,6 @@ _LOGGER = logging.getLogger(__name__)
 TERMWS_BINARY = "/usr/local/bin/termws"
 TIMEOUT = 300
 LOG_PATH = "/tmp/unicon_last_connection.log"
-
-import yaml
-from simple_webserver.schemas.common import UUID4Type
-from simple_webserver.schemas.nodes import NodeLabel
 
 
 def unicon_send_cli_command_sync(
@@ -78,7 +77,7 @@ def unicon_send_cli_command_sync(
 def _save_connection_log(connection, error):
     try:
         with open(LOG_PATH, "at") as logfile:
-            logfile.write(f"Start log of extraction: \n")
+            logfile.write("Start log of extraction: \n")
             if error:
                 logfile.write("Failed with error:\n")
                 logfile.writelines(error.format())
