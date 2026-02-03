@@ -223,8 +223,8 @@ def register_tools(mcp):  # noqa: C901
     )
     async def delete_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
         """
-        Delete node by lab and node UUID. Auto-stops and wipes if needed. CRITICAL: Always confirm
-        deletion with user first, unless user is responding "yes" to your confirmation prompt.
+        Delete node by lab and node UUID. Auto-stops and wipes if needed. CRITICAL: Always ask "Confirm deletion of [item]?" and wait for
+        user's "yes" before deleting.
         """
         client = get_cml_client_dep()
         try:

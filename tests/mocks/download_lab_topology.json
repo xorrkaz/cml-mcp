@@ -1,0 +1,10 @@
+{
+  "lab": {
+    "title": "Mock Lab Topology",
+    "description": "A mock lab topology for testing",
+    "version": "0.1.0"
+  },
+  "nodes": [],
+  "links": [],
+  "annotations": []
+}

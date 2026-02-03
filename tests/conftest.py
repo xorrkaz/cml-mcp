@@ -117,6 +117,14 @@ class MockCMLClient:
                 return self._load_mock_file("get_all_links_for_lab.json") or []
             elif endpoint.endswith("/annotations"):
                 return self._load_mock_file("get_annotations_for_cml_lab.json") or []
+            elif endpoint.endswith("/download"):
+                # Handle lab topology download
+                # Returns bytes (YAML) when is_binary=True, matching real CML API behavior
+                data = self._load_mock_file("download_lab_topology.json") or {}
+                if is_binary:
+                    import yaml
+                    return yaml.dump(data).encode("utf-8")
+                return data
             elif "/nodes/" in endpoint and endpoint.endswith("/interfaces"):
                 return self._load_mock_file("get_interfaces_for_node.json") or []
             elif "/links/" in endpoint and "/capture/status" in endpoint:
@@ -162,13 +170,19 @@ class MockCMLClient:
         if endpoint == "/labs":
             lab_id = self._generate_id()
             self._created_resources["labs"][lab_id] = data
-            return lab_id
+            return {"id": lab_id}
+
+        if endpoint == "/import":
+            # Handle lab topology import (used by clone_cml_lab)
+            lab_id = self._generate_id()
+            self._created_resources["labs"][lab_id] = data
+            return {"id": lab_id}
 
         if "/labs/" in endpoint:
             if endpoint.endswith("/nodes"):
                 node_id = self._generate_id()
                 self._created_resources["nodes"][node_id] = data
-                return node_id
+                return {"id": node_id}
             elif endpoint.endswith("/interfaces"):
                 intf_id = self._generate_id()
                 self._created_resources["interfaces"][intf_id] = data

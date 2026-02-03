@@ -77,7 +77,7 @@ The easiest way to get started is using `uvx` with Claude Desktop (or other MCP-
 
 ## Available MCP Tools
 
-The server provides 45 MCP tools organized into the following categories:
+The server provides 47 MCP tools organized into the following categories:
 
 ### Lab Management
 
@@ -90,6 +90,8 @@ The server provides 45 MCP tools organized into the following categories:
 - **wipe_cml_lab** - Wipe all node data/configurations (requires confirmation)
 - **delete_cml_lab** - Delete a lab (requires confirmation)
 - **get_cml_lab_by_title** - Find a lab by its title
+- **download_lab_topology** - Download lab topology as YAML file
+- **clone_cml_lab** - Clone a lab with optional new title
 
 ### Node Management
 

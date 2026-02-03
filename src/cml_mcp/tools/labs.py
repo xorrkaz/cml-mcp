@@ -34,6 +34,7 @@ from fastmcp import Context
 from fastmcp.exceptions import ToolError
 from mcp.shared.exceptions import McpError
 from mcp.types import INVALID_REQUEST, METHOD_NOT_FOUND
+import yaml
 
 from cml_mcp.cml.simple_webserver.schemas.common import UserName, UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabRequest, LabTitle
@@ -53,6 +54,36 @@ async def get_all_labs(client: CMLClient) -> list[UUID4Type]:
     """
     labs = await client.get("/labs", params={"show_all": True})
     return [UUID4Type(lab) for lab in labs]
+
+
+async def download_lab_file(lid: UUID4Type, client: CMLClient) -> str:
+    """
+    Download lab topology by UUID.
+
+    Args:
+        lid (UUID4Type): The lab ID.
+        client (CMLClient): The CML client instance.
+
+    Returns:
+        str: The topology as a YAML string.
+    """
+    topo_data = await client.get(f"/labs/{lid}/download", is_binary=True)
+    return topo_data.decode("utf-8")
+
+
+async def create_full_topology_from_obj(topology: Topology, client: CMLClient) -> UUID4Type:
+    """
+    Create complete lab from Topology object.
+
+    Args:
+        topology (Topology): The topology object.
+        client (CMLClient): The CML client instance.
+
+    Returns:
+        UUID4Type: The lab UUID.
+    """
+    resp = await client.post("/import", data=topology.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
+    return UUID4Type(resp["id"])
 
 
 def register_tools(mcp):  # noqa: C901
@@ -169,8 +200,7 @@ def register_tools(mcp):  # noqa: C901
             # representation of the argument object.
             if isinstance(topology, dict):
                 topology = Topology(**topology)
-            resp = await client.post("/import", data=topology.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
-            return UUID4Type(resp["id"])
+            return await create_full_topology_from_obj(topology, client)
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
@@ -287,8 +317,8 @@ def register_tools(mcp):  # noqa: C901
     )
     async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> bool:
         """
-        Delete lab by UUID. Auto-stops and wipes if needed. CRITICAL: Always confirm
-        deletion with user first, unless user is responding "yes" to your confirmation prompt.
+        Delete lab by UUID. Auto-stops and wipes if needed. CRITICAL: Always ask "Confirm deletion of [item]?" and wait for user's "yes"
+        before deleting.
         """
         client = get_cml_client_dep()
         try:
@@ -336,4 +366,46 @@ def register_tools(mcp):  # noqa: C901
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
             logger.error(f"Error getting CML lab by title {title}: {str(e)}", exc_info=True)
+            raise ToolError(e)
+
+    @mcp.tool(
+        annotations={"title": "Download lab topology", "readOnlyHint": True},
+    )
+    async def download_lab_topology(lid: UUID4Type) -> str:
+        """
+        Download lab topology by UUID. Returns the topology as a YAML string.
+        This string should be presented to the user as a YAML file for saving.
+        """
+        client = get_cml_client_dep()
+        try:
+            return await download_lab_file(lid, client)
+        except httpx.HTTPStatusError as e:
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+        except Exception as e:
+            logger.error(f"Error downloading lab topology for lab {lid}: {str(e)}", exc_info=True)
+            raise ToolError(e)
+
+    @mcp.tool(
+        annotations={"title": "Clone CML Lab", "readOnlyHint": False, "destructiveHint": False},
+    )
+    async def clone_cml_lab(lid: UUID4Type, new_title: LabTitle | None = None) -> UUID4Type:
+        """
+        Clone lab by UUID. Optionally provide a new title for the cloned lab, else title is "Copy of {original title}".
+        Returns the UUID of the newly created lab.
+        """
+        client = get_cml_client_dep()
+        try:
+            topo_file = await download_lab_file(lid, client)
+            yaml_data = yaml.safe_load(topo_file)
+            if new_title:
+                yaml_data["lab"]["title"] = str(new_title)
+            else:
+                yaml_data["lab"]["title"] = f"Copy of {yaml_data['lab']['title']}"
+
+            topology = Topology(**yaml_data)
+            return await create_full_topology_from_obj(topology, client)
+        except httpx.HTTPStatusError as e:
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+        except Exception as e:
+            logger.error(f"Error cloning CML lab {lid}: {str(e)}", exc_info=True)
             raise ToolError(e)

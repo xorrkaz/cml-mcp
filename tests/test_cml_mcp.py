@@ -62,7 +62,7 @@ from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefini
 async def test_list_tools(main_mcp_client: Client[FastMCPTransport]):
     list_tools = await main_mcp_client.list_tools()
 
-    assert len(list_tools) == snapshot(45)
+    assert len(list_tools) == snapshot(47)
 
 
 async def test_get_cml_labs(main_mcp_client: Client[FastMCPTransport], created_lab):
@@ -740,3 +740,142 @@ async def test_get_nodes_for_cml_lab(main_mcp_client: Client[FastMCPTransport], 
         if isinstance(node, dict):
             node = Node(**node)
         assert isinstance(node, Node)
+
+
+@pytest.mark.mock_only
+@pytest.mark.asyncio
+async def test_download_lab_topology(main_mcp_client):
+    """Test downloading a lab topology as YAML."""
+    # First create a lab to download
+    lab_result = await main_mcp_client.call_tool(name="create_empty_lab", arguments={"lab": {"title": "Download Test Lab"}})
+    assert isinstance(lab_result.content, list)
+    assert len(lab_result.content) > 0
+    assert isinstance(lab_result.content[0], TextContent)
+    lab_id = UUID4Type(lab_result.content[0].text)
+
+    # Download the lab topology
+    download_result = await main_mcp_client.call_tool(name="download_lab_topology", arguments={"lid": lab_id})
+    assert isinstance(download_result.content, list)
+    assert len(download_result.content) > 0
+    assert isinstance(download_result.content[0], TextContent)
+    # The result should be a YAML string
+    yaml_content = download_result.content[0].text
+    assert isinstance(yaml_content, str)
+    assert len(yaml_content) > 0
+
+    # Clean up - delete the lab
+    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": lab_id})
+    assert del_result.data is True
+
+
+@pytest.mark.mock_only
+@pytest.mark.asyncio
+async def test_clone_cml_lab(main_mcp_client):
+    """Test cloning a CML lab with a router node."""
+    # First create a lab to clone
+    lab_result = await main_mcp_client.call_tool(name="create_empty_lab", arguments={"lab": {"title": "Clone Source Lab"}})
+    assert isinstance(lab_result.content, list)
+    assert len(lab_result.content) > 0
+    assert isinstance(lab_result.content[0], TextContent)
+    source_lab_id = UUID4Type(lab_result.content[0].text)
+
+    # Add a router node to the source lab
+    node_create = NodeCreate(
+        node_definition="iol-xe",
+        label="Test Router",
+        x=100,
+        y=100,
+    )
+    node_result = await main_mcp_client.call_tool(name="add_node_to_cml_lab", arguments={"lid": source_lab_id, "node": node_create})
+    assert isinstance(node_result.content, list)
+    assert len(node_result.content) > 0
+
+    # Clone the lab with a new title
+    clone_result = await main_mcp_client.call_tool(
+        name="clone_cml_lab", arguments={"lid": source_lab_id, "new_title": "Cloned Lab"}
+    )
+    assert isinstance(clone_result.content, list)
+    assert len(clone_result.content) > 0
+    assert isinstance(clone_result.content[0], TextContent)
+    cloned_lab_id = UUID4Type(clone_result.content[0].text)
+    assert cloned_lab_id != source_lab_id
+
+    # Clean up - delete both labs
+    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": source_lab_id})
+    assert del_result.data is True
+    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": cloned_lab_id})
+    assert del_result.data is True
+
+
+@pytest.mark.live_only
+@pytest.mark.asyncio
+async def test_download_lab_topology_live(main_mcp_client):
+    """Test downloading a lab topology as YAML against live CML server."""
+    # First create a lab to download
+    lab_result = await main_mcp_client.call_tool(name="create_empty_lab", arguments={"lab": {"title": "Live Download Test Lab"}})
+    assert isinstance(lab_result.content, list)
+    assert len(lab_result.content) > 0
+    assert isinstance(lab_result.content[0], TextContent)
+    lab_id = UUID4Type(lab_result.content[0].text)
+
+    # Download the lab topology
+    download_result = await main_mcp_client.call_tool(name="download_lab_topology", arguments={"lid": lab_id})
+    assert isinstance(download_result.content, list)
+    assert len(download_result.content) > 0
+    assert isinstance(download_result.content[0], TextContent)
+    # The result should be a YAML string
+    yaml_content = download_result.content[0].text
+    assert isinstance(yaml_content, str)
+    assert len(yaml_content) > 0
+    # Verify it's valid YAML by parsing it
+    import yaml
+    parsed = yaml.safe_load(yaml_content)
+    assert "lab" in parsed
+
+    # Clean up - delete the lab
+    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": lab_id})
+    assert del_result.data is True
+
+
+@pytest.mark.live_only
+@pytest.mark.asyncio
+async def test_clone_cml_lab_live(main_mcp_client):
+    """Test cloning a CML lab with a router node against live CML server."""
+    # First create a lab to clone
+    lab_result = await main_mcp_client.call_tool(name="create_empty_lab", arguments={"lab": {"title": "Live Clone Source Lab"}})
+    assert isinstance(lab_result.content, list)
+    assert len(lab_result.content) > 0
+    assert isinstance(lab_result.content[0], TextContent)
+    source_lab_id = UUID4Type(lab_result.content[0].text)
+
+    # Add a router node to the source lab
+    node_create = NodeCreate(
+        node_definition="iol-xe",
+        label="Test Router",
+        x=100,
+        y=100,
+    )
+    node_result = await main_mcp_client.call_tool(name="add_node_to_cml_lab", arguments={"lid": source_lab_id, "node": node_create})
+    assert isinstance(node_result.content, list)
+    assert len(node_result.content) > 0
+
+    # Clone the lab with a new title
+    clone_result = await main_mcp_client.call_tool(
+        name="clone_cml_lab", arguments={"lid": source_lab_id, "new_title": "Live Cloned Lab"}
+    )
+    assert isinstance(clone_result.content, list)
+    assert len(clone_result.content) > 0
+    assert isinstance(clone_result.content[0], TextContent)
+    cloned_lab_id = UUID4Type(clone_result.content[0].text)
+    assert cloned_lab_id != source_lab_id
+
+    # Verify the cloned lab has the router node
+    cloned_nodes = await main_mcp_client.call_tool(name="get_nodes_for_cml_lab", arguments={"lid": cloned_lab_id})
+    assert isinstance(cloned_nodes.content, list)
+    assert len(cloned_nodes.content) > 0
+
+    # Clean up - delete both labs
+    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": source_lab_id})
+    assert del_result.data is True
+    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": cloned_lab_id})
+    assert del_result.data is True
