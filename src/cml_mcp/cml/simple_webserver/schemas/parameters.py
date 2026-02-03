@@ -8,7 +8,6 @@ from enum import StrEnum
 from typing import Annotated
 
 from fastapi import Path, Query
-
 from simple_webserver.schemas.common import DOMAIN_REG, PORT_REG, Permission, UUID4Type
 
 LabIdPathParameter = Annotated[
@@ -41,19 +40,13 @@ ExternalConnectorIdPathParameter = Annotated[
 ]
 
 
-NoticeIdPathParameter = Annotated[
-    UUID4Type, Path(description="The unique ID of a notice to users.")
-]
+NoticeIdPathParameter = Annotated[UUID4Type, Path(description="The unique ID of a notice to users.")]
 
 
-ResourcePoolIdPathParameter = Annotated[
-    UUID4Type, Path(description="The unique ID of a resource pool on this controller.")
-]
+ResourcePoolIdPathParameter = Annotated[UUID4Type, Path(description="The unique ID of a resource pool on this controller.")]
 
 
-NodeIdPathParameter = Annotated[
-    UUID4Type, Path(description="The unique ID of a node within a particular lab.")
-]
+NodeIdPathParameter = Annotated[UUID4Type, Path(description="The unique ID of a node within a particular lab.")]
 
 
 InterfaceIdPathParameter = Annotated[
@@ -62,9 +55,7 @@ InterfaceIdPathParameter = Annotated[
 ]
 
 
-LinkIdPathParameter = Annotated[
-    UUID4Type, Path(description="The unique ID of a link within a particular lab.")
-]
+LinkIdPathParameter = Annotated[UUID4Type, Path(description="The unique ID of a link within a particular lab.")]
 
 
 ComputeIdPathParameter = Annotated[
@@ -73,14 +64,10 @@ ComputeIdPathParameter = Annotated[
 ]
 
 
-SearchQueryPathParameter = Annotated[
-    str, Path(description="The search query parameter.", examples=["iosv-1"])
-]
+SearchQueryPathParameter = Annotated[str, Path(description="The search query parameter.", examples=["iosv-1"])]
 
 
-TagPathParameter = Annotated[
-    str, Path(description="The unique tag path parameter.", examples=["Core"])
-]
+TagPathParameter = Annotated[str, Path(description="The unique tag path parameter.", examples=["Core"])]
 
 
 ConsoleIdPathParameter = Annotated[
@@ -113,53 +100,43 @@ IsJsonQueryParameter = Annotated[
 
 DataQueryParameter = Annotated[
     bool,
-    Query(
-        description="""
+    Query(description="""
         Specify `true` if the service should include data
         about each element instead of just the UUID4Type array.
-        """
-    ),
+        """),
 ]
 
 
 ShowAllQueryParameter = Annotated[
     bool,
-    Query(
-        description="""
+    Query(description="""
         Specify `true` if the service should include items
         which belong to all accessible labs or just owned labs.
-        """
-    ),
+        """),
 ]
 
 
 OperationalQueryParameter = Annotated[
     bool,
-    Query(
-        description="""
+    Query(description="""
         Specify `true` if the service should include operational data
         about each element instead of just configuration.
         This parameter defaults to `true`,
         but may be switched to `false` in a later version of the API.
         if set to `false` `operational` field will be returned as `null`
-        """
-    ),
+        """),
 ]
 
 ExcludeConfigurationsQueryParameter = Annotated[
     bool,
-    Query(
-        description="""
+    Query(description="""
         Specify `true` if the node configuration should be excluded.
         Specify `false` if all node configurations should be included.
-        """
-    ),
+        """),
 ]
 
 
-UserIdPathParameter = Annotated[
-    UUID4Type, Path(description="The unique ID of a user on this controller.")
-]
+UserIdPathParameter = Annotated[UUID4Type, Path(description="The unique ID of a user on this controller.")]
 
 
 UsernamePathParameter = Annotated[
@@ -212,10 +189,7 @@ AuthGroupFilterQueryParameter = Annotated[
     str | None,
     Query(
         description="An optional filter that will be applied to the groups.",
-        examples=[
-            "(& (memberof=CN=parent_group,OU=groups,DC=corp,DC=com) "
-            "(objectclass=group) )"
-        ],
+        examples=["(& (memberof=CN=parent_group,OU=groups,DC=corp,DC=com) " "(objectclass=group) )"],
         max_length=1024,
         alias="filter",
     ),

@@ -9,13 +9,10 @@ from typing import Annotated
 
 from fastapi import Path
 from pydantic import BaseModel, Field
-
 from simple_webserver.schemas.common import HTTP_URL_REG, DefinitionID, UUID4Type
 from simple_webserver.schemas.labs import LabDescription, LabTitle
 
-GitUrl = Annotated[
-    str, Field(pattern=re.compile(HTTP_URL_REG), description="An HTTPS git URL")
-]
+GitUrl = Annotated[str, Field(pattern=re.compile(HTTP_URL_REG), description="An HTTPS git URL")]
 
 RepoName = Annotated[
     str,
@@ -39,13 +36,9 @@ RepoFolder = Annotated[
     ),
 ]
 
-RepoIdPathParameter = Annotated[
-    UUID4Type, Path(description="The ID of an available lab repository.")
-]
+RepoIdPathParameter = Annotated[UUID4Type, Path(description="The ID of an available lab repository.")]
 
-SampleLabIdPathParameter = Annotated[
-    UUID4Type, Path(description="The ID of the specified sample lab.")
-]
+SampleLabIdPathParameter = Annotated[UUID4Type, Path(description="The ID of the specified sample lab.")]
 
 
 class CreateLabRepo(BaseModel, extra="forbid"):
@@ -74,9 +67,7 @@ class SampleLabResponse(BaseModel, extra="forbid"):
 
 class LabRepoRefreshStatus(BaseModel, extra="forbid"):
     success: bool = Field(..., description="The status of the repository refresh.")
-    message: str = Field(
-        ..., description="Description of the status of the repository refresh."
-    )
+    message: str = Field(..., description="Description of the status of the repository refresh.")
     index: list[str] = Field(
         default="Index file updated successfully",
         description="The index file status of the repository.",

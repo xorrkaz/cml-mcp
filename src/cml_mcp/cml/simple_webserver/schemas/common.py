@@ -9,7 +9,6 @@ from enum import StrEnum, auto
 from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, Field, RootModel, field_serializer
-
 from simple_common.schemas import (
     DefaultPermissions,
     InterfaceState,
@@ -19,9 +18,7 @@ from simple_common.schemas import (
 )
 
 LINT_REG = r"[\da-z-]{1,15}"
-UUID4_REG = (
-    r"^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}(?![\n\r])$"
-)
+UUID4_REG = r"^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}(?![\n\r])$"
 UUID4_REG_EXP = re.compile(UUID4_REG)
 
 IPV4_REG = r"(\d{1,3}.){3}\d{1,3}"
@@ -211,9 +208,7 @@ class BorderStyle(StrEnum):
 COLOR_EXAMPLES = ["#FF00FF", "rgba(255, 0, 0, 0.5)", "lightgoldenrodyellow"]
 COLOR_EXAMPLES_STR = f"(e.g.,`{'` or `'.join(COLOR_EXAMPLES)}`)"
 
-AnnotationColor = Annotated[
-    str, Field(min_length=0, max_length=32, examples=COLOR_EXAMPLES)
-]
+AnnotationColor = Annotated[str, Field(min_length=0, max_length=32, examples=COLOR_EXAMPLES)]
 
 
 DateTimeString = Annotated[
@@ -254,18 +249,14 @@ Coordinate = Annotated[int, Field(description="A coordinate.", ge=-15000, le=150
 
 PinnedComputeID = Annotated[
     UUID4Type | None,
-    Field(
-        description="The ID of the compute host where this node is to be exclusively deployed."
-    ),
+    Field(description="The ID of the compute host where this node is to be exclusively deployed."),
 ]
 
 
 LabStateModel = Annotated[LabState, Field(description="The state of the lab.")]
 NodeStateModel = Annotated[NodeState, Field(description="The state of the node.")]
 LinkStateModel = Annotated[LinkState, Field(description="The state of the link.")]
-InterfaceStateModel = Annotated[
-    InterfaceState, Field(description="The state of the interface.")
-]
+InterfaceStateModel = Annotated[InterfaceState, Field(description="The state of the interface.")]
 
 
 class BaseDBModel(BaseModel):

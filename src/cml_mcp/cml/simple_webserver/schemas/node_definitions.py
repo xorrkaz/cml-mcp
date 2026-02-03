@@ -8,7 +8,6 @@ from enum import StrEnum, auto
 from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, Field, conlist, model_validator
-
 from simple_common.schemas import ConfigurationMediaType, DomainDriver
 from simple_webserver.schemas.common import (
     DefinitionID,
@@ -71,9 +70,7 @@ class LinuxNative(BaseModel, extra="forbid"):
     driver: DriverType = Field(..., description="Simulation Driver.")
     disk_driver: DiskDriver = Field(default=None, description="Disk Driver.")
     efi_boot: bool = Field(default=None, description="If set, use EFI boot for the VM.")
-    efi_code: FilePath = Field(
-        default=None, description="EFI code file path; if unset, use default."
-    )
+    efi_code: FilePath = Field(default=None, description="EFI code file path; if unset, use default.")
     efi_vars: FilePath = Field(
         default=None,
         description="EFI NVRAM var template path; if unset, the code file "
@@ -99,15 +96,9 @@ class LinuxNative(BaseModel, extra="forbid"):
         default=None,
         description="Network Driver.",
     )
-    data_volume: int = Field(
-        default=None, description="Data Disk Size in GiB.", ge=0, le=4096
-    )
-    boot_disk_size: int = Field(
-        default=None, description="Boot Disk Size in GiB.", ge=0, le=4096
-    )
-    video: VideoDevice = Field(
-        default=None, description="If present, then VNC can be used with the node VM."
-    )
+    data_volume: int = Field(default=None, description="Data Disk Size in GiB.", ge=0, le=4096)
+    boot_disk_size: int = Field(default=None, description="Boot Disk Size in GiB.", ge=0, le=4096)
+    video: VideoDevice = Field(default=None, description="If present, then VNC can be used with the node VM.")
     enable_rng: bool = Field(
         default=True,
         description="If set, use a random number generator.",
@@ -126,10 +117,7 @@ class LinuxNative(BaseModel, extra="forbid"):
             required = ["ram"]
         for key in required:
             if not getattr(self, key, None):
-                raise ValueError(
-                    f"{key} must be specified when libvirt_domain_driver is"
-                    f" {self.libvirt_domain_driver.value}"
-                )
+                raise ValueError(f"{key} must be specified when libvirt_domain_driver is" f" {self.libvirt_domain_driver.value}")
         return self
 
 
@@ -160,33 +148,23 @@ class Interfaces(BaseModel, extra="forbid"):
         ge=0,
         le=4,
     )
-    physical: conlist(PhysicalField, min_length=1) = Field(
-        ..., description="List of physical interfaces."
-    )
-    has_loopback_zero: bool = Field(
-        ..., description="Has `loopback0` interface (used with ANK)."
-    )
+    physical: conlist(PhysicalField, min_length=1) = Field(..., description="List of physical interfaces.")
+    has_loopback_zero: bool = Field(..., description="Has `loopback0` interface (used with ANK).")
     min_count: int = Field(
         default=None,
         description="Minimal number of physical interfaces needed to start a node.",
         ge=0,
         le=64,
     )
-    default_count: int = Field(
-        default=None, description="Default number of physical interfaces.", ge=1, le=64
-    )
+    default_count: int = Field(default=None, description="Default number of physical interfaces.", ge=1, le=64)
     iol_static_ethernets: Literal[0, 4, 8, 12, 16] = Field(
         default=None,
         description="Only for IOL nodes, the number of static Ethernet interfaces"
         " preceding any serial interface; default 0 means "
         "all interfaces are Ethernet.",
     )
-    loopback: conlist(LoopBackField, min_length=1) = Field(
-        default=None, description="List of loopback interfaces."
-    )
-    management: conlist(ManagementField, min_length=1) = Field(
-        default=None, description="List of management interfaces."
-    )
+    loopback: conlist(LoopBackField, min_length=1) = Field(default=None, description="List of loopback interfaces.")
+    management: conlist(ManagementField, min_length=1) = Field(default=None, description="List of management interfaces.")
 
     @model_validator(mode="after")
     def validate_one_of(self):
@@ -228,10 +206,7 @@ class UsageEstimations(BaseModel, extra="forbid"):
 
     cpus: int = Field(
         default=None,
-        description=(
-            "Estimated CPUs usage in one-hundred-part shares of whole CPUs "
-            "(up to 128 CPUs / 12800 shares)."
-        ),
+        description=("Estimated CPUs usage in one-hundred-part shares of whole CPUs " "(up to 128 CPUs / 12800 shares)."),
         ge=1,
         le=12800,
         examples=[40],
@@ -257,13 +232,9 @@ class Simulation(BaseModel, extra="forbid"):
     Simulation parameters.
     """
 
-    linux_native: LinuxNative = Field(
-        ..., description="Linux native simulation configuration."
-    )
+    linux_native: LinuxNative = Field(..., description="Linux native simulation configuration.")
     parameters: NodeParameters
-    usage_estimations: UsageEstimations = Field(
-        default=None, description="Estimated resource usage parameters."
-    )
+    usage_estimations: UsageEstimations = Field(default=None, description="Estimated resource usage parameters.")
 
 
 class General(BaseModel, extra="forbid"):
@@ -271,12 +242,8 @@ class General(BaseModel, extra="forbid"):
     General information for the node type.
     """
 
-    nature: DeviceNature = Field(
-        ..., description='The "nature" / kind of the node type defined here.'
-    )
-    description: str = Field(
-        default=None, description="A description of the node type.", max_length=4096
-    )
+    nature: DeviceNature = Field(..., description='The "nature" / kind of the node type defined here.')
+    description: str = Field(default=None, description="A description of the node type.", max_length=4096)
     read_only: bool = Field(
         default=False,
         description="Whether the node definition can be updated and deleted.",
@@ -337,12 +304,8 @@ class ConfigurationProvisioning(BaseModel, extra="forbid"):
     Provisioning configuration details.
     """
 
-    files: conlist(ConfigurationFile, min_length=1) = Field(
-        ..., description="List of node configuration file objects."
-    )
-    media_type: ConfigurationMediaType = Field(
-        ..., description="The type of the configuration media."
-    )
+    files: conlist(ConfigurationFile, min_length=1) = Field(..., description="List of node configuration file objects.")
+    media_type: ConfigurationMediaType = Field(..., description="The type of the configuration media.")
     volume_name: str = Field(
         ...,
         description="The volume name of the configuration media.",
@@ -356,12 +319,8 @@ class Configuration(BaseModel, extra="forbid"):
     Node definition configuration details.
     """
 
-    generator: ConfigurationGenerator = Field(
-        ..., description="Generator configuration details."
-    )
-    provisioning: ConfigurationProvisioning = Field(
-        default=None, description="Provisioning configuration details."
-    )
+    generator: ConfigurationGenerator = Field(..., description="Generator configuration details.")
+    provisioning: ConfigurationProvisioning = Field(default=None, description="Provisioning configuration details.")
 
 
 class Device(BaseModel, extra="forbid"):
@@ -380,8 +339,7 @@ class Icon(StrEnum):
 
 
 URI_BASE64_IMAGE_CONTENT_REGEX = re.compile(
-    r"^data:image/(png|jpeg|svg\+xml);base64,((?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{4}|"
-    r"[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}={2}))$"
+    r"^data:image/(png|jpeg|svg\+xml);base64,((?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{4}|" r"[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}={2}))$"
 )
 
 
@@ -417,15 +375,9 @@ class Ui(BaseModel, extra="forbid"):
         "format: data:<MIME_TYPE>;base64,<BASE_64_CONTENT>",
     )
 
-    label: str = Field(
-        ..., description="The node type label.", min_length=1, max_length=32
-    )
-    visible: bool = Field(
-        ..., description="Determines visibility in the UI for this node type."
-    )
-    group: Literal["Cisco", "Others"] = Field(
-        default=None, description="Intended to group similar node types (unused)."
-    )
+    label: str = Field(..., description="The node type label.", min_length=1, max_length=32)
+    visible: bool = Field(..., description="Determines visibility in the UI for this node type.")
+    group: Literal["Cisco", "Others"] = Field(default=None, description="Intended to group similar node types (unused).")
     description: str = Field(
         default=None,
         description="The description of the node type (can be Markdown).",
@@ -457,13 +409,10 @@ class PyAts(PyAtsCredentials, extra="forbid"):
         max_length=32,
     )
     model: PyAtsModel = Field(default=None)
-    use_in_testbed: bool = Field(
-        default=True, description="Use this device in an exported testbed?"
-    )
+    use_in_testbed: bool = Field(default=True, description="Use this device in an exported testbed?")
     config_extract_command: str | None = Field(
         default=None,
-        description="This is the CLI command to use when configurations "
-        "should be extracted from a device of this node type.",
+        description="This is the CLI command to use when configurations " "should be extracted from a device of this node type.",
         max_length=4096,
     )
 
@@ -512,9 +461,7 @@ class NodeDefinition(BaseModel, extra="forbid"):
         max_limit = domain_driver.serial_port_limit
 
         if serial_ports > max_limit:
-            raise ValueError(
-                f"{domain_driver} supports up to {serial_ports} serial consoles."
-            )
+            raise ValueError(f"{domain_driver} supports up to {serial_ports} serial consoles.")
 
         return self
 

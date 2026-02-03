@@ -76,6 +76,12 @@ def _send_cli_command_sync(
         os.chdir(cwd)  # Restore the original working directory
 
 
+if os.environ.get("RUN_CONTROLLER"):
+    from cml_mcp.tools.unicon_cli import unicon_send_cli_command_sync
+
+    _send_cli_command_sync = unicon_send_cli_command_sync
+
+
 def register_tools(mcp):
     """Register all CLI and console tools with the FastMCP server."""
 

@@ -9,7 +9,7 @@ from typing import Annotated
 from fastapi import Body
 from pydantic import BaseModel, Field
 
-from simple_webserver.schemas.common import (
+from cml_mcp.cml.simple_webserver.schemas.common import (
     Coordinate,
     DefinitionID,
     Label,
@@ -19,9 +19,7 @@ from simple_webserver.schemas.common import (
     UUID4Type,
 )
 
-NodeLabel = Annotated[
-    Label, Field(..., description="A node label.", examples=["desktop-1"])
-]
+NodeLabel = Annotated[Label, Field(..., description="A node label.", examples=["desktop-1"])]
 NodeId = Annotated[
     UUID4Type,
     Field(
@@ -40,30 +38,20 @@ Ram = Annotated[
     ),
 ]
 
-Cpus = Annotated[
-    int | None, Field(ge=1, le=128, description="Number of CPUs. Can be null.")
-]
+Cpus = Annotated[int | None, Field(ge=1, le=128, description="Number of CPUs. Can be null.")]
 
 AllocatedCpus = Annotated[
     int | None,
     Field(ge=0, le=128, description="Number allocated of CPUs. Can be null."),
 ]
 
-CpuLimit = Annotated[
-    int | None, Field(ge=20, le=100, description="CPU limit percentage. Can be null.")
-]
+CpuLimit = Annotated[int | None, Field(ge=20, le=100, description="CPU limit percentage. Can be null.")]
 
-DiskSpace = Annotated[
-    int | None, Field(ge=0, le=4096, description="Disk space in GB. Can be null.")
-]
+DiskSpace = Annotated[int | None, Field(ge=0, le=4096, description="Disk space in GB. Can be null.")]
 
-IOLAppId = Annotated[
-    int | None, Field(ge=1, le=1022, description="IOL Application ID. Can be null.")
-]
+IOLAppId = Annotated[int | None, Field(ge=1, le=1022, description="IOL Application ID. Can be null.")]
 
-NodeConfigurationContent = Annotated[
-    str | None, Field(description="Node configuration (no more than 20MB).")
-]
+NodeConfigurationContent = Annotated[str | None, Field(description="Node configuration (no more than 20MB).")]
 
 
 class NodeConfigurationFile(BaseModel, extra="forbid"):
@@ -114,9 +102,7 @@ class NodeBase(BaseModel):
     label: NodeLabel = Field(default=None)
     x: Coordinate = Field(default=None, description="Node X coordinate.")
     y: Coordinate = Field(default=None, description="Node Y coordinate.")
-    image_definition: DefinitionID | None = Field(
-        default=None, description="Image Definition ID for the specified node."
-    )
+    image_definition: DefinitionID | None = Field(default=None, description="Image Definition ID for the specified node.")
     tags: TagArray = Field(default=None)
 
 
@@ -127,9 +113,7 @@ class NodeBaseExtended(NodeBase):
     cpu_limit: CpuLimit = Field(default=None)
     data_volume: DiskSpace = Field(default=None)
     boot_disk_size: DiskSpace = Field(default=None)
-    hide_links: bool = Field(
-        default=False, description="Whether to hide links to/from this node."
-    )
+    hide_links: bool = Field(default=False, description="Whether to hide links to/from this node.")
     priority: int | None = Field(
         default=None,
         description="Priority of the node during lab start.",
@@ -150,9 +134,7 @@ class BootProgress(StrEnum):
 
 
 class NodeDefinedBase(NodeBaseExtended):
-    node_definition: DefinitionID = Field(
-        ..., description="Node Definition ID for the specified node."
-    )
+    node_definition: DefinitionID = Field(..., description="Node Definition ID for the specified node.")
 
 
 class NodeDefined(NodeDefinedBase):
@@ -177,16 +159,11 @@ class NodeOperationalData(BaseModel, extra="forbid"):
     cpus: AllocatedCpus = Field(...)
     data_volume: DiskSpace = Field(...)
     ram: Ram = Field(...)
-    compute_id: UUID4Type | None = Field(
-        ..., description="The ID of the compute host where this node is deployed."
-    )
-    image_definition: DefinitionID | None = Field(
-        ..., description="Image definition ID used for the specified node."
-    )
+    compute_id: UUID4Type | None = Field(..., description="The ID of the compute host where this node is deployed.")
+    image_definition: DefinitionID | None = Field(..., description="Image definition ID used for the specified node.")
     vnc_key: UUID4Type | None = Field(
         ...,
-        description="The key used to connect to a node's graphical VNC console "
-        "if supported by node.",
+        description="The key used to connect to a node's graphical VNC console " "if supported by node.",
     )
     resource_pool: UUID4Type | None = Field(
         default=None,
@@ -218,13 +195,9 @@ class NodeResponse(Node, extra="forbid"):
     configuration: NodeConfigurationFiles = Field(default=None)
 
 
-NodeCreateBody = Annotated[
-    NodeCreate, Body(description="A JSON object with a node's fundamental properties.")
-]
+NodeCreateBody = Annotated[NodeCreate, Body(description="A JSON object with a node's fundamental properties.")]
 
-NodeUpdateBody = Annotated[
-    NodeUpdate, Body(description="A JSON object with a node's updatable properties.")
-]
+NodeUpdateBody = Annotated[NodeUpdate, Body(description="A JSON object with a node's updatable properties.")]
 
 
 class NodeStateResponse(BaseModel, extra="forbid"):

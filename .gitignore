@@ -4,6 +4,7 @@ __pycache__
 .env
 dist/
 .vscode
+.idea/
 .mcpregistry_*
 *.tar
 .inline-snapshot

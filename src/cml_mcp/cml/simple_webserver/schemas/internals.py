@@ -8,7 +8,6 @@
 from typing import Annotated
 
 from pydantic import BaseModel, Field, conlist
-
 from simple_webserver.schemas.common import Hostname, IPAddress, UUID4Type
 from simple_webserver.schemas.keys import ConsoleKeysResponse, VNCKeysResponse
 

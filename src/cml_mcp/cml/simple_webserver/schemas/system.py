@@ -9,7 +9,6 @@ from typing import Annotated
 
 from fastapi import Body
 from pydantic import BaseModel, Field
-
 from simple_common.schemas import ComputeState
 from simple_webserver.schemas.common import (
     Hostname,
@@ -46,9 +45,7 @@ class ExternalConnectorBase(BaseModel):
     )
 
 
-ExternalConnectorLabel = Annotated[
-    Label, Field(description="Unique label for the external connector.")
-]
+ExternalConnectorLabel = Annotated[Label, Field(description="Unique label for the external connector.")]
 
 
 class ExternalConnectorConfig(ExternalConnectorBase):
@@ -57,9 +54,7 @@ class ExternalConnectorConfig(ExternalConnectorBase):
     """
 
     label: ExternalConnectorLabel = Field(default=None)
-    tags: TagArray = Field(
-        default=None, description="Assigned tags denoting purpose of the connector."
-    )
+    tags: TagArray = Field(default=None, description="Assigned tags denoting purpose of the connector.")
 
 
 class ExternalConnectorUpdate(ExternalConnectorConfig, extra="forbid"):
@@ -87,19 +82,13 @@ class ExternalConnectorState(ExternalConnectorBase, extra="forbid"):
         examples=[ExternalConnectorForwarding.NAT],
     )
     mtu: int = Field(default=None, description="MTU on the bridge device.")
-    exists: bool = Field(
-        default=None, description="The device exists on the controller host."
-    )
-    enabled: bool = Field(
-        default=None, description="The device is enabled for forwarding."
-    )
+    exists: bool = Field(default=None, description="The device exists on the controller host.")
+    enabled: bool = Field(default=None, description="The device is enabled for forwarding.")
     stp: bool = Field(
         default=None,
         description="The connector bridge participates in the Spanning Tree Protocol.",
     )
-    ip_networks: list[IPNetwork] | None = Field(
-        default=None, description="Assigned IP networks to the bridge device."
-    )
+    ip_networks: list[IPNetwork] | None = Field(default=None, description="Assigned IP networks to the bridge device.")
 
 
 class ExternalConnector(ExternalConnectorConfig, extra="forbid"):
@@ -107,9 +96,7 @@ class ExternalConnector(ExternalConnectorConfig, extra="forbid"):
     External connector target device (bridge) configuration and state.
     """
 
-    id: UUID4Type = Field(
-        ..., description="The external connector's unique identifier."
-    )
+    id: UUID4Type = Field(..., description="The external connector's unique identifier.")
     label: ExternalConnectorLabel = Field(...)
     device_name: ExternalConnectorDeviceName = Field(
         default=None,
@@ -123,9 +110,7 @@ class ExternalConnector(ExternalConnectorConfig, extra="forbid"):
             "Users may be limited by the resource pool settings imposed on them."
         ),
     )
-    operational: ExternalConnectorState = Field(
-        default=None, description="The operational state of the external connector."
-    )
+    operational: ExternalConnectorState = Field(default=None, description="The operational state of the external connector.")
     protected: bool = Field(
         default=None,
         description="L2 protection filtering is enabled for the network segment.",
@@ -134,9 +119,7 @@ class ExternalConnector(ExternalConnectorConfig, extra="forbid"):
         default=None,
         description="IP snooping service is enabled for the network segment.",
     )
-    tags: TagArray = Field(
-        default=None, description="Assigned tags denoting the purpose of the connector."
-    )
+    tags: TagArray = Field(default=None, description="Assigned tags denoting the purpose of the connector.")
 
 
 class ExternalConnectorsSync(BaseModel):
@@ -173,18 +156,10 @@ class ComputeHostConfig(BaseModel, extra="forbid"):
 
 
 class NodeCountsBase(BaseModel):
-    total_nodes: int | None = Field(
-        default=None, description="The total number of nodes."
-    )
-    total_orphans: int | None = Field(
-        default=None, description="The total number of orphaned nodes."
-    )
-    running_nodes: int | None = Field(
-        default=None, description="The total number of running nodes."
-    )
-    running_orphans: int | None = Field(
-        default=None, description="The total number of running orphaned nodes."
-    )
+    total_nodes: int | None = Field(default=None, description="The total number of nodes.")
+    total_orphans: int | None = Field(default=None, description="The total number of orphaned nodes.")
+    running_nodes: int | None = Field(default=None, description="The total number of running nodes.")
+    running_orphans: int | None = Field(default=None, description="The total number of running orphaned nodes.")
 
 
 class NodeCounts(NodeCountsBase, extra="forbid"):
@@ -197,30 +172,18 @@ class ComputeHostBase(BaseModel, extra="forbid"):
     """
 
     id: UUID4Type = Field(..., description="The compute host's unique identifier.")
-    server_address: str = Field(
-        ..., description="Host address on the internal cluster network."
-    )
+    server_address: str = Field(..., description="Host address on the internal cluster network.")
     hostname: Hostname = Field(..., description="The compute host's unique hostname.")
-    is_simulator: bool = Field(
-        ..., description="Host is used for virtual machine nodes."
-    )
+    is_simulator: bool = Field(..., description="Host is used for virtual machine nodes.")
     is_connector: bool = Field(
         ...,
         description="Host is used for external connector and unmanaged switch nodes.",
     )
     admission_state: ComputeStateField
-    nodes: UUID4ArrayType = Field(
-        ..., description="List of node ID's deployed on the host."
-    )
-    node_counts: NodeCounts = Field(
-        ..., description="Count of nodes and orphans deployed and running on the host."
-    )
-    is_connected: bool = Field(
-        ..., description="Host is communicating with the controller."
-    )
-    is_synced: bool = Field(
-        ..., description="Host state is synchronized with the controller."
-    )
+    nodes: UUID4ArrayType = Field(..., description="List of node ID's deployed on the host.")
+    node_counts: NodeCounts = Field(..., description="Count of nodes and orphans deployed and running on the host.")
+    is_connected: bool = Field(..., description="Host is communicating with the controller.")
+    is_synced: bool = Field(..., description="Host state is synchronized with the controller.")
 
 
 class SystemNoticeLevel(StrEnum):
@@ -244,17 +207,11 @@ SystemNoticeLevel = Annotated[
     ),
 ]
 
-SystemNoticeLabel = Annotated[
-    Label, Field(description="Short label or heading of the notice.")
-]
+SystemNoticeLabel = Annotated[Label, Field(description="Short label or heading of the notice.")]
 
-SystemNoticeContent = Annotated[
-    str, Field(max_length=8192, description="Content of the notice message.")
-]
+SystemNoticeContent = Annotated[str, Field(max_length=8192, description="Content of the notice message.")]
 
-SystemNoticeEnabled = Annotated[
-    bool, Field(description="Notice is enabled and actively shown to users.")
-]
+SystemNoticeEnabled = Annotated[bool, Field(description="Notice is enabled and actively shown to users.")]
 
 
 SystemNoticeAcknowledgements = Annotated[
@@ -285,9 +242,7 @@ class SystemNoticeCreate(SystemNoticeBase, extra="forbid"):
     Attributes of a new administrative notice to users.
     """
 
-    groups: UUID4ArrayType = Field(
-        default=None, description="List of group IDs associated to the created notice."
-    )
+    groups: UUID4ArrayType = Field(default=None, description="List of group IDs associated to the created notice.")
     level: SystemNoticeLevel = Field(...)
     label: SystemNoticeLabel = Field(...)
     content: SystemNoticeContent = Field(default="")
@@ -299,9 +254,7 @@ class SystemNoticeAcknowledgementUpdate(BaseModel, extra="forbid"):
     Update an administrative notice's acknowledgement state for some users.
     """
 
-    acknowledged: SystemNoticeAcknowledgements = Field(
-        ..., description="Users and their new acknowledgement states."
-    )
+    acknowledged: SystemNoticeAcknowledgements = Field(..., description="Users and their new acknowledgement states.")
 
 
 class SystemNoticeActivated(BaseModel, extra="forbid"):
@@ -309,9 +262,7 @@ class SystemNoticeActivated(BaseModel, extra="forbid"):
     Model representing the activation timestamp of a system notice.
     """
 
-    activated: datetime | None = Field(
-        default=None, description="Timestamp when the notice was enabled"
-    )
+    activated: datetime | None = Field(default=None, description="Timestamp when the notice was enabled")
 
 
 class SystemNoticeUpdate(SystemNoticeBase, extra="forbid"):
@@ -319,12 +270,8 @@ class SystemNoticeUpdate(SystemNoticeBase, extra="forbid"):
     Administrative notice update attributes.
     """
 
-    add_groups: UUID4ArrayType = Field(
-        default=None, description="List of group IDs to associate with the notice."
-    )
-    del_groups: UUID4ArrayType = Field(
-        default=None, description="List of group IDs to disassociate from the notice."
-    )
+    add_groups: UUID4ArrayType = Field(default=None, description="List of group IDs to associate with the notice.")
+    del_groups: UUID4ArrayType = Field(default=None, description="List of group IDs to disassociate from the notice.")
 
 
 class SystemNoticeResponse(SystemNoticeBase, SystemNoticeActivated, extra="forbid"):
@@ -377,9 +324,7 @@ class MaintenanceMode(MaintenanceModeBase, extra="forbid"):
     Maintenance mode state.
     """
 
-    resolved_notice: SystemNoticeResponse | None = Field(
-        default=None, description="Configured maintenance system notice."
-    )
+    resolved_notice: SystemNoticeResponse | None = Field(default=None, description="Configured maintenance system notice.")
 
 
 class MemoryStats(BaseModel, extra="forbid"):
@@ -412,9 +357,7 @@ class BasicComputeHostStats(BaseModel):
         ...,
         description="CPU statistics that shows number of cpus and load percent",
     )
-    memory: MemoryStats = Field(
-        ..., description="Memory statistics of the compute host."
-    )
+    memory: MemoryStats = Field(..., description="Memory statistics of the compute host.")
     disk: DiskStats = Field(..., description="Disk statistics of the compute host.")
 
 
@@ -436,9 +379,7 @@ class SystemInformation(BaseModel, extra="forbid"):
         ...,
         description="Flag indicating whether SSH-based console server authentication is enabled.",
     )
-    oui: MACAddress = Field(
-        ..., description="The OUI prefix used for all assigned interface MAC addresses."
-    )
+    oui: MACAddress = Field(..., description="The OUI prefix used for all assigned interface MAC addresses.")
     features: dict[str, bool] = Field(
         default_factory=dict,
         description="Feature flags available on this system.",
@@ -447,16 +388,12 @@ class SystemInformation(BaseModel, extra="forbid"):
 
 class DomInfo(NodeCountsBase, extra="forbid"):
     allocated_cpus: int = Field(..., description="The number of allocated CPUs.", ge=0)
-    allocated_memory: int = Field(
-        ..., description="The number of allocated memory.", ge=0
-    )
+    allocated_memory: int = Field(..., description="The number of allocated memory.", ge=0)
 
 
 class CpuHealthStats(BasicCpuStats, extra="forbid"):
     model: str = Field(..., description="The CPU model name.")
-    hyperthreading: bool = Field(
-        ..., description="Indicates if hyperthreading is enabled."
-    )
+    hyperthreading: bool = Field(..., description="Indicates if hyperthreading is enabled.")
     predicted: int = Field(..., description="The number of predicted CPUs.", ge=0)
     load: list[float] = Field(..., description="The CPU load (last few entries).")
 
@@ -472,12 +409,8 @@ class ComputeHostWithStats(BaseModel, extra="forbid"):
     """
 
     hostname: Hostname = Field(..., description="The hostname of the compute host.")
-    is_controller: bool = Field(
-        ..., description="Indicates if the host is a controller."
-    )
-    stats: ComputeHostStatsWithDomInfo = Field(
-        ..., description="The compute host statistics."
-    )
+    is_controller: bool = Field(..., description="Indicates if the host is a controller.")
+    stats: ComputeHostStatsWithDomInfo = Field(..., description="The compute host statistics.")
 
 
 class ControllerDiskStats(BaseModel, extra="forbid"):
@@ -497,9 +430,7 @@ class SystemStats(BaseModel, extra="forbid"):
         default=None,
         description="Controller host with statistics totals for all computes.",
     )
-    controller: ControllerDiskStats = Field(
-        default=None, description="Controller disk usage statistics."
-    )
+    controller: ControllerDiskStats = Field(default=None, description="Controller disk usage statistics.")
 
 
 class ComputeHealth(BaseModel, extra="forbid"):
@@ -519,37 +450,21 @@ class ComputeHealth(BaseModel, extra="forbid"):
 
 
 class ControllerHealth(BaseModel, extra="forbid"):
-    core_connected: bool = Field(
-        ..., description="Indicates whether core controller is connected"
-    )
+    core_connected: bool = Field(..., description="Indicates whether core controller is connected")
     nodes_loaded: bool = Field(..., description="Indicates whether nodes were loaded")
-    images_loaded: bool = Field(
-        ..., description="Indicates whether image definitions were loaded"
-    )
-    valid: bool = Field(
-        ..., description="Indicates whether the controller is in valid state."
-    )
+    images_loaded: bool = Field(..., description="Indicates whether image definitions were loaded")
+    valid: bool = Field(..., description="Indicates whether the controller is in valid state.")
 
 
 class SystemHealth(BaseModel, extra="forbid"):
     valid: bool | None = Field(..., description="Indicates if the system is healthy.")
-    computes: dict[UUID4Type, ComputeHealth] = Field(
-        ..., description="Compute hosts health statistics."
-    )
-    is_licensed: bool | None = Field(
-        ..., description="Indicates if the system is licensed."
-    )
-    is_enterprise: bool = Field(
-        ..., description="Indicates if the system is enterprise."
-    )
-    controller: ControllerHealth = Field(
-        ..., description="Controller health statistics."
-    )
+    computes: dict[UUID4Type, ComputeHealth] = Field(..., description="Compute hosts health statistics.")
+    is_licensed: bool | None = Field(..., description="Indicates if the system is licensed.")
+    is_enterprise: bool = Field(..., description="Indicates if the system is enterprise.")
+    controller: ControllerHealth = Field(..., description="Controller health statistics.")
 
 
-ComputeHostUpdateBody = Annotated[
-    ComputeHostConfig, Body(description="Set administrative state of a compute host.")
-]
+ComputeHostUpdateBody = Annotated[ComputeHostConfig, Body(description="Set administrative state of a compute host.")]
 
 ExternalConnectorUpdateBody = Annotated[
     ExternalConnectorUpdate,
@@ -561,15 +476,11 @@ ExternalConnectorsSyncBody = Annotated[
     Body(description="Set parameters for external connector sync."),
 ]
 
-SystemNoticeCreateBody = Annotated[
-    SystemNoticeCreate, Body(description="Create a system notice.")
-]
+SystemNoticeCreateBody = Annotated[SystemNoticeCreate, Body(description="Create a system notice.")]
 
 SystemNoticeUpdateBody = Annotated[
     SystemNoticeUpdate | SystemNoticeAcknowledgementUpdate,
     Body(description="Set attributes or acknowledgements of a system notice."),
 ]
 
-ExternalConnectorResponse = Annotated[
-    ExternalConnector, Field(description="External connector configuration and state.")
-]
+ExternalConnectorResponse = Annotated[ExternalConnector, Field(description="External connector configuration and state.")]

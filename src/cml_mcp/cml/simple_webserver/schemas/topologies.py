@@ -8,7 +8,6 @@ from typing import Annotated
 
 from fastapi import Body
 from pydantic import BaseModel, Field
-
 from simple_webserver.schemas.annotations import AnnotationResponse, AnnotationUpdate
 from simple_webserver.schemas.common import MACAddress, UUID4Type
 from simple_webserver.schemas.interfaces import (
@@ -33,9 +32,7 @@ from simple_webserver.schemas.smart_annotations import (
     SmartAnnotationResponse,
 )
 
-TopologyID = Annotated[
-    str, Field(min_length=1, max_length=64, description="Element ID.", examples=["l1"])
-]
+TopologyID = Annotated[str, Field(min_length=1, max_length=64, description="Element ID.", examples=["l1"])]
 
 
 class TopologySchemaVersion(StrEnum):
@@ -107,9 +104,7 @@ class Topology(BaseModel, extra="forbid"):
 
 ImportTopologyBody = Annotated[
     Topology,
-    Body(
-        description="This request body is a JSON object that describes a single topology."
-    ),
+    Body(description="This request body is a JSON object that describes a single topology."),
 ]
 
 

@@ -8,7 +8,6 @@ from typing import Annotated
 
 from fastapi import Body
 from pydantic import BaseModel, Field
-
 from simple_common.schemas import OptInStatus
 from simple_webserver.schemas.common import (
     BaseDBModel,
@@ -21,9 +20,7 @@ from simple_webserver.schemas.common import (
 )
 from simple_webserver.schemas.labs import LabUserAssociation
 
-NewPassword = Annotated[
-    Password, Field(..., description="The new password for the user.")
-]
+NewPassword = Annotated[Password, Field(..., description="The new password for the user.")]
 
 
 class PasswordChange(BaseModel, extra="forbid"):
@@ -45,10 +42,7 @@ SshPubkey = Annotated[
             server authentication is enabled by global configuration. Clear with empty
             string.
         """,
-        pattern=re.compile(
-            r"^([a-zA-Z\d-]{1,30} [a-zA-Z\d+/]{1,4096}={0,2}(?: [a-zA-Z\d@.+_-]{0,64})?"
-            r"(?![\n\r]))?$"
-        ),
+        pattern=re.compile(r"^([a-zA-Z\d-]{1,30} [a-zA-Z\d+/]{1,4096}={0,2}(?: [a-zA-Z\d@.+_-]{0,64})?" r"(?![\n\r]))?$"),
         examples=["ssh-ecdsa-sha2-nistp256 AAAAE...tCyk44= user@cml"],
     ),
 ]
@@ -90,9 +84,7 @@ class UserBase(BaseModel):
         default=None,
         description="User groups. Associate the user with this list of group IDs.",
     )
-    associations: list[LabUserAssociation] = Field(
-        default=None, description="Array of lab/user associations."
-    )
+    associations: list[LabUserAssociation] = Field(default=None, description="Array of lab/user associations.")
     resource_pool: UUID4Type | None = Field(
         default=None,
         description="Limit node launches by this user to the given resource pool.",

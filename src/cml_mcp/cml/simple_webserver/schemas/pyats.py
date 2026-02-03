@@ -6,7 +6,6 @@
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
-
 from simple_webserver.schemas.common import (
     DeviceNature,
     DriverType,
@@ -61,9 +60,7 @@ class PyAtsConnectionDetails(BaseModel, extra="forbid"):
     command: str | None = Field(default=None, examples=["open ..."])
     protocol: str = Field(..., examples=["ssh"])
     proxy: str | None = Field(default=None)
-    ip: IPAddress | str | None = Field(
-        default=None, description="IP address or hostname of the device"
-    )
+    ip: IPAddress | str | None = Field(default=None, description="IP address or hostname of the device")
     port: int | None = Field(default=None, ge=0, le=65535)
 
 
@@ -93,9 +90,7 @@ class PyAtsDevice(BaseModel, extra="forbid"):
 
 class PyAtsInterfaceSummary(BaseModel, extra="forbid"):
     link: UUID4Type | None = Field(default=None, description="Link ID if present")
-    type: Literal["ethernet", "loopback"] = Field(
-        ..., description="interface type", examples=["ethernet"]
-    )
+    type: Literal["ethernet", "loopback"] = Field(..., description="interface type", examples=["ethernet"])
 
 
 class PyAtsDeviceTopology(BaseModel, extra="forbid"):
@@ -115,6 +110,4 @@ class PyAtsTestbedName(BaseModel, extra="forbid"):
 class PyAtsTestbed(BaseModel, extra="forbid"):
     devices: dict[NodeLabel, PyAtsDevice] = Field(..., description="Device list")
     testbed: PyAtsTestbedName = Field(..., description="Testbed details (name)")
-    topology: dict[NodeLabel, PyAtsDeviceTopology] = Field(
-        ..., description="Topology connections list"
-    )
+    topology: dict[NodeLabel, PyAtsDeviceTopology] = Field(..., description="Topology connections list")

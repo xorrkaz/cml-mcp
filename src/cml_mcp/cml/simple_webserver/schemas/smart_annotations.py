@@ -7,7 +7,6 @@ from typing import Annotated
 
 from fastapi import Body
 from pydantic import BaseModel, Field
-
 from simple_webserver.schemas.common import (
     COLOR_EXAMPLES_STR,
     AnnotationColor,
@@ -20,12 +19,8 @@ class SmartAnnotationBase(BaseModel):
     """Configuration for a smart annotation with various styling and positioning
     attributes."""
 
-    is_on: bool = Field(
-        default=True, description="Indicates if the smart annotation is active or not."
-    )
-    padding: int = Field(
-        default=35, ge=1, le=200, description="Padding around the smart annotation."
-    )
+    is_on: bool = Field(default=True, description="Indicates if the smart annotation is active or not.")
+    padding: int = Field(default=35, ge=1, le=200, description="Padding around the smart annotation.")
     tag: str = Field(
         default=None,
         min_length=1,
@@ -94,9 +89,7 @@ class SmartAnnotationBase(BaseModel):
 class SmartAnnotation(SmartAnnotationBase, extra="forbid"):
     """Smart annotation element data."""
 
-    id: UUID4Type = Field(
-        None, description="Unique identifier for the smart annotation."
-    )
+    id: UUID4Type = Field(None, description="Unique identifier for the smart annotation.")
 
 
 class SmartAnnotationUpdate(SmartAnnotationBase, extra="forbid"):
@@ -107,12 +100,7 @@ class SmartAnnotationUpdate(SmartAnnotationBase, extra="forbid"):
 
 SmartAnnotationUpdateBody = Annotated[
     SmartAnnotationUpdate,
-    Body(
-        description="A JSON object with properties to update a smart annotation. "
-        "Only supplied properties will be updated."
-    ),
+    Body(description="A JSON object with properties to update a smart annotation. " "Only supplied properties will be updated."),
 ]
 
-SmartAnnotationResponse = Annotated[
-    SmartAnnotation, Field(description="The response body is a JSON annotation object.")
-]
+SmartAnnotationResponse = Annotated[SmartAnnotation, Field(description="The response body is a JSON annotation object.")]

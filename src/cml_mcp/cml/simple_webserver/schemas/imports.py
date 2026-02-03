@@ -15,6 +15,4 @@ class ImportLabResponse(BaseModel, extra="forbid"):
     """
 
     id: str = Field(..., description="The lab ID of the imported lab.")
-    warnings: list[str] | None = Field(
-        ..., description="Warnings, if any, as Markdown."
-    )
+    warnings: list[str] | None = Field(..., description="Warnings, if any, as Markdown.")

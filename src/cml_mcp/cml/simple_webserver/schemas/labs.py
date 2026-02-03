@@ -8,7 +8,6 @@ from typing import Annotated
 
 from fastapi import Body
 from pydantic import BaseModel, Field
-
 from simple_common.schemas import LabEventElementType, LabEventType
 from simple_webserver.schemas.annotations import AnnotationResponse
 from simple_webserver.schemas.common import (
@@ -65,9 +64,7 @@ LabDescription = Annotated[
 
 class LabGroupBase(BaseModel):
     id: UUID4Type = Field(..., description="ID of the lab group.")
-    permission: OldPermission = Field(
-        ..., description="Permission level for the lab group."
-    )
+    permission: OldPermission = Field(..., description="Permission level for the lab group.")
 
 
 class GroupLab(LabGroupBase, extra="forbid"):
@@ -80,37 +77,25 @@ class LabGroup(LabGroupBase, extra="forbid"):
 
 class LabGroupAssociation(BaseModel, extra="forbid"):
     id: UUID4Type = Field(..., description="ID of the group.")
-    permissions: Permissions = Field(
-        ..., description="Permissions for the specified group and lab."
-    )
+    permissions: Permissions = Field(..., description="Permissions for the specified group and lab.")
 
 
 class LabUserAssociation(BaseModel, extra="forbid"):
     id: UUID4Type = Field(..., description="ID of the user.")
-    permissions: Permissions = Field(
-        ..., description="Permissions for the specified user and lab."
-    )
+    permissions: Permissions = Field(..., description="Permissions for the specified user and lab.")
 
 
 class LabAssociations(BaseModel, extra="forbid"):
-    groups: list[LabGroupAssociation] = Field(
-        default=None, description="Array of group associations."
-    )
-    users: list[LabUserAssociation] = Field(
-        default=None, description="Array of user associations."
-    )
+    groups: list[LabGroupAssociation] = Field(default=None, description="Array of group associations.")
+    users: list[LabUserAssociation] = Field(default=None, description="Array of user associations.")
 
 
 LabOwner = Annotated[UUID4Type, Field(description="ID of the lab owner.")]
 
 
 class LabAutostart(BaseModel, extra="forbid"):
-    enabled: bool = Field(
-        default=False, description="Enable lab start when CML host boots."
-    )
-    priority: int | None = Field(
-        default=None, description="Priority of the autostarted lab.", ge=0, le=10000
-    )
+    enabled: bool = Field(default=False, description="Enable lab start when CML host boots.")
+    priority: int | None = Field(default=None, description="Priority of the autostarted lab.", ge=0, le=10000)
     delay: int | None = Field(
         default=None,
         description="Delay before the lab with next priority is autostarted.",
@@ -177,13 +162,9 @@ class Lab(BaseDBModel, extra="forbid"):
     lab_title: LabTitle = Field(...)
     owner: LabOwner = Field(default=None)
     owner_username: UserName = Field(default=None, description="The owner username.")
-    owner_fullname: UserFullName = Field(
-        default=None, description="The owner full name."
-    )
+    owner_fullname: UserFullName = Field(default=None, description="The owner full name.")
     state: LabStateModel = Field(...)
-    node_count: int = Field(
-        default=None, description="Number of nodes (or devices) in the lab.", ge=0
-    )
+    node_count: int = Field(default=None, description="Number of nodes (or devices) in the lab.", ge=0)
     link_count: int = Field(
         default=None,
         description="Number of connections between nodes in the lab.",
@@ -200,9 +181,7 @@ class Lab(BaseDBModel, extra="forbid"):
 
 LabGroupsBody = Annotated[
     list[LabGroup],
-    Body(
-        description="This request body is a JSON object that describes the group permissions for a lab."
-    ),
+    Body(description="This request body is a JSON object that describes the group permissions for a lab."),
 ]
 
 LabBody = Annotated[LabRequest, Body(description="The lab's data.")]
@@ -290,6 +269,4 @@ class SimplifiedLabTopologyInfo(LabTopologyInfoBase, extra="forbid"):
 
 
 class LabInfoResponse(Lab, extra="forbid"):
-    topology: LabTopologyInfo | SimplifiedLabTopologyInfo = Field(
-        default=None, description="Lab topology data"
-    )
+    topology: LabTopologyInfo | SimplifiedLabTopologyInfo = Field(default=None, description="Lab topology data")

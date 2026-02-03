@@ -30,11 +30,11 @@ import asyncio
 import logging
 
 import httpx
+import yaml
 from fastmcp import Context
 from fastmcp.exceptions import ToolError
 from mcp.shared.exceptions import McpError
 from mcp.types import INVALID_REQUEST, METHOD_NOT_FOUND
-import yaml
 
 from cml_mcp.cml.simple_webserver.schemas.common import UserName, UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabRequest, LabTitle

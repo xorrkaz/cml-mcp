@@ -8,16 +8,13 @@
 from enum import StrEnum
 
 from pydantic import BaseModel, Field, RootModel
-
 from simple_common.schemas import DomainDriver
 from simple_webserver.schemas.common import IPAddress, UUID4Type
 from simple_webserver.schemas.labs import LabTitle
 from simple_webserver.schemas.links import LinkLabel
 from simple_webserver.schemas.nodes import NodeLabel
 
-UpperDomainDriver = StrEnum(
-    "UpperDomainDriver", {member.name: member.name for member in DomainDriver}
-)
+UpperDomainDriver = StrEnum("UpperDomainDriver", {member.name: member.name for member in DomainDriver})
 
 
 class BaseLabDetails(BaseModel):
