@@ -2,6 +2,7 @@ import logging
 import traceback
 
 from unicon import Connection
+
 from cml_mcp.cml_client import CMLClient
 
 _LOGGER = logging.getLogger(__name__)
@@ -10,36 +11,32 @@ TERMWS_BINARY = "/usr/local/bin/termws"
 TIMEOUT = 300
 LOG_PATH = "/tmp/unicon_last_connection.log"
 
+import yaml
 from simple_webserver.schemas.common import UUID4Type
 from simple_webserver.schemas.nodes import NodeLabel
 
-import yaml
-
 
 def unicon_send_cli_command_sync(
-        client: CMLClient,
-        lid: UUID4Type,
-        label: NodeLabel,  # pyright: ignore[reportInvalidTypeForm]
-        commands: str,
-        config_command: bool,
+    client: CMLClient,
+    lid: UUID4Type,
+    label: NodeLabel,  # pyright: ignore[reportInvalidTypeForm]
+    commands: str,
+    config_command: bool,
 ) -> str:
     resp = client.vclient._session.get(f"/labs/{lid}/pyats_testbed")
     pyats_data = yaml.safe_load(resp.text)
-    device_pyats_data = pyats_data['devices'][label]
+    device_pyats_data = pyats_data["devices"][label]
 
-    resp = client.vclient._session.get(f"/labs/{lid}/nodes",
-                                       params={'data': True,
-                                               'operational': True}
-                                       )
+    resp = client.vclient._session.get(f"/labs/{lid}/nodes", params={"data": True, "operational": True})
 
     if resp.status_code != 200:
         raise Exception("can not retrieve node console key. is not running?")
 
     lab_op_info = resp.json()
 
-    consoles = [node['operational']['serial_consoles'] for node in lab_op_info if node['label'] == label].pop()
+    consoles = [node["operational"]["serial_consoles"] for node in lab_op_info if node["label"] == label].pop()
 
-    console_key = consoles[0]['console_key']
+    console_key = consoles[0]["console_key"]
 
     connect_command = f"{TERMWS_BINARY} -host [::1] -port 8006 -internal {console_key}"
     connection = None
@@ -48,9 +45,9 @@ def unicon_send_cli_command_sync(
         connection = Connection(
             hostname=label,
             start=[connect_command],
-            os=device_pyats_data['os'],
-            series=device_pyats_data.get('series'),  # can be None
-            credentials=device_pyats_data['credentials'],
+            os=device_pyats_data["os"],
+            series=device_pyats_data.get("series"),  # can be None
+            credentials=device_pyats_data["credentials"],
             log_stdout=False,
             log_buffer=True,
             learn_hostname=True,

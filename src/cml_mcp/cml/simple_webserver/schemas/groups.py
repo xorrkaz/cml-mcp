@@ -7,7 +7,6 @@ from typing import Annotated
 
 from fastapi import Body, Path
 from pydantic import BaseModel, Field
-
 from simple_webserver.schemas.common import (
     BaseDBModel,
     GenericDescription,
@@ -17,9 +16,7 @@ from simple_webserver.schemas.common import (
 )
 from simple_webserver.schemas.labs import GroupLab, LabGroupAssociation
 
-GroupIdPathParameter = Annotated[
-    UUID4Type, Path(description="The unique ID of a group on this controller.")
-]
+GroupIdPathParameter = Annotated[UUID4Type, Path(description="The unique ID of a group on this controller.")]
 
 
 GroupNamePathParameter = Annotated[
@@ -60,9 +57,7 @@ class GroupUpdateBase(GroupBase):
 
 
 class GroupAssocNew(BaseModel):
-    associations: list[LabGroupAssociation] = Field(
-        default=None, description="Array of lab/group associations."
-    )
+    associations: list[LabGroupAssociation] = Field(default=None, description="Array of lab/group associations.")
 
 
 class GroupAssocOld(BaseModel):
@@ -93,9 +88,7 @@ GroupCreateBodyParameter = Annotated[GroupCreate | GroupCreateOld, Body(...)]
 GroupUpdateBodyParameter = Annotated[GroupUpdate | GroupUpdateOld, Body(...)]
 
 
-class GroupResponse(
-    BaseDBModel, GroupCreateBase, GroupAssocNew, GroupAssocOld, extra="forbid"
-):
+class GroupResponse(BaseDBModel, GroupCreateBase, GroupAssocNew, GroupAssocOld, extra="forbid"):
     """Information about a group."""
 
     # XXX: Allow this to be None for backward compatibility with existing groups.
@@ -105,9 +98,7 @@ class GroupResponse(
         max_length=255,
         examples=["CN=Lab 1 Members,CN=groups,DC=corp,DC=com"],
     )
-    directory_exists: bool | None = Field(
-        default=None, description="Whether the group exists on LDAP"
-    )
+    directory_exists: bool | None = Field(default=None, description="Whether the group exists on LDAP")
 
 
 class GroupBriefResponse(BaseModel, extra="forbid"):

@@ -6,7 +6,6 @@
 from typing import Annotated
 
 from pydantic import BaseModel, Field
-
 from simple_webserver.schemas.common import (
     IPv4Address,
     IPv6Address,
@@ -40,7 +39,5 @@ class NodeNetworkAddressesResponse(BaseModel, extra="forbid"):
 
 LabNetworkAddressesResponse = Annotated[
     dict[NodeId, NodeNetworkAddressesResponse],
-    Field(
-        description="Lab network addresses dictionary or empty dictionary if lab is not started"
-    ),
+    Field(description="Lab network addresses dictionary or empty dictionary if lab is not started"),
 ]

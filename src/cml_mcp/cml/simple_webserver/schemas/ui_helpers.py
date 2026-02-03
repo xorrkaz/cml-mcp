@@ -5,7 +5,6 @@
 #
 
 from pydantic import BaseModel, Field
-
 from simple_common.schemas import LabState, LinkState, NodeState
 from simple_webserver.schemas.common import (
     EffectivePermissions,

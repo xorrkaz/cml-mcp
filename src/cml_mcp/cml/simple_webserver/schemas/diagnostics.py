@@ -7,7 +7,6 @@
 from datetime import datetime
 
 from pydantic import BaseModel, Field
-
 from simple_common.schemas import BootEventType
 from simple_webserver.schemas.common import (
     Coordinate,
@@ -191,18 +190,12 @@ class NodeLaunchQueueDiagnostics(BaseModel, extra="forbid"):
     cpu_limit: CpuLimit = Field(default=None)
     cpus: AllocatedCpus = Field(...)
     data_volume: DiskSpace = Field(default=None)
-    hide_links: bool = Field(
-        default=None, description="Whether to hide links to/from this node."
-    )
+    hide_links: bool = Field(default=None, description="Whether to hide links to/from this node.")
     id: NodeId
-    image_definition: DefinitionID | None = Field(
-        default=None, description="Image Definition ID for the specified node."
-    )
+    image_definition: DefinitionID | None = Field(default=None, description="Image Definition ID for the specified node.")
     lab_id: UUID4Type = Field(default=None)
     label: NodeLabel = Field(default=None)
-    node_definition: DefinitionID = Field(
-        ..., description="Node Definition ID for the specified node."
-    )
+    node_definition: DefinitionID = Field(..., description="Node Definition ID for the specified node.")
     parameters: NodeParameters
     pinned_compute_id: PinnedComputeID = Field(default=None)
     ram: Ram = Field(default=None)

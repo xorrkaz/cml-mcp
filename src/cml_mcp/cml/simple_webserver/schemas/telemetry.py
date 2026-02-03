@@ -8,7 +8,6 @@ from enum import StrEnum, auto
 from typing import Any
 
 from pydantic import BaseModel, Field
-
 from simple_common.schemas import OptInStatus, TelemetryEventCategory
 
 
@@ -49,8 +48,6 @@ class OptInUpdate(OptInBase, extra="forbid"):
 
 
 class TelemetryEventResponse(BaseModel, extra="forbid"):
-    category: TelemetryEventCategory = Field(
-        ..., description="Telemetry event category."
-    )
+    category: TelemetryEventCategory = Field(..., description="Telemetry event category.")
     timestamp: datetime = Field(..., description="The timestamp of the event.")
     data: dict[str, Any] = Field(..., description="The data of the event.")

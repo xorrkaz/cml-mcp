@@ -126,11 +126,7 @@ class NodeState(FSMState):
 
     @property
     def is_starting(self) -> bool:
-        return (
-            self is NodeState.QUEUED
-            or self is NodeState.STARTED
-            or self is NodeState.BOOTED
-        )
+        return self is NodeState.QUEUED or self is NodeState.STARTED or self is NodeState.BOOTED
 
 
 class LinkState(FSMState):

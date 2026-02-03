@@ -7,7 +7,6 @@ from typing import Annotated
 
 from fastapi import Body
 from pydantic import BaseModel, Field, conlist
-
 from simple_webserver.schemas.common import (
     GenericDescription,
     Label,
@@ -41,9 +40,7 @@ class ResourcePoolBaseData(BaseModel):
         le=32768,
         description="(Not enforced) Amount of disk space (GB) allowed or used.",
     )
-    external_connectors: (
-        conlist(ExternalConnectorDeviceName, min_length=0, max_length=128) | None
-    ) = Field(
+    external_connectors: conlist(ExternalConnectorDeviceName, min_length=0, max_length=128) | None = Field(
         default=None,
         description="List of external connector interface names allowed or used.",
         examples=[ExternalConnectorDeviceName("bridge0")],
@@ -54,9 +51,7 @@ class ResourcePoolBase(ResourcePoolBaseData):
     """Resource pool base."""
 
     label: ResourcePoolLabel = Field(default=None)
-    description: NullableGenericDescription = Field(
-        default=None, description="Free-form textual description of the resource pool."
-    )
+    description: NullableGenericDescription = Field(default=None, description="Free-form textual description of the resource pool.")
     cpus: int | None = Field(
         default=None,
         ge=0,
@@ -75,9 +70,7 @@ class ResourcePoolTemplateCreate(ResourcePoolBase, extra="forbid"):
     """Resource pool template create attributes."""
 
     label: ResourcePoolLabel = Field(...)
-    users: UUID4ArrayType = Field(
-        default=None, description="List of user IDs assigned to the created pool."
-    )
+    users: UUID4ArrayType = Field(default=None, description="List of user IDs assigned to the created pool.")
 
 
 class ResourcePoolCreate(ResourcePoolTemplateCreate, extra="forbid"):
@@ -106,9 +99,7 @@ class ResourcePool(ResourcePoolBase, extra="forbid"):
 class ResourcePoolAdmin(ResourcePool, extra="forbid"):
     """Resource pool configuration data. with involved users"""
 
-    users: UUID4ArrayType = Field(
-        default=None, description="List of user IDs assigned to the pool."
-    )
+    users: UUID4ArrayType = Field(default=None, description="List of user IDs assigned to the pool.")
 
 
 class ResourcePoolTemplate(ResourcePoolBase, extra="forbid"):
@@ -146,12 +137,8 @@ class ResourcePoolUsage(BaseModel, extra="forbid"):
     id: UUID4Type
     label: ResourcePoolLabel = Field(default=None)
 
-    description: GenericDescription | None = Field(
-        default=None, description="Free-form textual description of the resource pool."
-    )
-    limit: ResourcePoolUsageData = Field(
-        default=None, description="Resolved limits (from self or parent template)."
-    )
+    description: GenericDescription | None = Field(default=None, description="Free-form textual description of the resource pool.")
+    limit: ResourcePoolUsageData = Field(default=None, description="Resolved limits (from self or parent template).")
     usage: ResourcePoolUsageData = Field(
         default=None,
         description="Current total usage by nodes using the resource pool.",

@@ -9,14 +9,11 @@ from typing import Annotated
 
 from fastapi import Body, Path
 from pydantic import BaseModel, Field, model_validator
-
 from simple_webserver.schemas.common import IPAddress, MACAddress, UUID4Type
 
 LINK_ENCAP_DESCRIPTION = "Link encapsulation"
 
-CaptureKeyPathParameter = Annotated[
-    UUID4Type, Path(description="The UUID of the PCAP (link capture key).")
-]
+CaptureKeyPathParameter = Annotated[UUID4Type, Path(description="The UUID of the PCAP (link capture key).")]
 
 
 PacketIdPathParameter = Annotated[
@@ -64,9 +61,7 @@ class PCAPStart(BaseModel, extra="forbid"):
         max_length=128,
         examples=["src 0.0.0.0"],
     )
-    encap: LinkEncap = Field(
-        default=LinkEncap.ETHERNET, description=LINK_ENCAP_DESCRIPTION
-    )
+    encap: LinkEncap = Field(default=LinkEncap.ETHERNET, description=LINK_ENCAP_DESCRIPTION)
 
     @model_validator(mode="after")
     def check_at_least_one(self):
@@ -75,9 +70,7 @@ class PCAPStart(BaseModel, extra="forbid"):
         return self
 
 
-PCAPStartBody = Annotated[
-    PCAPStart, Body(description="Send parameters in JSON format to start PCAP.")
-]
+PCAPStartBody = Annotated[PCAPStart, Body(description="Send parameters in JSON format to start PCAP.")]
 
 
 class PCAPConfigStatus(BaseModel, extra="forbid"):
@@ -114,9 +107,7 @@ class PCAPStatusResponse(BaseModel, extra="forbid"):
         None,
         description="The configuration of the PCAP. Empty when PCAP is not running",
     )
-    starttime: datetime | None = Field(
-        None, description="The start time of the PCAP. None when PCAP is not running"
-    )
+    starttime: datetime | None = Field(None, description="The start time of the PCAP. None when PCAP is not running")
     packetscaptured: int | None = Field(
         None,
         description="The number of packets captured. None when PCAP is not running",
@@ -139,12 +130,8 @@ class PCAPItem(BaseModel, extra="forbid"):
         max_length=16,
         examples=["12.003743"],
     )
-    source: MACAddress | IPAddress = Field(
-        ..., description="The MAC/IP address of the source."
-    )
-    destination: MACAddress | IPAddress = Field(
-        ..., description="The MAC/IP address of the destination."
-    )
+    source: MACAddress | IPAddress = Field(..., description="The MAC/IP address of the source.")
+    destination: MACAddress | IPAddress = Field(..., description="The MAC/IP address of the destination.")
     length: str = Field(
         ...,
         description="The length of the packet.",

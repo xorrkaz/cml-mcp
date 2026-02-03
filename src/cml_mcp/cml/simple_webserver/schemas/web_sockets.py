@@ -4,7 +4,6 @@
 # All rights reserved.
 #
 from pydantic import BaseModel, Field
-
 from simple_webserver.schemas.common import UUID4Type
 
 

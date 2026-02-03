@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     )
 
     cml_url: AnyHttpUrl | None = Field(default=None, description="URL of the Cisco Modeling Labs server")
+    cml_mcp_remote_server_url: AnyHttpUrl | None = Field(
+        default=None, description="URL of the remote CML mcp server. " "Can be read from Swagger API docs"
+    )
     cml_username: str | None = Field(default=None, description="Username for CML server authentication")
     cml_password: str | None = Field(default=None, description="Password for CML server authentication")
     cml_verify_ssl: bool = Field(
@@ -79,6 +82,10 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
-if settings.cml_mcp_transport == TransportEnum.STDIO:
+if settings.cml_mcp_remote_server_url:
+    if not settings.cml_username or not settings.cml_password:
+        raise ValueError("CML_USERNAME, and CML_PASSWORD must be set when using remote MCP server")
+
+elif settings.cml_mcp_transport == TransportEnum.STDIO:
     if not settings.cml_url or not settings.cml_username or not settings.cml_password:
         raise ValueError("CML_URL, CML_USERNAME, and CML_PASSWORD must be set when using stdio transport")

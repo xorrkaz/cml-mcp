@@ -8,13 +8,9 @@ from typing import Annotated
 from fastapi import Body
 from pydantic import Field
 
-LicensingReservationModeBodyParameter = Annotated[
-    bool, Body(description="The license reservation feature status.")
-]
+LicensingReservationModeBodyParameter = Annotated[bool, Body(description="The license reservation feature status.")]
 
-LicensingReservationRequestCode = Annotated[
-    str, Field(description="Reservation request code for the CSSM.")
-]
+LicensingReservationRequestCode = Annotated[str, Field(description="Reservation request code for the CSSM.")]
 
 LicensingAuthorizationCodeBodyParameter = Annotated[
     str,
@@ -24,14 +20,8 @@ LicensingAuthorizationCodeBodyParameter = Annotated[
     ),
 ]
 
-LicensingConfirmationCode = Annotated[
-    str | None, Field(description="The confirmation code from a completed reservation.")
-]
+LicensingConfirmationCode = Annotated[str | None, Field(description="The confirmation code from a completed reservation.")]
 
-LicensingReturnCode = Annotated[
-    str | None, Field(description="The return code from a released reservation.")
-]
+LicensingReturnCode = Annotated[str | None, Field(description="The return code from a released reservation.")]
 
-LicensingDiscardCode = Annotated[
-    str, Field(description="The discard code for an already cancelled reservation.")
-]
+LicensingDiscardCode = Annotated[str, Field(description="The discard code for an already cancelled reservation.")]
