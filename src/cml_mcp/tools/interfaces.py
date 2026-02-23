@@ -51,7 +51,8 @@ def register_tools(mcp):
     ) -> SimplifiedInterfaceResponse:
         """
         Add interface to node. Returns interface with id, node, slot, type, and MAC address.
-        Required: node (UUID). Optional: slot (0-128), mac_address ("00:11:22:33:44:55" format).
+        Input: interface object. Prefer a JSON object; JSON-encoded object strings are accepted.
+        Required: node (node UUID). Optional: slot (0-128), mac_address ("00:11:22:33:44:55" format).
         """
         client = get_cml_client_dep()
         try:

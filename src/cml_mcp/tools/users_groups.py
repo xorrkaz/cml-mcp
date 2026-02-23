@@ -54,6 +54,7 @@ def register_tools(mcp):  # noqa: C901
     async def create_cml_user(user: UserCreate | dict) -> UUID4Type:
         """
         Create user. Requires admin. Returns user UUID.
+        Input: user object. Prefer a JSON object; JSON-encoded object strings are accepted.
         Required: username, password. Optional: fullname, description, email, groups (UUID list), admin (bool), resource_pool (UUID).
         """
         client = get_cml_client_dep()
@@ -141,6 +142,7 @@ def register_tools(mcp):  # noqa: C901
     async def create_cml_group(group: GroupCreate | dict) -> UUID4Type:
         """
         Create group. Requires admin. Returns group UUID.
+        Input: group object. Prefer a JSON object; JSON-encoded object strings are accepted.
         Required: name. Optional: description, members (user UUID list), associations (lab permissions).
         """
         client = get_cml_client_dep()

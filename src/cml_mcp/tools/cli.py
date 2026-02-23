@@ -127,6 +127,7 @@ def register_tools(mcp):
     ) -> str:
         """
         Send CLI commands to running node by lab UUID and node label. Node must be in BOOTED state.
+        label is the node label, not the node UUID.
         CRITICAL: Can modify device state. Review commands before executing, especially with config_command=true.
         Separate multiple commands with newlines.
         config_command=false: exec/operational mode (default). config_command=true: config mode only

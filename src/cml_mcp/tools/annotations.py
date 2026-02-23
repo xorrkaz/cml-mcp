@@ -81,6 +81,7 @@ def register_tools(mcp):
     ) -> UUID4Type:
         """
         Add visual annotation to lab. Returns annotation UUID.
+        Input: annotation object. Prefer a JSON object; JSON-encoded object strings are accepted.
         Required field: type ("text"/"rectangle"/"ellipse"/"line").
 
         Common fields: x1, y1 (coords -15000 to 15000), color, border_color, border_style (""/"2,2"/"4,2"),

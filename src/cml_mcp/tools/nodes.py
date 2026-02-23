@@ -94,7 +94,9 @@ def register_tools(mcp):  # noqa: C901
     ) -> UUID4Type:
         """
         Add node to lab. Returns node UUID. Auto-creates default interfaces per node definition.
+        Input: node object. Prefer a JSON object; JSON-encoded object strings are accepted.
         Required: x (-15000 to 15000), y (-15000 to 15000), label (1-128 chars), node_definition (e.g., "alpine", "iosv").
+        node_definition values come from get_cml_node_definitions.
         Optional: image_definition, ram (MB), cpus, cpu_limit (%), data_volume (GB), boot_disk_size (GB), tags, configuration, parameters.
         """
         client = get_cml_client_dep()
