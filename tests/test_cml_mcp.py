@@ -58,6 +58,8 @@ from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
 from cml_mcp.cml.simple_webserver.schemas.users import UserCreate, UserResponse
 from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse
 
+pytestmark = pytest.mark.slow
+
 
 async def test_list_tools(main_mcp_client: Client[FastMCPTransport]):
     list_tools = await main_mcp_client.list_tools()
@@ -65,7 +67,7 @@ async def test_list_tools(main_mcp_client: Client[FastMCPTransport]):
     assert len(list_tools) == snapshot(47)
 
 
-async def test_get_cml_labs(main_mcp_client: Client[FastMCPTransport]):
+async def test_get_cml_labs(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
     result = await main_mcp_client.call_tool(name="get_cml_labs", arguments={})
     # outsource(result.data, ".json")
 
@@ -114,6 +116,14 @@ async def test_user_mgmt(main_mcp_client: Client[FastMCPTransport]):
 
 
 async def test_get_cml_groups(main_mcp_client: Client[FastMCPTransport]):
+    # set-up: create group
+    group_create = GroupCreate(
+        name="mcp_test_group",
+        description="Test group created by MCP tests",
+    )
+    _ = await main_mcp_client.call_tool(name="create_cml_group", arguments={"group": group_create})
+    # skip asserts as there should be separate test for this specific call
+
     result = await main_mcp_client.call_tool(name="get_cml_groups", arguments={})
     # outsource(result.data, ".json")
 
@@ -123,6 +133,9 @@ async def test_get_cml_groups(main_mcp_client: Client[FastMCPTransport]):
         if isinstance(group, dict):
             group = GroupResponse(**group)
         assert isinstance(group, GroupResponse)
+
+    # clean-up
+    _ = await main_mcp_client.call_tool(name="delete_cml_group", arguments={"group_id": group.id})
 
 
 @pytest.mark.live_only
@@ -357,59 +370,31 @@ async def test_packet_capture_operations(main_mcp_client: Client[FastMCPTranspor
 
 
 @pytest.mark.live_only
-async def test_empty_lab_mgmt(main_mcp_client: Client[FastMCPTransport]):
-    title = LabTitle("MCP Test Lab")
-    lab_create = LabRequest(
-        title=title,
-        description="This is a test lab created by MCP tests",
-        notes="Some _markdown_ notes for the lab.",
-    )
-    result = await main_mcp_client.call_tool(name="create_empty_lab", arguments={"lab": lab_create})
-    assert isinstance(result.content, list)
-    assert len(result.content) > 0
-    assert isinstance(result.content[0], TextContent)
-    lab_id = UUID4Type(result.content[0].text)
-
+async def test_empty_lab_mgmt(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
+    lid, lab_create = created_lab
     # Fetch the lab details
-    lab_result = await main_mcp_client.call_tool(name="get_cml_lab_by_title", arguments={"title": title})
+    lab_result = await main_mcp_client.call_tool(name="get_cml_lab_by_title", arguments={"title": lab_create.title})
+
     # outsource(lab_result.structured_content, ".json")
     if isinstance(lab_result.structured_content, dict):
         lab_result.structured_content = Lab(**lab_result.structured_content)
     assert isinstance(lab_result.structured_content, Lab)
-    assert lab_result.structured_content.id == lab_id
-
-    # Delete the lab
-    # This also tests stopping and wiping the lab.
-    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": lab_id})
-    assert del_result.data is True
+    assert lab_result.structured_content.id == lid
 
 
 @pytest.mark.live_only
-async def test_modify_cml_lab(main_mcp_client: Client[FastMCPTransport]):
-    title = LabTitle("MCP Modify Lab")
-    lab_create = LabRequest(
-        title=title,
-        description="This is a test lab created by MCP tests for modification",
-        notes="Some _markdown_ notes for the lab.",
-    )
-    result = await main_mcp_client.call_tool(name="create_empty_lab", arguments={"lab": lab_create})
-    assert isinstance(result.content, list)
-    assert len(result.content) > 0
-    assert isinstance(result.content[0], TextContent)
-    lab_id = UUID4Type(result.content[0].text)
-
+async def test_modify_cml_lab(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
+    lab_id, lab_create = created_lab
     lab_create.title = LabTitle("MCP Modified Lab Title")
     mod_result = await main_mcp_client.call_tool(name="modify_cml_lab", arguments={"lid": lab_id, "lab": lab_create})
+
     assert mod_result.data is True
 
-    # Clean up - delete the lab
-    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": lab_id})
-    assert del_result.data is True
 
-
+# TODO: verify topology yaml to avoid Pydantic errors
 @pytest.mark.live_only
 async def test_full_cml_topology(main_mcp_client: Client[FastMCPTransport]):
-    topo = Path("tests/input_data/IOL_OSPF_Lab.yaml")
+    topo = Path(__file__).parent.joinpath("input_data/IOL_OSPF_Lab.yaml")
     with topo.open("r") as f:
         topo_data = Topology(**(yaml.safe_load(f)))
     result = await main_mcp_client.call_tool(name="create_full_lab_topology", arguments={"topology": topo_data})
@@ -424,18 +409,8 @@ async def test_full_cml_topology(main_mcp_client: Client[FastMCPTransport]):
 
 
 @pytest.mark.live_only
-async def test_intf_management(main_mcp_client: Client[FastMCPTransport]):
-    title = LabTitle("MCP Interface Add Lab")
-    lab_create = LabRequest(
-        title=title,
-        description="This is a test lab created by MCP tests for interface addition",
-        notes="Some _markdown_ notes for the lab.",
-    )
-    result = await main_mcp_client.call_tool(name="create_empty_lab", arguments={"lab": lab_create})
-    assert isinstance(result.content, list)
-    assert len(result.content) > 0
-    assert isinstance(result.content[0], TextContent)
-    lab_id = UUID4Type(result.content[0].text)
+async def test_intf_management(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
+    lab_id = created_lab[0]
 
     node_create = NodeCreate(
         node_definition="iol-xe",
@@ -474,24 +449,10 @@ async def test_intf_management(main_mcp_client: Client[FastMCPTransport]):
             intf = SimplifiedInterfaceResponse(**intf)
         assert isinstance(intf, SimplifiedInterfaceResponse)
 
-    # Clean up - delete the lab
-    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": lab_id})
-    assert del_result.data is True
-
 
 @pytest.mark.live_only
-async def test_add_annotation_to_cml_lab(main_mcp_client: Client[FastMCPTransport]):
-    title = LabTitle("MCP Annotation Lab")
-    lab_create = LabRequest(
-        title=title,
-        description="This is a test lab created by MCP tests for annotation addition",
-        notes="Some _markdown_ notes for the lab.",
-    )
-    result = await main_mcp_client.call_tool(name="create_empty_lab", arguments={"lab": lab_create})
-    assert isinstance(result.content, list)
-    assert len(result.content) > 0
-    assert isinstance(result.content[0], TextContent)
-    lab_id = UUID4Type(result.content[0].text)
+async def test_add_annotation_to_cml_lab(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
+    lab_id = created_lab[0]
 
     ellipse_annotation = EllipseAnnotation(
         x1=150,
@@ -608,24 +569,10 @@ async def test_add_annotation_to_cml_lab(main_mcp_client: Client[FastMCPTranspor
                 annotation = TextAnnotationResponse(**annotation)
             assert annotation.type in {"ellipse", "line", "rectangle", "text"}
 
-    # Clean up - delete the lab
-    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": lab_id})
-    assert del_result.data is True
-
 
 @pytest.mark.live_only
-async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport]):
-    title = LabTitle("MCP Connect Nodes Lab")
-    lab_create = LabRequest(
-        title=title,
-        description="This is a test lab created by MCP tests for connecting two nodes",
-        notes="Some _markdown_ notes for the lab.",
-    )
-    result = await main_mcp_client.call_tool(name="create_empty_lab", arguments={"lab": lab_create})
-    assert isinstance(result.content, list)
-    assert len(result.content) > 0
-    assert isinstance(result.content[0], TextContent)
-    lab_id = UUID4Type(result.content[0].text)
+async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
+    lab_id = created_lab[0]
 
     node1_create = NodeCreate(
         node_definition="iol-xe",
@@ -740,7 +687,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport]):
         if isinstance(item, dict):
             item = PCAPItem(**item)
         assert isinstance(item, PCAPItem)
-        if item.protocol.lower() == "icmp":
+        if item.protocol.lower().startswith("icmp"):
             found_icmp = True
     assert found_icmp is True
 
@@ -759,23 +706,10 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport]):
     )
     assert cond_result.data is True
 
-    # Clean up - delete the lab
-    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": lab_id})
-    assert del_result.data is True
-
 
 @pytest.mark.live_only
-async def test_get_nodes_for_cml_lab(main_mcp_client: Client[FastMCPTransport]):
-    lab_create = LabRequest(
-        title=LabTitle("MCP Get Nodes Lab"),
-        description="This is a test lab created by MCP tests for getting nodes",
-        notes="Some _markdown_ notes for the lab.",
-    )
-    result = await main_mcp_client.call_tool(name="create_empty_lab", arguments={"lab": lab_create})
-    assert isinstance(result.content, list)
-    assert len(result.content) > 0
-    assert isinstance(result.content[0], TextContent)
-    lab_id = UUID4Type(result.content[0].text)
+async def test_get_nodes_for_cml_lab(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
+    lab_id = created_lab[0]
 
     node_create = NodeCreate(
         node_definition="iol-xe",
@@ -802,21 +736,12 @@ async def test_get_nodes_for_cml_lab(main_mcp_client: Client[FastMCPTransport]):
             node = Node(**node)
         assert isinstance(node, Node)
 
-    # Clean up - delete the lab
-    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": lab_id})
-    assert del_result.data is True
-
 
 @pytest.mark.mock_only
 @pytest.mark.asyncio
-async def test_download_lab_topology(main_mcp_client):
+async def test_download_lab_topology(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
     """Test downloading a lab topology as YAML."""
-    # First create a lab to download
-    lab_result = await main_mcp_client.call_tool(name="create_empty_lab", arguments={"lab": {"title": "Download Test Lab"}})
-    assert isinstance(lab_result.content, list)
-    assert len(lab_result.content) > 0
-    assert isinstance(lab_result.content[0], TextContent)
-    lab_id = UUID4Type(lab_result.content[0].text)
+    lab_id = created_lab[0]
 
     # Download the lab topology
     download_result = await main_mcp_client.call_tool(name="download_lab_topology", arguments={"lid": lab_id})
@@ -828,21 +753,12 @@ async def test_download_lab_topology(main_mcp_client):
     assert isinstance(yaml_content, str)
     assert len(yaml_content) > 0
 
-    # Clean up - delete the lab
-    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": lab_id})
-    assert del_result.data is True
-
 
 @pytest.mark.mock_only
 @pytest.mark.asyncio
-async def test_clone_cml_lab(main_mcp_client):
+async def test_clone_cml_lab(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
     """Test cloning a CML lab with a router node."""
-    # First create a lab to clone
-    lab_result = await main_mcp_client.call_tool(name="create_empty_lab", arguments={"lab": {"title": "Clone Source Lab"}})
-    assert isinstance(lab_result.content, list)
-    assert len(lab_result.content) > 0
-    assert isinstance(lab_result.content[0], TextContent)
-    source_lab_id = UUID4Type(lab_result.content[0].text)
+    source_lab_id = created_lab[0]
 
     # Add a router node to the source lab
     node_create = NodeCreate(
@@ -863,23 +779,16 @@ async def test_clone_cml_lab(main_mcp_client):
     cloned_lab_id = UUID4Type(clone_result.content[0].text)
     assert cloned_lab_id != source_lab_id
 
-    # Clean up - delete both labs
-    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": source_lab_id})
-    assert del_result.data is True
+    # Clean up - delete clone lab
     del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": cloned_lab_id})
     assert del_result.data is True
 
 
 @pytest.mark.live_only
 @pytest.mark.asyncio
-async def test_download_lab_topology_live(main_mcp_client):
+async def test_download_lab_topology_live(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
     """Test downloading a lab topology as YAML against live CML server."""
-    # First create a lab to download
-    lab_result = await main_mcp_client.call_tool(name="create_empty_lab", arguments={"lab": {"title": "Live Download Test Lab"}})
-    assert isinstance(lab_result.content, list)
-    assert len(lab_result.content) > 0
-    assert isinstance(lab_result.content[0], TextContent)
-    lab_id = UUID4Type(lab_result.content[0].text)
+    lab_id = created_lab[0]
 
     # Download the lab topology
     download_result = await main_mcp_client.call_tool(name="download_lab_topology", arguments={"lid": lab_id})
@@ -896,21 +805,12 @@ async def test_download_lab_topology_live(main_mcp_client):
     parsed = yaml.safe_load(yaml_content)
     assert "lab" in parsed
 
-    # Clean up - delete the lab
-    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": lab_id})
-    assert del_result.data is True
-
 
 @pytest.mark.live_only
 @pytest.mark.asyncio
-async def test_clone_cml_lab_live(main_mcp_client):
+async def test_clone_cml_lab_live(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
     """Test cloning a CML lab with a router node against live CML server."""
-    # First create a lab to clone
-    lab_result = await main_mcp_client.call_tool(name="create_empty_lab", arguments={"lab": {"title": "Live Clone Source Lab"}})
-    assert isinstance(lab_result.content, list)
-    assert len(lab_result.content) > 0
-    assert isinstance(lab_result.content[0], TextContent)
-    source_lab_id = UUID4Type(lab_result.content[0].text)
+    source_lab_id = created_lab[0]
 
     # Add a router node to the source lab
     node_create = NodeCreate(
@@ -936,8 +836,6 @@ async def test_clone_cml_lab_live(main_mcp_client):
     assert isinstance(cloned_nodes.content, list)
     assert len(cloned_nodes.content) > 0
 
-    # Clean up - delete both labs
-    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": source_lab_id})
-    assert del_result.data is True
+    # Clean up - delete both labs (source is deleted in fixture)
     del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": cloned_lab_id})
     assert del_result.data is True
