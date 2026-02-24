@@ -1,5 +1,5 @@
 [flake8]
-exclude = .venv,.git,.eggs,__pycache__,docs/source/conf.py,old,build,dist
-ignore = E731
+exclude = .venv,.git,.eggs,__pycache__,docs/source/conf.py,old,build,dist,src/cml_mcp/cml
+ignore = E731,E203,W503
 max-complexity = 40
 max-line-length = 140

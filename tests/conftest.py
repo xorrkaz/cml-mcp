@@ -14,7 +14,6 @@ from typing import Any
 
 import pytest
 
-
 # Determine if we should use mocks
 USE_MOCKS = os.getenv("USE_MOCKS", "true").lower() == "true"
 MOCKS_DIR = Path(__file__).parent / "mocks"
@@ -113,6 +112,7 @@ class MockCMLClient:
                 data = self._load_mock_file("download_lab_topology.json") or {}
                 if is_binary:
                     import yaml
+
                     return yaml.dump(data).encode("utf-8")
                 return data
             elif "/nodes/" in endpoint and endpoint.endswith("/interfaces"):
@@ -290,8 +290,9 @@ async def main_mcp_client():
     Main MCP client fixture for testing.
     Works with both mock and live modes.
     """
-    from cml_mcp.server import server_mcp
     from fastmcp.client import Client
+
+    from cml_mcp.server import server_mcp
 
     async with Client(transport=server_mcp) as mcp_client:
         yield mcp_client
