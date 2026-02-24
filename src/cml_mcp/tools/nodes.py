@@ -66,7 +66,7 @@ def register_tools(mcp):  # noqa: C901
             for node in list(resp):
                 # XXX: Fixup known issues with bad data coming from
                 # certain node types.
-                if "operational" in node:
+                if node.get("operational") is not None:
                     if node["operational"].get("vnc_key") == "":
                         node["operational"]["vnc_key"] = None
                     if node["operational"].get("image_definition") == "":

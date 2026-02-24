@@ -59,7 +59,7 @@ class SimplifiedInterfaces(BaseModel, extra="ignore"):
     )
     default_count: int = Field(default=None, description="Default number of physical interfaces.", ge=1, le=64)
     iol_static_ethernets: Literal[0, 4, 8, 12, 16] = Field(
-        default=None,
+        default=0,
         description="Only for IOL nodes, the number of static Ethernet interfaces"
         " preceding any serial interface; default 0 means "
         "all interfaces are Ethernet.",
