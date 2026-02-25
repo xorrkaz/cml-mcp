@@ -37,14 +37,14 @@ Issues = "https://github.com/xorrkaz/cml-mcp/issues"
 
 [tool.black]
 line-length = 140
+force-exclude = '''
+^/src/cml_mcp/cml/
+'''
 
 [tool.isort]
 profile = "black"
 line_length = 140
-
-[tool.flake8]
-max-line-length = 140
-extend-ignore = ["E203", "W503"]
+skip_glob = ["src/cml_mcp/cml/**"]
 
 [tool.uv.sources]
 cml-mcp = { workspace = true }

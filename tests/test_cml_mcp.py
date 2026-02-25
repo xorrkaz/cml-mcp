@@ -26,9 +26,10 @@ Usage:
   pytest -m live_only tests/test_cml_mcp.py
 """
 
+from pathlib import Path
+
 import pytest
 import yaml
-from pathlib import Path
 from fastmcp.client import Client
 from fastmcp.client.transports import FastMCPTransport
 from inline_snapshot import snapshot  # , outsource
@@ -36,25 +37,25 @@ from mcp.types import TextContent
 
 from cml_mcp.cml.simple_webserver.schemas.annotations import (
     EllipseAnnotation,
-    LineAnnotation,
-    RectangleAnnotation,
-    TextAnnotation,
     EllipseAnnotationResponse,
+    LineAnnotation,
     LineAnnotationResponse,
+    RectangleAnnotation,
     RectangleAnnotationResponse,
+    TextAnnotation,
     TextAnnotationResponse,
 )
 from cml_mcp.cml.simple_webserver.schemas.common import DefinitionID, UserName, UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.groups import GroupCreate, GroupResponse
 from cml_mcp.cml.simple_webserver.schemas.interfaces import InterfaceCreate
 from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabRequest, LabTitle
-from cml_mcp.cml.simple_webserver.schemas.links import LinkResponse, LinkConditionConfiguration, LinkCreate
+from cml_mcp.cml.simple_webserver.schemas.links import LinkConditionConfiguration, LinkCreate, LinkResponse
 from cml_mcp.cml.simple_webserver.schemas.node_definitions import NodeDefinition
 from cml_mcp.cml.simple_webserver.schemas.nodes import Node, NodeCreate
+from cml_mcp.cml.simple_webserver.schemas.pcap import PCAPItem, PCAPStart, PCAPStatusResponse
 from cml_mcp.cml.simple_webserver.schemas.system import SystemHealth, SystemInformation, SystemStats
 from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
 from cml_mcp.cml.simple_webserver.schemas.users import UserCreate, UserResponse
-from cml_mcp.cml.simple_webserver.schemas.pcap import PCAPItem, PCAPStart, PCAPStatusResponse
 from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse
 
 
@@ -855,9 +856,7 @@ async def test_clone_cml_lab(main_mcp_client):
     assert len(node_result.content) > 0
 
     # Clone the lab with a new title
-    clone_result = await main_mcp_client.call_tool(
-        name="clone_cml_lab", arguments={"lid": source_lab_id, "new_title": "Cloned Lab"}
-    )
+    clone_result = await main_mcp_client.call_tool(name="clone_cml_lab", arguments={"lid": source_lab_id, "new_title": "Cloned Lab"})
     assert isinstance(clone_result.content, list)
     assert len(clone_result.content) > 0
     assert isinstance(clone_result.content[0], TextContent)
@@ -893,6 +892,7 @@ async def test_download_lab_topology_live(main_mcp_client):
     assert len(yaml_content) > 0
     # Verify it's valid YAML by parsing it
     import yaml
+
     parsed = yaml.safe_load(yaml_content)
     assert "lab" in parsed
 
@@ -924,9 +924,7 @@ async def test_clone_cml_lab_live(main_mcp_client):
     assert len(node_result.content) > 0
 
     # Clone the lab with a new title
-    clone_result = await main_mcp_client.call_tool(
-        name="clone_cml_lab", arguments={"lid": source_lab_id, "new_title": "Live Cloned Lab"}
-    )
+    clone_result = await main_mcp_client.call_tool(name="clone_cml_lab", arguments={"lid": source_lab_id, "new_title": "Live Cloned Lab"})
     assert isinstance(clone_result.content, list)
     assert len(clone_result.content) > 0
     assert isinstance(clone_result.content[0], TextContent)
