@@ -196,7 +196,7 @@ class MockCMLClient:
             elif endpoint.endswith("/annotations"):
                 annotation_id = self._generate_id()
                 self._created_resources["annotations"][annotation_id] = data
-                return annotation_id
+                return {"id": annotation_id}
             elif endpoint.endswith("/start"):
                 return None
             elif endpoint.endswith("/stop"):
@@ -207,12 +207,12 @@ class MockCMLClient:
         if endpoint == "/users":
             user_id = self._generate_id()
             self._created_resources["users"][user_id] = data
-            return user_id
+            return {"id": user_id}
 
         if endpoint == "/groups":
             group_id = self._generate_id()
             self._created_resources["groups"][group_id] = data
-            return group_id
+            return {"id": group_id}
 
         # Default response
         return None
