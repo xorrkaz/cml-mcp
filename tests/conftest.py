@@ -375,17 +375,28 @@ def pytest_collection_modifyitems(config, items):
 async def created_lab(main_mcp_client: Client[FastMCPTransport]) -> AsyncGenerator[tuple[UUID4Type, LabRequest], None]:
     # --- Setup: create lab ---
     title = COMMON_TEST_LAB_TITLE
+    autostart = LabAutostart() if USE_MOCKS else None
+    node_staging = NodeStaging() if USE_MOCKS else None
     lab_create = LabRequest(
         title=title,
         description="This is a test lab created by MCP tests",
         notes="Some _markdown_ notes for the lab.",
-        autostart=LabAutostart(),
-        node_staging=NodeStaging(),
+        autostart=autostart,
+        node_staging=node_staging,
     )
+
+    lab_payload = {
+        "title": title,
+        "description": "This is a test lab created by MCP tests",
+        "notes": "Some _markdown_ notes for the lab.",
+    }
+    if USE_MOCKS:
+        lab_payload["autostart"] = LabAutostart().model_dump(mode="json", exclude_none=True)
+        lab_payload["node_staging"] = NodeStaging().model_dump(mode="json", exclude_none=True)
 
     result = await main_mcp_client.call_tool(
         name="create_empty_lab",
-        arguments={"lab": lab_create},
+        arguments={"lab": lab_payload},
     )
 
     assert isinstance(result.content, list)
