@@ -31,8 +31,10 @@ class LinkResponse(LinkConnectionInfo, extra="forbid"):
     """Link object."""
 
     lab_id: UUID4Type = Field(default=None, description="ID of the lab.")
-    link_capture_key: str = Field(
-        default=None, max_length=64, description="The link capture key."
+    link_capture_key: UUID4Type | None = Field(
+        default=None,
+        max_length=64,
+        description="Deprecated. The link capture key is now the same as link ID.",
     )
     state: LabStateModel = Field(
         default=None, description="The status of the link in the lab."
@@ -104,17 +106,13 @@ class LinkWithConditionConfig(LinkConnectionInfo, extra="forbid"):
     conditioning: LinkConditionConfiguration = Field(default=None)
 
 
-class LinkConditionOperational(LinkCondition, extra="forbid"):
-    pass
-
-
 class ConditionResponse(LinkCondition, extra="forbid"):
     enabled: bool = Field(
         default=False, description="The link conditioning is enabled."
     )
-    operational: LinkConditionOperational = Field(
+    operational: LinkCondition | None = Field(
         default=None,
-        description="Additional operational data associated with the link conditioning.",
+        description="Applied operational data associated with the link conditioning.",
     )
 
 

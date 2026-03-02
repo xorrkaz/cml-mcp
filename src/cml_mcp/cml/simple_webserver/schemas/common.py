@@ -10,6 +10,7 @@ from typing import Annotated
 
 from pydantic import AfterValidator, BaseModel, Field, RootModel, field_serializer
 
+from simple_common.constants import DEFAULT_LOGIN_TIMEOUT
 from simple_common.schemas import (
     DefaultPermissions,
     InterfaceState,
@@ -293,6 +294,7 @@ class DeviceNature(StrEnum):
     CLOUD = auto()
     HOST = auto()
     FIREWALL = auto()
+    WIRELESS = auto()
     EXTERNAL_CONNECTOR = auto()
 
 
@@ -318,6 +320,66 @@ class DriverType(StrEnum):
     UBUNTU = auto()
     UNMANAGED_SWITCH = auto()
     WAN_EMULATOR = auto()
+
+
+PyAtsToken = Annotated[
+    str | None,
+    Field(
+        description="The device platform/model token as defined by pyATS / Unicon.",
+        min_length=1,
+        max_length=32,
+        examples=["asav", "iosv", "cat8k", "iosxrv9k", "n9k"],
+    ),
+]
+
+PyAtsOs = Annotated[
+    str,
+    Field(
+        description="The operating system as defined by pyATS / Unicon.",
+        min_length=1,
+        max_length=32,
+        examples=["asa", "ios", "iosxe", "iosxr", "nxos", "linux"],
+    ),
+]
+
+
+PyAtsPassword = Annotated[
+    str | None,
+    Field(
+        default=None,
+        description="Password to use with pyATS / Unicon",
+        min_length=1,
+        max_length=128,
+    ),
+]
+
+PyAtsUsername = Annotated[
+    str | None,
+    Field(
+        default=None,
+        description="Username to use with pyATS / Unicon",
+        min_length=1,
+        max_length=64,
+    ),
+]
+
+
+class PyAtsCredentials(BaseModel, extra="forbid"):
+    username: PyAtsUsername
+    password: PyAtsPassword
+    enable_password: PyAtsPassword
+
+
+Timeout = Annotated[
+    int,
+    Field(
+        description="Timeout in seconds for authentication requests (default 10).",
+        default=DEFAULT_LOGIN_TIMEOUT,
+        ge=1,
+        le=60,
+        examples=[30],
+    ),
+]
 
 
 class StringDict(RootModel[dict[str, str]]):

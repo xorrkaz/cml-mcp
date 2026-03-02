@@ -98,8 +98,7 @@ class GroupResponse(
 ):
     """Information about a group."""
 
-    # XXX: Allow this to be None for backward compatibility with existing groups.
-    directory_dn: str | None = Field(
+    directory_dn: str = Field(
         default=None,
         description="Group distinguished name from LDAP",
         max_length=255,

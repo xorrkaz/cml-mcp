@@ -329,8 +329,8 @@ def pytest_collection_modifyitems(config, items):
 async def created_lab(main_mcp_client: Client[FastMCPTransport]) -> AsyncGenerator[tuple[UUID4Type, LabRequest], None]:
     # --- Setup: create lab ---
     title = COMMON_TEST_LAB_TITLE
-    autostart = LabAutostart() if USE_MOCKS else None
-    node_staging = NodeStaging() if USE_MOCKS else None
+    autostart = LabAutostart()
+    node_staging = NodeStaging()
     lab_create = LabRequest(
         title=title,
         description="This is a test lab created by MCP tests",

@@ -12,6 +12,27 @@ TAR = "tar"
 TARGZ = "tar.gz"
 SUPPORTED_IMAGE_FORMATS = [QCOW2, QCOW, TAR, TARGZ]
 
+LINK_CONDITION_PARAMETERS = (
+    "bandwidth",
+    "latency",
+    "delay_corr",
+    "limit",
+    "loss",
+    "loss_corr",
+    "gap",
+    "duplicate",
+    "duplicate_corr",
+    "jitter",
+    "reorder_prob",
+    "reorder_corr",
+    "corrupt_prob",
+    "corrupt_corr",
+)
+
+
+def empty_link_condition() -> dict[str, None]:
+    return dict.fromkeys(LINK_CONDITION_PARAMETERS)
+
 
 class AuthMethod(StrEnum):
     LOCAL = auto()
@@ -78,6 +99,10 @@ class DomainDriver(StrEnum):
         return self is DomainDriver.IOL
 
     @property
+    def is_iol_or_docker(self) -> bool:
+        return self is DomainDriver.IOL or self is DomainDriver.DOCKER
+
+    @property
     def is_kvm_or_docker(self) -> bool:
         return self is DomainDriver.KVM or self is DomainDriver.DOCKER
 
@@ -108,29 +133,6 @@ class DomainDriver(StrEnum):
 
 class FSMState(StrEnum):
     pass
-
-
-class LabState(FSMState):
-    DEFINED_ON_CORE = "DEFINED_ON_CORE"
-    STOPPED = "STOPPED"
-    STARTED = "STARTED"
-
-
-class NodeState(FSMState):
-    DEFINED_ON_CORE = "DEFINED_ON_CORE"
-    STOPPED = "STOPPED"
-    STARTED = "STARTED"
-    QUEUED = "QUEUED"
-    BOOTED = "BOOTED"
-    DISCONNECTED = "DISCONNECTED"
-
-    @property
-    def is_starting(self) -> bool:
-        return (
-            self is NodeState.QUEUED
-            or self is NodeState.STARTED
-            or self is NodeState.BOOTED
-        )
 
 
 class LinkState(FSMState):
@@ -194,3 +196,54 @@ class TelemetryEventCategory(StrEnum):
     IMPORT_LAB = auto()
     EXPORT_LAB = auto()
     AAA_INFO = auto()
+    LAB_AUTOSTART = auto()
+
+
+_LAB_TELEMETRY_MAP: dict[str, TelemetryEventCategory] = {
+    "STARTED": TelemetryEventCategory.START_LAB,
+    "STOPPED": TelemetryEventCategory.STOP_LAB,
+}
+
+
+class LabState(FSMState):
+    DEFINED_ON_CORE = "DEFINED_ON_CORE"
+    STOPPED = "STOPPED"
+    STARTED = "STARTED"
+
+    @property
+    def telemetry_category(self) -> TelemetryEventCategory | None:
+        return _LAB_TELEMETRY_MAP.get(self)
+
+
+_NODE_TELEMETRY_MAP: dict[str, TelemetryEventCategory] = {
+    "QUEUED": TelemetryEventCategory.QUEUE_NODE,
+    "STARTED": TelemetryEventCategory.START_NODE,
+    "STOPPED": TelemetryEventCategory.STOP_NODE,
+    "BOOTED": TelemetryEventCategory.BOOT_NODE,
+    "DEFINED_ON_CORE": TelemetryEventCategory.WIPE_NODE,
+}
+
+
+class NodeState(FSMState):
+    DEFINED_ON_CORE = "DEFINED_ON_CORE"
+    STOPPED = "STOPPED"
+    STARTED = "STARTED"
+    QUEUED = "QUEUED"
+    BOOTED = "BOOTED"
+    DISCONNECTED = "DISCONNECTED"
+
+    @property
+    def telemetry_category(self) -> TelemetryEventCategory | None:
+        return _NODE_TELEMETRY_MAP.get(self)
+
+    @property
+    def is_started(self) -> bool:
+        return self is NodeState.BOOTED or self is NodeState.STARTED
+
+    @property
+    def is_starting(self) -> bool:
+        return (
+            self is NodeState.BOOTED
+            or self is NodeState.QUEUED
+            or self is NodeState.STARTED
+        )
