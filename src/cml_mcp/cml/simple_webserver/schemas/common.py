@@ -142,7 +142,7 @@ IPv6Address = Annotated[
 IPNetwork = Annotated[
     str,
     Field(
-        pattern=re.compile(rf"^({IPV4_REG}|{IPV6_REG})"  r"/\d{1,3}(?![\n\r])$"),
+        pattern=re.compile(rf"^({IPV4_REG}|{IPV6_REG})" r"/\d{1,3}(?![\n\r])$"),
         description="An IPv4 or IPv6 network prefix.",
     ),
 ]
@@ -171,11 +171,6 @@ LinuxInterfaceName = Annotated[
         description="Interface name or number in a Linux host.",
     ),
 ]
-
-
-class OldPermission(StrEnum):
-    READ_ONLY = DefaultPermissions.READ_ONLY
-    READ_WRITE = DefaultPermissions.READ_WRITE
 
 
 class Permission(StrEnum):

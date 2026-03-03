@@ -19,7 +19,6 @@ from simple_webserver.schemas.common import (
     LabStateModel,
     LinkStateModel,
     NodeStateModel,
-    OldPermission,
     Permissions,
     UserFullName,
     UserName,
@@ -61,17 +60,6 @@ LabDescription = Annotated[
         examples=["CCNA study lab"],
     ),
 ]
-
-
-class GroupLab(BaseModel, extra="forbid"):
-    id: UUID4Type = Field(..., description="ID of the lab group.")
-    permission: OldPermission = Field(
-        ..., description="Permission level for the lab group."
-    )
-
-
-class LabGroup(GroupLab, extra="forbid"):
-    name: str = Field(default=None, description="Name of the lab group.")
 
 
 class LabGroupAssociation(BaseModel, extra="forbid"):
@@ -117,10 +105,7 @@ class LabAutostart(BaseModel, extra="forbid"):
 
 LabAutostartMixin = Annotated[
     LabAutostart,
-    Field(
-        default_factory=dict,
-        description="The lab's autostart configuration.",
-    ),
+    Field(default_factory=dict, description="The lab's autostart configuration."),
 ]
 
 
@@ -129,8 +114,7 @@ class NodeStaging(BaseModel, extra="forbid"):
         default=False, description="Whether the node staging is enabled."
     )
     start_remaining: bool = Field(
-        default=True,
-        description="Whether nodes with unset priority should be started.",
+        default=True, description="Whether nodes with unset priority should be started."
     )
     abort_on_failure: bool = Field(
         default=False,
@@ -153,13 +137,8 @@ class LabRequest(BaseModel, extra="forbid"):
     owner: LabOwner = Field(default=None)
     description: LabDescription = Field(default=None)
     notes: LabNotes = Field(default=None)
-    groups: list[LabGroup] = Field(
-        default=None,
-        description="Array of LabGroup objects - mapping from group ID to permissions.",
-    )
     associations: LabAssociations = Field(
-        default=None,
-        description="Object of lab/group and lab/user associations.",
+        default=None, description="Object of lab/group and lab/user associations."
     )
     autostart: LabAutostartMixin = Field(...)
     node_staging: NodeStagingMixin = Field(...)
@@ -185,10 +164,6 @@ class Lab(BaseDBModel, extra="forbid"):
         description="Number of connections between nodes in the lab.",
         ge=0,
     )
-    groups: list[LabGroup] = Field(
-        default=None,
-        description="Array of LabGroup objects - mapping from group ID to permissions.",
-    )
     effective_permissions: EffectivePermissions = Field(...)
     autostart: LabAutostartMixin = Field(...)
     node_staging: NodeStagingMixin = Field(...)
@@ -199,13 +174,6 @@ class LabResponse(Lab, extra="forbid"):
 
     pass
 
-
-LabGroupsBody = Annotated[
-    list[LabGroup],
-    Body(
-        description="This request body is a JSON object that describes the group permissions for a lab."
-    ),
-]
 
 LabBody = Annotated[LabRequest, Body(description="The lab's data.")]
 

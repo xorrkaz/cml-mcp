@@ -51,8 +51,6 @@ class ConfigurationMediaType(StrEnum):
 
 
 class DefaultPermissions:
-    READ_ONLY = "read_only"
-    READ_WRITE = "read_write"
     LAB_VIEW = "lab_view"
     LAB_EXEC = "lab_exec"
     LAB_EDIT = "lab_edit"

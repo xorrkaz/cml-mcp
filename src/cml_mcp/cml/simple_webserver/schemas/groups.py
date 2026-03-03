@@ -15,7 +15,7 @@ from simple_webserver.schemas.common import (
     UUID4ArrayType,
     UUID4Type,
 )
-from simple_webserver.schemas.labs import GroupLab, LabGroupAssociation
+from simple_webserver.schemas.labs import LabGroupAssociation
 
 GroupIdPathParameter = Annotated[
     UUID4Type, Path(description="The unique ID of a group on this controller.")
@@ -42,8 +42,7 @@ class GroupBase(BaseModel):
         examples=["CCNA study group"],
     )
     members: UUID4ArrayType = Field(
-        default=[],
-        description="Members of the group as a list of user IDs.",
+        default=[], description="Members of the group as a list of user IDs."
     )
 
 
@@ -65,18 +64,7 @@ class GroupAssocNew(BaseModel):
     )
 
 
-class GroupAssocOld(BaseModel):
-    labs: list[GroupLab] = Field(
-        default=None,
-        description="Labs of the group as a object of lab IDs and permission.",
-    )
-
-
 class GroupCreate(GroupCreateBase, GroupAssocNew, extra="forbid"):
-    pass
-
-
-class GroupCreateOld(GroupCreateBase, GroupAssocOld, extra="forbid"):
     pass
 
 
@@ -84,18 +72,12 @@ class GroupUpdate(GroupUpdateBase, GroupAssocNew, extra="forbid"):
     pass
 
 
-class GroupUpdateOld(GroupUpdateBase, GroupAssocOld, extra="forbid"):
-    pass
+GroupCreateBodyParameter = Annotated[GroupCreate, Body(...)]
+
+GroupUpdateBodyParameter = Annotated[GroupUpdate, Body(...)]
 
 
-GroupCreateBodyParameter = Annotated[GroupCreate | GroupCreateOld, Body(...)]
-
-GroupUpdateBodyParameter = Annotated[GroupUpdate | GroupUpdateOld, Body(...)]
-
-
-class GroupResponse(
-    BaseDBModel, GroupCreateBase, GroupAssocNew, GroupAssocOld, extra="forbid"
-):
+class GroupResponse(BaseDBModel, GroupCreateBase, GroupAssocNew, extra="forbid"):
     """Information about a group."""
 
     directory_dn: str = Field(

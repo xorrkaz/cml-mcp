@@ -211,9 +211,6 @@ class ComputeHostBase(BaseModel, extra="forbid"):
         description="Host is used for external connector and unmanaged switch nodes.",
     )
     admission_state: ComputeStateField
-    nodes: UUID4ArrayType = Field(
-        ..., description="List of node ID's deployed on the host."
-    )
     node_counts: NodeCounts = Field(
         ..., description="Count of nodes and orphans deployed and running on the host."
     )
@@ -411,8 +408,7 @@ class BasicComputeHostStats(BaseModel):
     """
 
     cpu: CpuStats = Field(
-        ...,
-        description="CPU statistics that shows number of cpus and load percent",
+        ..., description="CPU statistics that shows number of cpus and load percent"
     )
     memory: MemoryStats = Field(
         ..., description="Memory statistics of the compute host."
@@ -443,8 +439,7 @@ class SystemInformation(BaseModel, extra="forbid"):
     )
     timeout: Timeout
     features: dict[str, bool] = Field(
-        default_factory=dict,
-        description="Feature flags available on this system.",
+        default_factory=dict, description="Feature flags available on this system."
     )
 
 
@@ -603,10 +598,8 @@ class DefinitionReport(BaseModel, extra="forbid"):
 
 class DefinitionReportResponse(BaseModel, extra="forbid"):
     node_definitions: DefinitionReport = Field(
-        default_factory=DefinitionReport,
-        description="Node definitions reload report.",
+        default_factory=DefinitionReport, description="Node definitions reload report."
     )
     image_definitions: DefinitionReport = Field(
-        default_factory=DefinitionReport,
-        description="Image definitions reload report.",
+        default_factory=DefinitionReport, description="Image definitions reload report."
     )
