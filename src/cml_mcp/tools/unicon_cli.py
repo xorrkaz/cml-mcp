@@ -1,5 +1,4 @@
 import logging
-import traceback
 
 import yaml
 from unicon import Connection
@@ -40,7 +39,6 @@ def unicon_send_cli_command_sync(
 
     connect_command = f"{TERMWS_BINARY} -host [::1] -port 8006 -internal {console_key}"
     connection = None
-    error = None
     try:
         connection = Connection(
             hostname=label,
