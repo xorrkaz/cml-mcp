@@ -10,7 +10,6 @@ import logging
 import os
 import re
 import tempfile
-from enum import StrEnum
 
 import httpx
 from fastmcp.exceptions import ToolError
@@ -20,7 +19,7 @@ from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.nodes import NodeLabel
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import _pyats_auth_pass, _pyats_password, _pyats_username, get_cml_client_dep
-from cml_mcp.tools.unicon_cli import unicon_send_cli_command_sync
+from cml_mcp.tools.unicon_cli import unicon_send_cli_command_sync, TERMWS_BINARY
 from cml_mcp.types import ConsoleLogOutput
 
 try:
@@ -30,12 +29,6 @@ except ImportError:
 
 
 logger = logging.getLogger("cml-mcp.tools.cli")
-
-
-class ConnectionType(StrEnum):
-    PYATS = "pyats"
-    UNICON = "unicon"
-    AUTO = "auto"
 
 
 def _send_cli_command_sync(
@@ -138,7 +131,6 @@ def register_tools(mcp):
         label: NodeLabel,  # pyright: ignore[reportInvalidTypeForm]
         commands: str,
         config_command: bool = False,
-        connection_type: ConnectionType = ConnectionType.AUTO,
     ) -> str:
         """
         Send CLI commands to running node by lab UUID and node label. Node must be in BOOTED state.
@@ -150,11 +142,10 @@ def register_tools(mcp):
         Returns command output text. Requires PyATS/Genie and/or Unicon libraries.
         Unicon is installed as dependency for PyATS but can be installed separately.
         """
-        logger.info(f"Sending CLI commands to node {label} using {connection_type}")
-        if connection_type is ConnectionType.AUTO and _PyatsTFLoader or connection_type is ConnectionType.PYATS:
-            exec_tool = _send_cli_command_sync
-        else:
+        if _PyatsTFLoader is None and os.path.exists(TERMWS_BINARY):
             exec_tool = unicon_send_cli_command_sync
+        else:
+            exec_tool = _send_cli_command_sync
         client = get_cml_client_dep()
 
         # Verify vclient is available
