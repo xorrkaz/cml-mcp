@@ -94,7 +94,6 @@ def register_tools(mcp):  # noqa: C901
     ) -> UUID4Type:
         """
         Add node to lab. Returns node UUID. Auto-creates default interfaces per node definition.
-        Input: node object. Prefer a JSON object; JSON-encoded object strings are accepted.
         Required: x (-15000 to 15000), y (-15000 to 15000), label (1-128 chars), node_definition (e.g., "alpine", "iosv").
         node_definition values come from get_cml_node_definitions.
         Optional: image_definition, ram (MB), cpus, cpu_limit (%), data_volume (GB), boot_disk_size (GB), tags, configuration, parameters.
@@ -124,8 +123,8 @@ def register_tools(mcp):  # noqa: C901
         config: NodeConfigurationContent,
     ) -> bool:
         """
-        Set node startup config by lab and node UUID. Node must be in CREATED state (new or wiped).
-        More efficient than starting node and sending CLI. Config is string with device commands.
+        Set node startup config by lab and node UUID. config is a plain string of device commands.
+        Node must be in CREATED state (new or wiped). More efficient than starting node and sending CLI.
         """
         client = get_cml_client_dep()
         payload = {"configuration": str(config)}
@@ -192,8 +191,8 @@ def register_tools(mcp):  # noqa: C901
     )
     async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
         """
-        Wipe node by lab and node UUID. Erases all node data. Node must be stopped first. CRITICAL: Always confirm
-        wipe with user first, unless user is responding "yes" to your confirmation prompt.
+        Wipe node by lab and node UUID. Erases all node data. Node must be stopped first. CRITICAL: Always ask "Confirm wipe of [item]?"
+        and wait for user's "yes" before wiping.
         """
         client = get_cml_client_dep()
         try:

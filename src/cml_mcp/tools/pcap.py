@@ -73,7 +73,7 @@ def register_tools(mcp):
     async def check_packet_capture_status(lid: UUID4Type, link_id: UUID4Type) -> PCAPStatusResponse:
         """
         Check if a packet capture is active on a link by lab and link UUID.
-        Returns object capture config, and number of packets captured.
+        Returns capture config and number of packets captured so far.
         """
         client = get_cml_client_dep()
         try:

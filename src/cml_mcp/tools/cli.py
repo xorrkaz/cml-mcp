@@ -133,14 +133,11 @@ def register_tools(mcp):
         config_command: bool = False,
     ) -> str:
         """
-        Send CLI commands to running node by lab UUID and node label. Node must be in BOOTED state.
-        label is the node label, not the node UUID.
+        Send CLI commands to running node by lab UUID and node label (not UUID). Node must be in BOOTED state.
         CRITICAL: Can modify device state. Review commands before executing, especially with config_command=true.
         Separate multiple commands with newlines.
-        config_command=false: exec/operational mode (default). config_command=true: config mode only
-        (don't include "configure terminal" or "end").
-        Returns command output text. Requires PyATS/Genie and/or Unicon libraries.
-        Unicon is installed as dependency for PyATS but can be installed separately.
+        config_command=false (default): exec/operational mode. config_command=true: config mode (omit "configure terminal"/"end").
+        Returns command output text.
         """
         if _PyatsTFLoader is None and os.path.exists(TERMWS_BINARY):
             exec_tool = unicon_send_cli_command_sync

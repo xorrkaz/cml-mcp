@@ -33,7 +33,6 @@ def register_tools(mcp):
     ) -> UUID4Type:
         """
         Create link between two interfaces. Returns link UUID.
-        Input: link object. Prefer a JSON object; JSON-encoded object strings are accepted.
         Required: src_int (source interface UUID), dst_int (destination interface UUID).
         Use interface UUIDs from get_interfaces_for_node.
         """
@@ -81,7 +80,6 @@ def register_tools(mcp):
     ) -> bool:
         """
         Configure link network conditions by lab and link UUID.
-        Input: condition object. Prefer a JSON object; JSON-encoded object strings are accepted.
         Omit fields to leave existing values unchanged.
         Fields (all optional): bandwidth (kbps, 0-10M), latency (ms, 0-10K), loss (%, 0-100), jitter (ms, 0-10K),
         duplicate (%, 0-100), corrupt_prob (%, 0-100), gap (ms), limit (ms), reorder_prob (%, 0-100),

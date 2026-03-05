@@ -97,7 +97,7 @@ def register_tools(mcp):  # noqa: C901
     )
     async def get_cml_labs(user: UserName | None = None) -> list[Lab]:
         """
-        Retrieve labs for a specific user. Omit user parameter for current user's labs.
+        Retrieve labs filtered by username. Omit user to get all labs (admin) or current user's labs (non-admin).
         Returns list of Lab objects with id, lab_title, owner_username, description, state, and metadata.
         """
         client = get_cml_client_dep()
@@ -136,7 +136,6 @@ def register_tools(mcp):  # noqa: C901
     async def create_empty_lab(lab: LabRequest | dict) -> UUID4Type:
         """
         Create empty lab. Returns lab UUID.
-        Input: lab object. Prefer a JSON object; JSON-encoded object strings are accepted.
         Optional: title (str, 1-64 chars), owner (UUID), description (str, max 4096 chars), notes (str, max 32768 chars),
         associations (group/user permissions).
         """
@@ -165,7 +164,6 @@ def register_tools(mcp):  # noqa: C901
     async def modify_cml_lab(lid: UUID4Type, lab: LabRequest | dict) -> bool:
         """
         Update lab metadata by UUID.
-        Input: lab object. Prefer a JSON object; JSON-encoded object strings are accepted.
         Modifiable: title, owner, description, notes, associations (group/user permissions).
         """
         client = get_cml_client_dep()
@@ -192,7 +190,6 @@ def register_tools(mcp):  # noqa: C901
     async def create_full_lab_topology(topology: Topology | dict) -> UUID4Type:
         """
         Create complete lab from Topology. Returns lab UUID.
-        Input: Topology object. Prefer a JSON object; JSON-encoded object strings are accepted.
         Required: lab (title, version), nodes (id, x, y, label, node_definition, interfaces), links (id, i1, i2, n1, n2).
         Optional: annotations (text/rectangle/ellipse/line), smart_annotations.
         Supports full configuration: RAM, CPU, images, interface MAC addresses, link conditioning, and node configs.
@@ -283,8 +280,8 @@ def register_tools(mcp):  # noqa: C901
     )
     async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> bool:
         """
-        Wipe lab by UUID. Erases all node data/configurations. CRITICAL: Always confirm
-        wipe with user first, unless user is responding "yes" to your confirmation prompt.
+        Wipe lab by UUID. Erases all node data/configurations. CRITICAL: Always ask "Confirm wipe of [item]?" and wait for user's "yes"
+        before wiping.
         """
         client = get_cml_client_dep()
         try:
@@ -393,8 +390,8 @@ def register_tools(mcp):  # noqa: C901
     )
     async def clone_cml_lab(lid: UUID4Type, new_title: LabTitle | None = None) -> UUID4Type:
         """
-        Clone lab by UUID. Optionally provide a new title for the cloned lab, else title is "Copy of {original title}".
-        Returns the UUID of the newly created lab.
+        Clone lab by UUID. Returns UUID of the new lab.
+        Optional new_title; if omitted, the clone is titled "Copy of " followed by the original title.
         """
         client = get_cml_client_dep()
         try:
