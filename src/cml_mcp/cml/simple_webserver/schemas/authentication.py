@@ -14,6 +14,7 @@ from simple_webserver.schemas.common import (
     PORT_REG,
     GroupName,
     Password,
+    Timeout,
     UserName,
     UUID4Type,
 )
@@ -176,6 +177,7 @@ class LDAPAuthConfig(BaseModel, extra="forbid"):
         description="Manager user DN for lookup if anonymous search is not allowed.",
         examples=["uid=someuser,cn=users,cn=accounts,dc=corp,dc=com"],
     )
+    timeout: Timeout
     display_attribute: str | None = Field(
         default=None,
         max_length=256,
@@ -207,12 +209,7 @@ class RadiusAuthConfigBase(BaseModel, extra="forbid"):
         le=65535,
         description="Default RADIUS server port (used when entry has no ':port').",
     )
-    timeout: int = Field(
-        default=5,
-        ge=1,
-        le=60,
-        description="Timeout in seconds for RADIUS requests (default 5).",
-    )
+    timeout: Timeout
     nas_identifier: str | None = Field(
         default=None,
         max_length=256,
@@ -383,20 +380,20 @@ class AuthTestUserResponse(BaseModel, extra="forbid"):
         default=None,
         description="The user has access to the system and the user filter matches.",
     )
-    is_admin: bool | None = Field(
-        default=None,
+    is_admin: bool = Field(
+        default=False,
         description="The user has admin rights. If LDAP is configured, then the admin filter must match.",
     )
-    display: str | None = Field(
-        default=None,
+    display: str = Field(
+        default="",
         description="The user's display name, if the configured attribute was found.",
     )
-    email: str | None = Field(
-        default=None,
+    email: str = Field(
+        default="",
         description="The user's email address, if the configured attribute was found.",
     )
-    attributes: AuthTestAttributes | None = Field(
-        default=None,
+    attributes: AuthTestAttributes = Field(
+        default_factory=dict,
         description=(
             "If the user auth'ed OK, then this object holds the dictionary of user attributes, "
             "independent of having CML access or admin access or other privileges. "
@@ -411,19 +408,19 @@ class AuthTestGroupResponse(BaseModel, extra="forbid"):
         default=None,
         description="The group exists on the server and the group filter matches.",
     )
-    is_member: bool | None = Field(
-        default=None,
+    is_member: bool = Field(
+        default=False,
         description=(
             "Whether the given user is a member of the given group. Will default to false "
             "if either the user or the group could not be found on the LDAP server."
         ),
     )
-    display: str | None = Field(
-        default=None,
+    display: str = Field(
+        default="",
         description="The group's display name, if the configured attribute was found.",
     )
-    attributes: AuthTestAttributes | None = Field(
-        default=None,
+    attributes: AuthTestAttributes = Field(
+        default_factory=dict,
         description=(
             "If the group was found OK, then this object holds the dictionary of group attributes, "
             "independent of having CML access or admin access or other privileges. "
@@ -436,12 +433,8 @@ class AuthTestGroupResponse(BaseModel, extra="forbid"):
 class AuthTestResponse(BaseModel, extra="forbid"):
     """System Authentication Test response."""
 
-    user: AuthTestUserResponse | None = Field(
-        default=None, description="Results for the user."
-    )
-    group: AuthTestGroupResponse | None = Field(
-        default=None, description="Results for the group."
-    )
+    user: AuthTestUserResponse = Field(..., description="Results for the user.")
+    group: AuthTestGroupResponse = Field(..., description="Results for the group.")
 
 
 class AuthenticateResponse(BaseModel, extra="forbid"):

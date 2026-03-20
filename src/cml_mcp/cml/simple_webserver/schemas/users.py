@@ -57,8 +57,8 @@ SshPubkey = Annotated[
 DirectoryDn = Annotated[
     str,
     Field(
-        description="User distinguished name from LDAP",
-        examples=["CN=John Doe,CN=users,DC=corp,DC=com"],
+        description="User distinguished name from LDAP or external auth identifier",
+        examples=["CN=John Doe,CN=users,DC=corp,DC=com", "RADIUS"],
         max_length=255,
     ),
 ]
@@ -74,8 +74,7 @@ class UserBase(BaseModel):
         description="Additional, textual free-form detail of the user.",
         examples=["Rules the network simulation world, location: unknown"],
     )
-    # XXX: Allow email to be None for backward compatibility with existing users.
-    email: str | None = Field(
+    email: str = Field(
         default=None,
         description="The optional e-mail address of the user.",
         examples=["johndoe@cisco.com"],
@@ -97,10 +96,8 @@ class UserBase(BaseModel):
         default=None,
         description="Limit node launches by this user to the given resource pool.",
     )
-    # XXX: Allow bool and None types for backward compatibility with CML 2.9.
-    # XXX: Also set default to False for 2.9 compatibility.
-    opt_in: OptInStatus | bool | None = Field(
-        default=False,
+    opt_in: OptInStatus = Field(
+        default=OptInStatus.UNSET,
         description="Telemetry opt-in state for user.",
         examples=[status.value for status in OptInStatus],
     )
@@ -128,11 +125,13 @@ class UserCreate(UserBase, extra="forbid"):
     pubkey: SshPubkey = Field(default=None)
 
 
+UserCreateBody = Annotated[UserCreate, Body(...)]
+
+
 class UserResponse(BaseDBModel, UserBase, extra="forbid"):
     """User info"""
 
-    # XXX: Allow this to be None for backward compatibility with existing users.
-    directory_dn: DirectoryDn | None = Field(default=None)
+    directory_dn: DirectoryDn = Field(default=None)
     labs: UUID4ArrayType = Field(default=None, description="Labs owned by the user.")
     pubkey_info: str | None = Field(
         default=None,
@@ -144,6 +143,48 @@ class UserResponse(BaseDBModel, UserBase, extra="forbid"):
         """,
         examples=[""],
         max_length=512,
+    )
+    username: UserName | None = Field(default=None)
+    fullname: UserFullName | None = Field(default=None)
+    description: GenericDescription | None = Field(
+        default=None,
+        description="Additional, textual free-form detail of the user.",
+        examples=["Rules the network simulation world, location: unknown"],
+    )
+    email: str | None = Field(
+        default=None,
+        description="The optional e-mail address of the user.",
+        examples=["johndoe@cisco.com"],
+        max_length=128,
+    )
+    admin: bool | None = Field(
+        default=None,
+        description="Whether user has administrative rights or not.",
+        examples=[True],
+    )
+    groups: UUID4ArrayType | None = Field(
+        default=None,
+        description="User groups. Associate the user with this list of group IDs.",
+    )
+    associations: list[LabUserAssociation] = Field(
+        default=None, description="Array of lab/user associations."
+    )
+    resource_pool: UUID4Type | None = Field(
+        default=None,
+        description="Limit node launches by this user to the given resource pool.",
+    )
+    opt_in: OptInStatus = Field(
+        default=OptInStatus.UNSET,
+        description="Telemetry opt-in state for user.",
+        examples=[status.value for status in OptInStatus],
+    )
+    tour_version: str | None = Field(
+        default=None,
+        description="""
+            The newest version of the introduction tour that the user has seen.
+        """,
+        examples=["2.7.0"],
+        max_length=128,
     )
 
 

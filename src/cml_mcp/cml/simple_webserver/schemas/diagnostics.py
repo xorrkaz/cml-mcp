@@ -9,17 +9,15 @@ from datetime import datetime
 from pydantic import BaseModel, Field
 
 from simple_common.schemas import BootEventType
+from simple_core.models.type_hints import LabId, UserId
 from simple_webserver.schemas.common import (
-    Coordinate,
     DefinitionID,
     Hostname,
     InterfaceStateModel,
     IPAddress,
     LinkStateModel,
     NodeStateModel,
-    PinnedComputeID,
     StringDict,
-    TagArray,
     UUID4Type,
 )
 from simple_webserver.schemas.interfaces import (
@@ -38,14 +36,9 @@ from simple_webserver.schemas.licensing import (
 )
 from simple_webserver.schemas.links import LinkResponse
 from simple_webserver.schemas.nodes import (
-    AllocatedCpus,
-    CpuLimit,
-    DiskSpace,
     Node,
     NodeId,
     NodeLabel,
-    NodeParameters,
-    Ram,
 )
 from simple_webserver.schemas.system import (
     ComputeHostStatsWithDomInfo,
@@ -82,6 +75,30 @@ class NodeDiagnostics(Node, extra="forbid"):
     )
 
 
+class FabricDiagnostics(BaseModel, extra="forbid"):
+    """Fabric service diagnostics"""
+
+    pid: int = Field(default=0)
+    goroutines: int = Field(default=0)
+    fd_cur: int = Field(default=0)
+    fd_max: int = Field(default=0)
+    proc_status: str = Field(default="")
+    status_fd_max: int = Field(default=0)
+    uptime: int = Field(default=0)
+    started_at: str = Field(default="")
+    links: int = Field(default=0)
+    in_use: int = Field(default=0)
+    port_states: int = Field(default=0)
+    pcap_states: int = Field(default=0)
+    remote_mux_count: int = Field(default=0)
+
+
+class LowLevelDiagnostics(BaseModel, extra="forbid"):
+    """Low-level services diagnostics"""
+
+    fabric: FabricDiagnostics | None = Field(default=None)
+
+
 class ComputeDiagnostics(BaseModel, extra="forbid"):
     """ComputeDiagnostics info"""
 
@@ -94,6 +111,7 @@ class ComputeDiagnostics(BaseModel, extra="forbid"):
     is_connector: bool = Field(...)
     is_simulator: bool = Field(...)
     readiness: ReadinessResponse = Field(...)
+    low_level: LowLevelDiagnostics
     lld_consistency: ConsistencyResponse
     nodes: dict[UUID4Type, NodeDiagnostics] = Field(default_factory=dict)
     links: dict[UUID4Type, LinkResponse] = Field(default_factory=dict)
@@ -184,31 +202,24 @@ class NodeDefinitionDiagnostics(BaseModel, extra="forbid"):
 NodeDefinitionDiagnosticsResponse = list[NodeDefinitionDiagnostics]
 
 
+class ResorceRequirements(BaseModel, extra="forbid"):
+    cpus: int = Field(...)
+    cpu_limit: int = Field(...)
+    cpu_points: int | None = Field(...)
+    ram: int = Field(...)
+    disk: int = Field(...)
+
+
 class NodeLaunchQueueDiagnostics(BaseModel, extra="forbid"):
     """Node launch queue diagnostics info"""
 
-    boot_disk_size: DiskSpace = Field(default=None)
-    cpu_limit: CpuLimit = Field(default=None)
-    cpus: AllocatedCpus = Field(...)
-    data_volume: DiskSpace = Field(default=None)
-    hide_links: bool = Field(
-        default=None, description="Whether to hide links to/from this node."
-    )
-    id: NodeId
-    image_definition: DefinitionID | None = Field(
-        default=None, description="Image Definition ID for the specified node."
-    )
-    lab_id: UUID4Type = Field(default=None)
-    label: NodeLabel = Field(default=None)
-    node_definition: DefinitionID = Field(
-        ..., description="Node Definition ID for the specified node."
-    )
-    parameters: NodeParameters
-    pinned_compute_id: PinnedComputeID = Field(default=None)
-    ram: Ram = Field(default=None)
-    tags: TagArray = Field(default=None)
-    x: Coordinate = Field(default=None, description="Node X coordinate.")
-    y: Coordinate = Field(default=None, description="Node Y coordinate.")
+    node_id: NodeId = Field(...)
+    lab_id: LabId = Field(...)
+    user_id: UserId = Field(...)
+    queued_time: int = Field(...)
+    priority: int | None = Field(...)
+    dependencies: list[NodeId] = Field(default_factory=list)
+    resource_requirements: ResorceRequirements = Field(default_factory=dict)
 
 
 NodeLaunchQueueDiagnosticsResponse = list[NodeLaunchQueueDiagnostics]
