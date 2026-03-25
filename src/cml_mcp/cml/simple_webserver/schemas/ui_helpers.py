@@ -37,7 +37,7 @@ class UiTopologyNodeResponse(NodeTopology, extra="forbid"):
     pinned_compute_id: PinnedComputeID | None
     interfaces: list[InterfaceResponse] = Field(default_factory=list)
     operational: NodeOperationalData | None
-    resource_pool: ResourcePoolResponse | None
+    resource_pool: UUID4Type | None
 
 
 class UiTopologyLabResponse(LabTopologyWithOwner, extra="forbid"):

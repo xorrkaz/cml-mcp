@@ -5,8 +5,9 @@
 #
 from datetime import datetime
 from enum import StrEnum, auto
-from typing import Any
+from typing import Annotated, Any
 
+from fastapi import Body
 from pydantic import BaseModel, Field
 
 from simple_common.schemas import OptInStatus, TelemetryEventCategory
@@ -46,6 +47,22 @@ class OptInGetResponse(OptInBase, extra="forbid"):
 
 class OptInUpdate(OptInBase, extra="forbid"):
     pass
+
+
+OptInUpdateBody = Annotated[
+    OptInUpdate,
+    Body(
+        description="The request body is a JSON object describing the desired state "
+        "of the telemetry feature."
+    ),
+]
+
+FeedbackBody = Annotated[
+    FeedbackSchema,
+    Body(
+        description="The request body is a JSON object with the feedback in free form."
+    ),
+]
 
 
 class TelemetryEventResponse(BaseModel, extra="forbid"):

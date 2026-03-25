@@ -15,6 +15,7 @@ from simple_webserver.schemas.common import (
     Label,
     NodeStateModel,
     PinnedComputeID,
+    PyAtsCredentials,
     TagArray,
     UUID4Type,
 )
@@ -135,6 +136,10 @@ class NodeBaseExtended(NodeBase):
         description="Priority of the node during lab start.",
         ge=0,
         le=10000,
+    )
+    pyats: PyAtsCredentials = Field(
+        default_factory=PyAtsCredentials,
+        description="pyATS specific credentials for the node.",
     )
 
 
