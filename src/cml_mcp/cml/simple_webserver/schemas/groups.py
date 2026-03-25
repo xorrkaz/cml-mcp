@@ -98,7 +98,7 @@ class GroupResponse(
 ):
     """Information about a group."""
 
-    directory_dn: str = Field(
+    directory_dn: str | None = Field(
         default=None,
         description="Group distinguished name from LDAP",
         max_length=255,

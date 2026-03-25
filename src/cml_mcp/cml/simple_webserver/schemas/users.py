@@ -7,7 +7,7 @@ import re
 from typing import Annotated
 
 from fastapi import Body
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from simple_common.schemas import OptInStatus
 from simple_webserver.schemas.common import (
@@ -101,6 +101,17 @@ class UserBase(BaseModel):
         description="Telemetry opt-in state for user.",
         examples=[status.value for status in OptInStatus],
     )
+
+    @field_validator("opt_in", mode="before")
+    @classmethod
+    def _coerce_opt_in(cls, v):
+        """CML 2.9 returns a boolean; older servers may return None."""
+        if v is None:
+            return OptInStatus.UNSET
+        if isinstance(v, bool):
+            return OptInStatus.ACCEPTED if v else OptInStatus.DECLINED
+        return v
+
     tour_version: str = Field(
         default=None,
         description="""
@@ -131,7 +142,7 @@ UserCreateBody = Annotated[UserCreate, Body(...)]
 class UserResponse(BaseDBModel, UserBase, extra="forbid"):
     """User info"""
 
-    directory_dn: DirectoryDn = Field(default=None)
+    directory_dn: DirectoryDn | None = Field(default=None)
     labs: UUID4ArrayType = Field(default=None, description="Labs owned by the user.")
     pubkey_info: str | None = Field(
         default=None,

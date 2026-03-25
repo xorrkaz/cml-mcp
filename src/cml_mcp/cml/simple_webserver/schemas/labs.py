@@ -124,7 +124,7 @@ class LabAutostart(BaseModel, extra="forbid"):
 LabAutostartMixin = Annotated[
     LabAutostart,
     Field(
-        default_factory=dict,
+        default_factory=LabAutostart,
         description="The lab's autostart configuration.",
         json_schema_extra=CMLVersion.V2_10.introduced(),
     ),
@@ -150,7 +150,7 @@ class NodeStaging(BaseModel, extra="forbid"):
 NodeStagingMixin = Annotated[
     NodeStaging,
     Field(
-        default_factory=dict,
+        default_factory=NodeStaging,
         description="The lab's node staging configuration.",
         json_schema_extra=CMLVersion.V2_10.introduced(),
     ),

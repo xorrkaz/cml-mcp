@@ -3,7 +3,7 @@
 # Copyright (c) 2019-2026, Cisco Systems, Inc.
 # All rights reserved.
 #
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import Body
 from pydantic import BaseModel, Field
@@ -31,9 +31,8 @@ class LinkResponse(LinkConnectionInfo, extra="forbid"):
     """Link object."""
 
     lab_id: UUID4Type = Field(default=None, description="ID of the lab.")
-    link_capture_key: UUID4Type | None = Field(
+    link_capture_key: UUID4Type | Literal[""] | None = Field(
         default=None,
-        max_length=64,
         description="Deprecated. The link capture key is now the same as link ID.",
     )
     state: LabStateModel = Field(

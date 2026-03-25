@@ -515,9 +515,9 @@ class ComputeHealth(BaseModel, extra="forbid"):
     fabric: bool | None = Field(..., description="Link fabric service is ready")
     device_mux: bool | None = Field(..., description="Console service is ready")
     docker_shim: bool | None = Field(..., description="Container service is ready")
-    cpu_overload: bool = Field(..., description="CPU overload prevents node starts")
-    memory_overload: bool = Field(..., description="RAM overload prevents node starts")
-    disk_overload: bool = Field(..., description="Disk overload prevents node starts")
+    cpu_overload: bool = Field(default=False, description="CPU overload prevents node starts")
+    memory_overload: bool = Field(default=False, description="RAM overload prevents node starts")
+    disk_overload: bool = Field(default=False, description="Disk overload prevents node starts")
     refplat_images_available: bool | None = Field(
         ..., description="Images stored on controller are accessible on this compute"
     )
@@ -529,10 +529,10 @@ class ComputeHealth(BaseModel, extra="forbid"):
 
 class ControllerHealth(BaseModel, extra="forbid"):
     core_connected: bool | None = Field(..., description="Core service is connected")
-    airhandler: bool | None = Field(..., description="Wireless link service is ready")
-    dispatcher: bool | None = Field(..., description="Console/PCAP service is ready")
-    ipsnooper: bool | None = Field(..., description="Layer3 address service is ready")
-    pcapdemux: bool | None = Field(..., description="PCAP analyzer service is ready")
+    airhandler: bool | None = Field(default=None, description="Wireless link service is ready")
+    dispatcher: bool | None = Field(default=None, description="Console/PCAP service is ready")
+    ipsnooper: bool | None = Field(default=None, description="Layer3 address service is ready")
+    pcapdemux: bool | None = Field(default=None, description="PCAP analyzer service is ready")
     nodes_loaded: bool = Field(..., description="Node definitions have been loaded")
     images_loaded: bool = Field(..., description="Image definitions have been loaded")
     valid: bool = Field(..., description="The controller is in a valid state.")
