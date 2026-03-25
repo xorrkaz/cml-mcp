@@ -93,7 +93,7 @@ class LinuxNative(BaseModel, extra="forbid"):
         default=None,
         min_length=1,
         max_length=64,
-        pattern=re.compile(r"^[a-zA-Z\d-]{1,32}(,[+!?^-][a-z\d._]{1,16})*(?![\n\r])$"),
+        pattern=re.compile(r"^[a-zA-Z\d-]{1,32}(,[+!?^-][a-z\d._]{1,16})*$"),
     )
     nic_driver: NicDriver = Field(
         default=None,

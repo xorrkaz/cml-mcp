@@ -44,7 +44,7 @@ class LicensingFeatureIdMixIn(BaseModel):
     id: str = Field(
         ...,
         description="Identification tag of the feature.",
-        pattern=re.compile(r"^[a-zA-Z\d._,-]{1,128}(?![\n\r])$"),
+        pattern=re.compile(r"^[a-zA-Z\d._,-]{1,128}$"),
         examples=[
             "regid.2019-10.com.cisco.CML_NODE_COUNT,1.0_2607650b-6ca8-46d5-81e5-e6688b7383c4"
         ],
@@ -55,7 +55,7 @@ LicensingProductLicenseBodyParameter = Annotated[
     str,
     Body(
         description="Product license.",
-        pattern=re.compile(r"^\w{1,20}(?![\n\r])$"),
+        pattern=re.compile(r"^\w{1,20}$"),
     ),
 ]
 
@@ -67,7 +67,7 @@ class LicensingTransportProxy(BaseModel, extra="forbid"):
         ...,
         description="Domain name of the HTTP proxy server.",
         examples=["lab-proxy.example.com"],
-        pattern=re.compile(rf"^({DOMAIN_REG})(?![\n\r])$"),
+        pattern=re.compile(rf"^({DOMAIN_REG})$"),
         min_length=1,
         max_length=256,
     )

@@ -100,7 +100,7 @@ DefinitionIDPathParameter = Annotated[
         description="ID of the requested definition.",
         min_length=1,
         max_length=250,
-        pattern=re.compile(r"^(?![.])[^!@#%^&*();$\n\r\t/\\]{1,250}(?![\n\r])$"),
+        pattern=re.compile(r"^[^.!@#%^&*();$\n\r\t/\\][^!@#%^&*();$\n\r\t/\\]{0,249}$"),
         examples=["server"],
     ),
 ]
@@ -177,7 +177,7 @@ HostNameQueryParameter = Annotated[
     Query(
         min_length=1,
         max_length=128,
-        pattern=re.compile(rf"^({DOMAIN_REG})(:{PORT_REG})?(?![\n\r])$"),
+        pattern=re.compile(rf"^({DOMAIN_REG})(:{PORT_REG})?$"),
         description="A hostname or IP address with optional L4 port number.",
         examples=[
             {

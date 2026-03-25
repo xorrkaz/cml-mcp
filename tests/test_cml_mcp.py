@@ -61,6 +61,19 @@ from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefini
 pytestmark = pytest.mark.slow
 
 
+def _to_model(obj, cls):
+    """Coerce a dict or dataclass to a Pydantic model instance."""
+    import dataclasses
+
+    if isinstance(obj, cls):
+        return obj
+    if isinstance(obj, dict):
+        return cls(**obj)
+    if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
+        return cls(**dataclasses.asdict(obj))
+    return cls.model_validate(obj, from_attributes=True)
+
+
 async def test_list_tools(main_mcp_client: Client[FastMCPTransport]):
     list_tools = await main_mcp_client.list_tools()
 
@@ -76,6 +89,8 @@ async def test_get_cml_labs(main_mcp_client: Client[FastMCPTransport], created_l
     for lab in result.data:
         if isinstance(lab, dict):
             lab = Lab(**lab)
+        elif not isinstance(lab, Lab):
+            lab = Lab.model_validate(lab, from_attributes=True)
         assert isinstance(lab, Lab)
 
 
@@ -88,6 +103,8 @@ async def test_get_cml_users(main_mcp_client: Client[FastMCPTransport]):
     for user in result.data:
         if isinstance(user, dict):
             user = UserResponse(**user)
+        elif not isinstance(user, UserResponse):
+            user = UserResponse.model_validate(user, from_attributes=True)
         assert isinstance(user, UserResponse)
 
 
@@ -132,6 +149,8 @@ async def test_get_cml_groups(main_mcp_client: Client[FastMCPTransport]):
     for group in result.data:
         if isinstance(group, dict):
             group = GroupResponse(**group)
+        elif not isinstance(group, GroupResponse):
+            group = GroupResponse.model_validate(group, from_attributes=True)
         assert isinstance(group, GroupResponse)
 
     # clean-up
@@ -205,6 +224,8 @@ async def test_node_defs(main_mcp_client: Client[FastMCPTransport]):
     for i, node_def in enumerate(result.data):
         if isinstance(node_def, dict):
             node_def = SuperSimplifiedNodeDefinitionResponse(**node_def)
+        elif not isinstance(node_def, SuperSimplifiedNodeDefinitionResponse):
+            node_def = SuperSimplifiedNodeDefinitionResponse.model_validate(node_def, from_attributes=True)
         assert isinstance(node_def, SuperSimplifiedNodeDefinitionResponse)
         nd_result = await main_mcp_client.call_tool(name="get_node_definition_detail", arguments={"did": DefinitionID(node_def.id)})
         if i == 0:
@@ -363,6 +384,8 @@ async def test_packet_capture_operations(main_mcp_client: Client[FastMCPTranspor
     for item in packet_overview.data:
         if isinstance(item, dict):
             item = PCAPItem(**item)
+        elif not isinstance(item, PCAPItem):
+            item = PCAPItem.model_validate(item, from_attributes=True)
         assert isinstance(item, PCAPItem)
         if item.protocol.lower() == "icmp":
             found_icmp = True
@@ -445,8 +468,7 @@ async def test_intf_management(main_mcp_client: Client[FastMCPTransport], create
     assert len(intf_result.data) == snapshot(6)
     # outsource(intf_result.data, ".json")
     for intf in intf_result.data:
-        if isinstance(intf, dict):
-            intf = SimplifiedInterfaceResponse(**intf)
+        intf = _to_model(intf, SimplifiedInterfaceResponse)
         assert isinstance(intf, SimplifiedInterfaceResponse)
 
 
@@ -609,8 +631,8 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
 
     # Interface index 0 is a loopback and cannot be connected.
     link_create = LinkCreate(
-        src_int=intf1_result.data[1]["id"],
-        dst_int=intf2_result.data[1]["id"],
+        src_int=_to_model(intf1_result.data[1], SimplifiedInterfaceResponse).id,
+        dst_int=_to_model(intf2_result.data[1], SimplifiedInterfaceResponse).id,
     )
     link_result = await main_mcp_client.call_tool(name="connect_two_nodes", arguments={"lid": lab_id, "link_info": link_create})
     assert isinstance(link_result.content, list)
@@ -626,8 +648,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
     assert len(link_result.data) == snapshot(1)
     # outsource(link_result.data, ".json")
     for link in link_result.data:
-        if isinstance(link, dict):
-            link = LinkResponse(**link)
+        link = _to_model(link, LinkResponse)
         assert isinstance(link, LinkResponse)
 
     _ = await main_mcp_client.call_tool(
@@ -639,7 +660,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
         name="start_packet_capture",
         arguments={
             "lid": lab_id,
-            "link_id": LinkResponse(**link_result.data[0]).id,
+            "link_id": _to_model(link_result.data[0], LinkResponse).id,
             "pcap": PCAPStart(maxpackets=100, bpfilter="icmp"),  # we don't need 100, but we don't want it to stop too early either
         },
     )
@@ -654,7 +675,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
         name="check_packet_capture_status",
         arguments={
             "lid": lab_id,
-            "link_id": LinkResponse(**link_result.data[0]).id,
+            "link_id": _to_model(link_result.data[0], LinkResponse).id,
         },
     )
     # outsource(pcap_status.structured_content, ".json")
@@ -667,7 +688,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
         name="stop_packet_capture",
         arguments={
             "lid": lab_id,
-            "link_id": LinkResponse(**link_result.data[0]).id,
+            "link_id": _to_model(link_result.data[0], LinkResponse).id,
         },
     )
     assert stop_result.data is True
@@ -676,7 +697,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
         name="get_captured_packet_overview",
         arguments={
             "lid": lab_id,
-            "link_id": LinkResponse(**link_result.data[0]).id,
+            "link_id": _to_model(link_result.data[0], LinkResponse).id,
         },
     )
     # outsource(packet_overview.data, ".json")
@@ -684,8 +705,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
     assert len(packet_overview.data) >= 5
     found_icmp = False
     for item in packet_overview.data:
-        if isinstance(item, dict):
-            item = PCAPItem(**item)
+        item = _to_model(item, PCAPItem)
         assert isinstance(item, PCAPItem)
         if item.protocol.lower().startswith("icmp"):
             found_icmp = True
@@ -695,7 +715,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
         name="apply_link_conditioning",
         arguments={
             "lid": lab_id,
-            "link_id": LinkResponse(**link_result.data[0]).id,
+            "link_id": _to_model(link_result.data[0], LinkResponse).id,
             "condition": LinkConditionConfiguration(
                 enabled=True,
                 bandwidth=1000,
@@ -732,8 +752,7 @@ async def test_get_nodes_for_cml_lab(main_mcp_client: Client[FastMCPTransport], 
     assert isinstance(nodes_result.data, list)
     assert len(nodes_result.data) == snapshot(3)
     for node in nodes_result.data:
-        if isinstance(node, dict):
-            node = Node(**node)
+        node = _to_model(node, Node)
         assert isinstance(node, Node)
 
 

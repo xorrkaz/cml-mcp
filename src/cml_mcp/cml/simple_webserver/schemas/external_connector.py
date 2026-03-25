@@ -14,7 +14,7 @@ from simple_webserver.schemas.common import Tag, TagArray
 ExternalConnectorDeviceName = Annotated[
     str,
     Field(
-        pattern=re.compile(r"^(bridge|local|virbr|vlan)\d{1,4}(?![\n\r])$"),
+        pattern=re.compile(r"^(bridge|local|virbr|vlan)\d{1,4}$"),
         description="A Linux bridge name usable for external connectivity.",
     ),
 ]
