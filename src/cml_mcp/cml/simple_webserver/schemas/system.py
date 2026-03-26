@@ -12,11 +12,13 @@ from pydantic import BaseModel, Field
 
 from simple_common.schemas import ComputeState
 from simple_webserver.schemas.common import (
+    DefinitionID,
     Hostname,
     IPNetwork,
     Label,
     MACAddress,
     TagArray,
+    Timeout,
     UUID4ArrayType,
     UUID4Type,
 )
@@ -439,9 +441,9 @@ class SystemInformation(BaseModel, extra="forbid"):
     oui: MACAddress = Field(
         ..., description="The OUI prefix used for all assigned interface MAC addresses."
     )
-    features: dict[str, bool] = Field(
-        default_factory=dict,
-        description="Feature flags available on this system.",
+    timeout: Timeout
+    features: list[str] = Field(
+        default_factory=list, description="Enabled features on this system."
     )
 
 
@@ -503,32 +505,37 @@ class SystemStats(BaseModel, extra="forbid"):
 
 
 class ComputeHealth(BaseModel, extra="forbid"):
-    kvm_vmx_enabled: bool | None = Field(...)
-    enough_cpus: bool | None = Field(...)
-    lld_connected: bool = Field(...)
-    lld_synced: bool | None = Field(...)
-    libvirt: bool | None = Field(...)
-    fabric: bool | None = Field(...)
-    device_mux: bool | None = Field(...)
-    refplat_images_available: bool | None = Field(...)
-    docker_shim: bool | None = Field(...)
-    valid: bool | None = Field(...)
+    kvm_vmx_enabled: bool | None = Field(
+        ..., description="System supports running KVM virtual machines"
+    )
+    enough_cpus: bool | None = Field(..., description="Host has at least 4 CPUs")
+    lld_connected: bool = Field(..., description="Node handling service is connected")
+    lld_synced: bool | None = Field(..., description="Node and link states are in sync")
+    libvirt: bool | None = Field(..., description="Libvirt VM service is ready")
+    fabric: bool | None = Field(..., description="Link fabric service is ready")
+    device_mux: bool | None = Field(..., description="Console service is ready")
+    docker_shim: bool | None = Field(..., description="Container service is ready")
+    cpu_overload: bool = Field(default=False, description="CPU overload prevents node starts")
+    memory_overload: bool = Field(default=False, description="RAM overload prevents node starts")
+    disk_overload: bool = Field(default=False, description="Disk overload prevents node starts")
+    refplat_images_available: bool | None = Field(
+        ..., description="Images stored on controller are accessible on this compute"
+    )
+    valid: bool | None = Field(..., description="The compute host is in a valid state")
+    is_controller: bool = Field(..., description="This host is the controller")
     admission_state: ComputeState = Field(...)
-    is_controller: bool = Field(...)
     hostname: Hostname = Field(...)
 
 
 class ControllerHealth(BaseModel, extra="forbid"):
-    core_connected: bool = Field(
-        ..., description="Indicates whether core controller is connected"
-    )
-    nodes_loaded: bool = Field(..., description="Indicates whether nodes were loaded")
-    images_loaded: bool = Field(
-        ..., description="Indicates whether image definitions were loaded"
-    )
-    valid: bool = Field(
-        ..., description="Indicates whether the controller is in valid state."
-    )
+    core_connected: bool | None = Field(..., description="Core service is connected")
+    airhandler: bool | None = Field(default=None, description="Wireless link service is ready")
+    dispatcher: bool | None = Field(default=None, description="Console/PCAP service is ready")
+    ipsnooper: bool | None = Field(default=None, description="Layer3 address service is ready")
+    pcapdemux: bool | None = Field(default=None, description="PCAP analyzer service is ready")
+    nodes_loaded: bool = Field(..., description="Node definitions have been loaded")
+    images_loaded: bool = Field(..., description="Image definitions have been loaded")
+    valid: bool = Field(..., description="The controller is in a valid state.")
 
 
 class SystemHealth(BaseModel, extra="forbid"):
@@ -546,6 +553,14 @@ class SystemHealth(BaseModel, extra="forbid"):
         ..., description="Controller health statistics."
     )
 
+
+MaintenanceModeUpdateBody = Annotated[
+    MaintenanceModeUpdate,
+    Body(
+        description="The request body is a JSON object describing the desired state "
+        "of the maintenance mode."
+    ),
+]
 
 ComputeHostUpdateBody = Annotated[
     ComputeHostConfig, Body(description="Set administrative state of a compute host.")
@@ -573,3 +588,32 @@ SystemNoticeUpdateBody = Annotated[
 ExternalConnectorResponse = Annotated[
     ExternalConnector, Field(description="External connector configuration and state.")
 ]
+
+
+class DefinitionReport(BaseModel, extra="forbid"):
+    unchanged: list[DefinitionID] = Field(
+        default_factory=list, description="List of unchanged definitions."
+    )
+    updated: list[DefinitionID] = Field(
+        default_factory=list, description="List of updated definitions."
+    )
+    new: list[DefinitionID] = Field(
+        default_factory=list, description="List of new definitions."
+    )
+    removed: list[DefinitionID] = Field(
+        default_factory=list, description="List of removed definitions."
+    )
+    failed: list[str] = Field(
+        default_factory=list, description="List of error messages."
+    )
+
+
+class DefinitionReportResponse(BaseModel, extra="forbid"):
+    node_definitions: DefinitionReport = Field(
+        default_factory=DefinitionReport,
+        description="Node definitions reload report.",
+    )
+    image_definitions: DefinitionReport = Field(
+        default_factory=DefinitionReport,
+        description="Image definitions reload report.",
+    )

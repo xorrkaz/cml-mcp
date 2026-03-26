@@ -7,7 +7,6 @@ Set the USE_MOCKS environment variable to control the behavior:
 - USE_MOCKS=false: Run against a live CML server
 """
 
-import base64
 import json
 import os
 from collections.abc import AsyncGenerator
@@ -22,8 +21,6 @@ from mcp.types import TextContent
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.labs import LabRequest, LabTitle, LabAutostart, NodeStaging
-from cml_mcp.settings import settings
-
 COMMON_TEST_LAB_TITLE = LabTitle("MCP Test Lab")
 
 # Determine if we should use mocks
@@ -310,53 +307,10 @@ async def main_mcp_client():
         yield mcp_client
 
 
-def custom_httpx_client_factory(headers=None, *args, **kwargs):
-    """
-    Custom httpx client factory.
-    The standard httpx client does not allow to disable ssl verification.
-    This affects systems with self-signed certificates.
-    This function basically just ignores any args/kwargs passed by fastMCP while creating https client object.
-    Headers can be passed to this function or directly to mcp client.
-    """
-    kwargs["verify"] = False
-    kwargs["follow_redirects"] = True
-    kwargs["headers"] = headers
-    return httpx.AsyncClient(*args, **kwargs)
-
-
-if settings.cml_mcp_remote_server_url:
-
-    @pytest.fixture()
-    async def main_mcp_client():
-        """
-        Main MCP client fixture for testing.
-        Works with both mock and live modes.
-        """
-        creds_bytes = ":".join([settings.cml_username, settings.cml_password]).encode()
-        base64_creds = base64.b64encode(creds_bytes).decode()
-
-        headers = {
-            "X-Authorization": f"Basic {base64_creds}",
-        }
-
-        from fastmcp.client import Client
-        from fastmcp.client.transports import StreamableHttpTransport
-
-        remote_server = StreamableHttpTransport(
-            url=settings.cml_mcp_remote_server_url,
-            headers=headers,
-            httpx_client_factory=custom_httpx_client_factory,
-        )
-        # timeout set to 300 because lab_converge takes time
-        async with Client(transport=remote_server, timeout=300) as mcp_client:
-            yield mcp_client
-
-
 def pytest_configure(config):
     """Add custom markers."""
     config.addinivalue_line("markers", "live_only: mark test to run only against live CML server")
     config.addinivalue_line("markers", "mock_only: mark test to run only with mocks")
-    config.addinivalue_line("markers", "slow: mark test that runs more then 10s")
 
 
 def pytest_collection_modifyitems(config, items):
@@ -375,8 +329,8 @@ def pytest_collection_modifyitems(config, items):
 async def created_lab(main_mcp_client: Client[FastMCPTransport]) -> AsyncGenerator[tuple[UUID4Type, LabRequest], None]:
     # --- Setup: create lab ---
     title = COMMON_TEST_LAB_TITLE
-    autostart = LabAutostart() if USE_MOCKS else None
-    node_staging = NodeStaging() if USE_MOCKS else None
+    autostart = LabAutostart()
+    node_staging = NodeStaging()
     lab_create = LabRequest(
         title=title,
         description="This is a test lab created by MCP tests",

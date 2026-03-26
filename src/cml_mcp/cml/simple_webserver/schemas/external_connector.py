@@ -29,28 +29,24 @@ ExternalConnectorTag = Annotated[
 ]
 
 
-class ExternalConnectorMappingBase(BaseModel):
-    """Base for mapping of external connector lab node configs to available bridges."""
+class ExternalConnectorMappingBase(BaseModel, extra="forbid"):
+    """Update an external connector mapping."""
 
-    key: ExternalConnectorTag = Field(default=None)
-    device_name: NullableExternalConnectorDeviceName = Field(default=None)
+    key: ExternalConnectorTag = Field(...)
+    device_name: NullableExternalConnectorDeviceName = Field(...)
 
 
 class ExternalConnectorMapping(ExternalConnectorMappingBase, extra="forbid"):
     """Mapping of external connector lab node configs to available bridges."""
 
-    key: ExternalConnectorTag = Field(...)
-    device_name: NullableExternalConnectorDeviceName = Field(...)
     label: str = Field(
-        default=None,
         description="Unique label for the external connector.",
         max_length=128,
     )
     tags: TagArray = Field(
-        default=None, description="Tags denoting purpose of the external connector."
+        description="Tags denoting purpose of the external connector."
     )
     allowed: bool = Field(
-        default=None,
         description="""
       If true, the calling user is allowed to start external connector nodes
       which are configured to use this external connector mapping.
@@ -59,15 +55,8 @@ class ExternalConnectorMapping(ExternalConnectorMappingBase, extra="forbid"):
     )
 
 
-class ExternalConnectorMappingUpdate(ExternalConnectorMappingBase, extra="forbid"):
-    """Update an external connector mapping."""
-
-    key: ExternalConnectorTag = Field(...)
-    device_name: NullableExternalConnectorDeviceName = Field(...)
-
-
 ExternalConnectorMappingBody = Annotated[
-    list[ExternalConnectorMappingUpdate],
+    list[ExternalConnectorMappingBase],
     Body(description="Partial list of external connector key-device_name mappings."),
 ]
 

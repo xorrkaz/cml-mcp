@@ -64,7 +64,7 @@ def register_tools(mcp):  # noqa: C901
             # representation of the argument object.
             if isinstance(user, dict):
                 user = UserCreate(**user)
-            resp = await client.post("/users", data=user.model_dump(mode="json", exclude_none=True))
+            resp = await client.post("/users", data=user.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")

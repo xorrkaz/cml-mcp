@@ -3,58 +3,21 @@
 # Copyright (c) 2019-2026, Cisco Systems, Inc.
 # All rights reserved.
 #
-from typing import Annotated, Literal
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
 from simple_webserver.schemas.common import (
     DeviceNature,
-    DriverType,
     IPAddress,
+    PyAtsCredentials,
+    PyAtsOs,
+    PyAtsToken,
     StringDict,
     UUID4Type,
 )
 from simple_webserver.schemas.interfaces import InterfaceLabel
 from simple_webserver.schemas.nodes import NodeLabel
-
-PyAtsOs = Annotated[
-    str,
-    Field(
-        description="The operating system as defined / understood by pyATS.",
-        min_length=1,
-        max_length=32,
-        examples=["linux"],
-    ),
-]
-
-
-PyAtsModel = Annotated[
-    str,
-    Field(
-        description="The device model as defined by pyATS / Unicon.",
-        min_length=1,
-        max_length=32,
-        examples=["cirrus"],
-    ),
-]
-
-PyatsUsername = Annotated[
-    str | None,
-    Field(
-        description="Username to use with pyATS / Unicon",
-        min_length=1,
-        max_length=64,
-    ),
-]
-
-PyatsPassword = Annotated[
-    str | None,
-    Field(
-        description="Password to use with pyATS / Unicon",
-        min_length=1,
-        max_length=128,
-    ),
-]
 
 
 class PyAtsConnectionDetails(BaseModel, extra="forbid"):
@@ -73,22 +36,18 @@ class Connections(BaseModel, extra="forbid"):
     defaults: StringDict | None = Field(default=None)
 
 
-class PyAtsCredentials(BaseModel, extra="forbid"):
-    username: PyatsUsername = Field(default=None)
-    password: PyatsPassword = Field(default=None)
-
-
 class PyAtsDeviceCredentials(BaseModel, extra="forbid"):
-    default: PyAtsCredentials
+    default: PyAtsCredentials | None = Field(default=None)
+    enable: PyAtsCredentials | None = Field(default=None)
 
 
 class PyAtsDevice(BaseModel, extra="forbid"):
     connections: Connections
     credentials: PyAtsDeviceCredentials
-    os: PyAtsOs = Field(...)
     type: DeviceNature = Field(..., examples=["router"])
-    model: PyAtsModel | None = Field(default=None)
-    platform: DriverType | None = Field(default=None, examples=["iosv"])
+    os: PyAtsOs = Field(...)
+    platform: PyAtsToken = Field(default=None)
+    model: PyAtsToken = Field(default=None)
 
 
 class PyAtsInterfaceSummary(BaseModel, extra="forbid"):

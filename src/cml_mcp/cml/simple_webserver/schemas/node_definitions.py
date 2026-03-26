@@ -7,6 +7,7 @@ import re
 from enum import StrEnum, auto
 from typing import Annotated, Literal
 
+from fastapi import Body
 from pydantic import AfterValidator, BaseModel, Field, conlist, model_validator
 
 from simple_common.schemas import ConfigurationMediaType, DomainDriver
@@ -15,9 +16,11 @@ from simple_webserver.schemas.common import (
     DeviceNature,
     DriverType,
     FilePath,
+    PyAtsCredentials,
+    PyAtsOs,
+    PyAtsToken,
 )
 from simple_webserver.schemas.nodes import NodeConfigurationContent, NodeParameters
-from simple_webserver.schemas.pyats import PyAtsCredentials, PyAtsModel, PyAtsOs
 
 
 class NicDriver(StrEnum):
@@ -167,16 +170,16 @@ class Interfaces(BaseModel, extra="forbid"):
         ..., description="Has `loopback0` interface (used with ANK)."
     )
     min_count: int = Field(
-        default=None,
+        default=0,
         description="Minimal number of physical interfaces needed to start a node.",
         ge=0,
         le=64,
     )
     default_count: int = Field(
-        default=None, description="Default number of physical interfaces.", ge=1, le=64
+        default=1, description="Default number of physical interfaces.", ge=1, le=64
     )
     iol_static_ethernets: Literal[0, 4, 8, 12, 16] = Field(
-        default=None,
+        default=0,
         description="Only for IOL nodes, the number of static Ethernet interfaces"
         " preceding any serial interface; default 0 means "
         "all interfaces are Ethernet.",
@@ -414,7 +417,8 @@ class Ui(BaseModel, extra="forbid"):
         description="The icon to use with this node type."
         "Select one from the list or pass custom URI with "
         "png|jpeg|svg+xml image encoded to base64 in following "
-        "format: data:<MIME_TYPE>;base64,<BASE_64_CONTENT>",
+        "format: data:<MIME_TYPE>;base64,<BASE_64_CONTENT>"
+        "image size should not exceed 100kB before encoding.",
     )
 
     label: str = Field(
@@ -450,13 +454,11 @@ class Inherited(BaseModel, extra="forbid"):
 
 class PyAts(PyAtsCredentials, extra="forbid"):
     os: PyAtsOs = Field(...)
-    series: str = Field(
+    series: PyAtsToken = Field(
         default=None,
-        description="The device series as defined by pyATS / Unicon.",
-        min_length=1,
-        max_length=32,
+        description="The device platform token as defined by pyATS / Unicon.",
     )
-    model: PyAtsModel = Field(default=None)
+    model: PyAtsToken = Field(default=None)
     use_in_testbed: bool = Field(
         default=True, description="Use this device in an exported testbed?"
     )
@@ -549,3 +551,10 @@ class SimplifiedNodeDefinition(BaseModel, extra="forbid"):
     ui: UiSimplified = Field(...)
     sim: SimulationUiSimplified = Field(...)
     image_definitions: list[DefinitionID] = Field(default_factory=list)
+
+
+NodeDefinitionBody = Annotated[NodeDefinition, Body(...)]
+
+NodeDefinitionReadOnlyBody = Annotated[
+    bool, Body(description="Desired node definition's read-only state.")
+]
