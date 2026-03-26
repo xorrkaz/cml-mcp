@@ -41,15 +41,15 @@ TopologyID = Annotated[
 class TopologySchemaVersion(StrEnum):
     v0_0_1 = "0.0.1"
     v0_0_2 = "0.0.2"
-    v0_0_3 = "0.0.3"  # CML 2.0
-    v0_0_4 = "0.0.4"  # CML 2.1
-    v0_0_5 = "0.0.5"  # CML 2.3
-    v0_1_0 = "0.1.0"  # CML 2.4
-    v0_2_0 = "0.2.0"  # CML 2.5
-    v0_2_1 = "0.2.1"  # CML 2.6
-    v0_2_2 = "0.2.2"  # CML 2.7
-    v0_3_0 = "0.3.0"  # CML 2.8
-    v0_3_1 = "0.3.1"  # CML 2.10
+    v0_0_3 = "0.0.3"
+    v0_0_4 = "0.0.4"
+    v0_0_5 = "0.0.5"
+    v0_1_0 = "0.1.0"
+    v0_2_0 = "0.2.0"
+    v0_2_1 = "0.2.1"
+    v0_2_2 = "0.2.2"
+    v0_3_0 = "0.3.0"
+    v0_3_1 = "0.3.1"
 
 
 class LabTopology(BaseModel, extra="forbid"):
@@ -111,6 +111,18 @@ ImportTopologyBody = Annotated[
         description="This request body is a JSON object that describes a single topology."
     ),
 ]
+
+
+class ImportTopologyResponse(BaseModel, extra="forbid"):
+    """
+    The response is a JSON object with the ID of the imported lab
+    and any warnings that occurred during the import.
+    """
+
+    id: UUID4Type = Field(..., description="The lab ID of the imported lab.")
+    warnings: list[str] | None = Field(
+        ..., description="Warnings, if any, as Markdown."
+    )
 
 
 class TopologyResponse(Topology, extra="forbid"):
