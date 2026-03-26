@@ -145,7 +145,7 @@ def register_tools(mcp):  # noqa: C901
             # representation of the argument object.
             if isinstance(lab, dict):
                 lab = LabRequest(**lab)
-            resp = await client.post("/labs", data=lab.model_dump(mode="json", exclude_none=True))
+            resp = await client.post("/labs", data=lab.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -172,7 +172,7 @@ def register_tools(mcp):  # noqa: C901
             # representation of the argument object.
             if isinstance(lab, dict):
                 lab = LabRequest(**lab)
-            await client.patch(f"/labs/{lid}", data=lab.model_dump(mode="json", exclude_none=True))
+            await client.patch(f"/labs/{lid}", data=lab.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
             return True
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")

@@ -4,12 +4,13 @@
 # All rights reserved.
 #
 import re
+from typing import Annotated
 
+from fastapi import Body
 from pydantic import BaseModel, Field, model_validator
 
-from simple_webserver.schemas.common import DefinitionID, FilePath
+from simple_webserver.schemas.common import DefinitionID, FilePath, PyAtsCredentials
 from simple_webserver.schemas.nodes import NodeConfigurationContent
-from simple_webserver.schemas.pyats import PyAtsCredentials
 
 
 class ImageDefinition(BaseModel, extra="forbid"):
@@ -70,7 +71,9 @@ class ImageDefinition(BaseModel, extra="forbid"):
         description="Whether the image definition can be updated or deleted.",
     )
     configuration: NodeConfigurationContent = None
-    pyats: PyAtsCredentials | None = None
+    pyats: PyAtsCredentials | None = Field(
+        default=None, description="pyATS specific credentials for the image definition."
+    )
     ram: int | None = Field(default=None, ge=1, le=1048576, description="Memory (MiB).")
     cpus: int | None = Field(default=None, ge=1, le=128, description="CPUs.")
     cpu_limit: int | None = Field(default=None, ge=20, le=100, description="CPU Limit.")
@@ -86,3 +89,10 @@ class ImageDefinition(BaseModel, extra="forbid"):
         if self.disk_image or self.docker_tag:
             return self
         raise ValueError("Either disk_image or docker_tag must be provided")
+
+
+ImageDefinitionBody = Annotated[ImageDefinition, Body(...)]
+
+ImageDefinitionReadOnlyBody = Annotated[
+    bool, Body(description="Desired image definition's read-only state.")
+]

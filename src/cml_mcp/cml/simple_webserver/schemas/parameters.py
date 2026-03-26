@@ -244,3 +244,9 @@ ServiceUUID4QueryParameter = Annotated[
     UUID4Type,
     Query(description="The unique key of a lab service."),
 ]
+
+
+WirelessPcapPathParameter = Annotated[
+    UUID4Type,
+    Path(description="The unique key of a wireless PCAP capture session."),
+]
