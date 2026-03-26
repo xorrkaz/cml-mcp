@@ -21,19 +21,19 @@ from simple_common.schemas import (
 
 LINT_REG = r"[\da-z-]{1,15}"
 UUID4_REG = (
-    r"^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}(?![\n\r])$"
+    r"^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$"
 )
 UUID4_REG_EXP = re.compile(UUID4_REG)
 
 IPV4_REG = r"(\d{1,3}.){3}\d{1,3}"
 IPV6_REG = r"[\da-fA-F:]{3,39}" + f"(%{LINT_REG})?"
-IP_REG = rf"^({IPV4_REG}|{IPV6_REG})(?![\n\r])$"
+IP_REG = rf"^({IPV4_REG}|{IPV6_REG})$"
 HOSTNAME_REG = r"[a-zA-Z\d.-]{1,64}"
 PORT_REG = r"\d{1,5}"
-HOST_REG = rf"^{HOSTNAME_REG}(?![\n\r])$"
+HOST_REG = rf"^{HOSTNAME_REG}$"
 DOMAIN_REG = rf"{IPV4_REG}|\[{IPV6_REG}\]|{HOSTNAME_REG}"
 ORIGIN_REG = rf"https?://({DOMAIN_REG})(:{PORT_REG})?"
-HTTP_URL_REG = rf"^{ORIGIN_REG}(/[\w.-]+)+(?![\n\r])$"
+HTTP_URL_REG = rf"^{ORIGIN_REG}(/[\w.-]+)+$"
 
 
 def _remove_duplicates(lst: list) -> list:
@@ -45,7 +45,7 @@ FilePath = Annotated[
     Field(
         min_length=1,
         max_length=255,
-        pattern=re.compile(r"^(?![.])[^!@#%^&*();$\n\r\t/\\]{1,255}(?![\n\r])$"),
+        pattern=re.compile(r"^[^.!@#%^&*();$\n\r\t/\\][^!@#%^&*();$\n\r\t/\\]{0,254}$"),
     ),
 ]
 
@@ -142,7 +142,7 @@ IPv6Address = Annotated[
 IPNetwork = Annotated[
     str,
     Field(
-        pattern=re.compile(rf"^({IPV4_REG}|{IPV6_REG})" r"/\d{1,3}(?![\n\r])$"),
+        pattern=re.compile(rf"^({IPV4_REG}|{IPV6_REG})" r"/\d{1,3}$"),
         description="An IPv4 or IPv6 network prefix.",
     ),
 ]
@@ -150,7 +150,7 @@ IPNetwork = Annotated[
 MACAddress = Annotated[
     str | None,
     Field(
-        pattern=re.compile(r"^[a-fA-F\d]{2}(:[a-fA-F\d]{2}){5}(?![\n\r])$"),
+        pattern=re.compile(r"^[a-fA-F\d]{2}(:[a-fA-F\d]{2}){5}$"),
         description="MAC address in Linux format.",
         examples=["00:11:22:33:44:55"],
     ),
@@ -167,7 +167,7 @@ Hostname = Annotated[
 LinuxInterfaceName = Annotated[
     str,
     Field(
-        pattern=re.compile(rf"^{LINT_REG}(?![\n\r])$"),
+        pattern=re.compile(rf"^{LINT_REG}$"),
         description="Interface name or number in a Linux host.",
     ),
 ]
@@ -241,7 +241,7 @@ DefinitionID = Annotated[
     Field(
         min_length=1,
         max_length=250,
-        pattern=re.compile(r"^(?![.])[^!@#%^&*();$\n\r\t/\\]{1,250}(?![\n\r])$"),
+        pattern=re.compile(r"^[^.!@#%^&*();$\n\r\t/\\][^!@#%^&*();$\n\r\t/\\]{0,249}$"),
         description="Name of the node or image definition (max 250 UTF-8 bytes).",
         examples=["server"],
     ),

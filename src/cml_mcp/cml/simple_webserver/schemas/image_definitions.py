@@ -42,7 +42,7 @@ class ImageDefinition(BaseModel, extra="forbid"):
         examples=["58ce6f1271ae1c8a2006ff7d3e54e9874d839f573d8009c20154ad0f2fb0a225"],
         min_length=64,
         max_length=64,
-        pattern=re.compile(r"^[a-fA-F\d]{64}(?![\n\r])$"),
+        pattern=re.compile(r"^[a-fA-F\d]{64}$"),
     )
     schema_version: str = Field(
         default="0.0.1",

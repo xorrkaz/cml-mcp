@@ -24,7 +24,7 @@ RepoName = Annotated[
         examples=["cml-labs"],
         min_length=1,
         max_length=64,
-        pattern=re.compile(r"^(?![/.])[\w.-]{1,64}(?![\n\r])$"),
+        pattern=re.compile(r"^[\w-][\w.-]{0,63}$"),
     ),
 ]
 
@@ -35,7 +35,7 @@ RepoFolder = Annotated[
         examples=["cml-community"],
         min_length=1,
         max_length=255,
-        pattern=re.compile(r"^(?![/.])[\w./-]{1,255}(?![\n\r])$"),
+        pattern=re.compile(r"^[\w-][\w./-]{0,254}$"),
     ),
 ]
 

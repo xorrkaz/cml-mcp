@@ -46,8 +46,7 @@ SshPubkey = Annotated[
             string.
         """,
         pattern=re.compile(
-            r"^([a-zA-Z\d-]{1,30} [a-zA-Z\d+/]{1,4096}={0,2}(?: [a-zA-Z\d@.+_-]{0,64})?"
-            r"(?![\n\r]))?$"
+            r"^([a-zA-Z\d-]{1,30} [a-zA-Z\d+/]{1,4096}={0,2}(?: [a-zA-Z\d@.+_-]{0,64})?)?$"
         ),
         examples=["ssh-ecdsa-sha2-nistp256 AAAAE...tCyk44= user@cml"],
     ),
