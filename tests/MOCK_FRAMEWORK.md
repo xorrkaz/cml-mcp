@@ -48,17 +48,17 @@ The mock framework is implemented in `tests/conftest.py` and consists of:
 
 ### Mock Mode (USE_MOCKS=true)
 
-- **10/10 read-only tests PASSING**
-- Tests run in ~3 seconds
+- **13/13 mock-compatible tests PASSING**
+- Tests run in ~6 seconds
 - No network calls, no external dependencies
 - Safe for CI/CD pipelines
 
 ### Test Categories
 
-**Read-Only Tests (Work with Mocks)**:
+**Mock-Compatible Tests (13 pass in mock mode)**:
 
 - ✅ test_list_tools
-- ✅ test_get_cml_labs  
+- ✅ test_get_cml_labs
 - ✅ test_get_cml_users
 - ✅ test_get_cml_groups
 - ✅ test_get_cml_information
@@ -66,7 +66,10 @@ The mock framework is implemented in `tests/conftest.py` and consists of:
 - ✅ test_get_cml_statistics
 - ✅ test_get_cml_licensing_details
 - ✅ test_node_defs
-- ✅ test_packet_capture_operations
+- ✅ test_get_annotations_for_cml_lab (marked `mock_only`)
+- ✅ test_packet_capture_operations (marked `mock_only`)
+- ✅ test_download_lab_topology (marked `mock_only`)
+- ✅ test_clone_cml_lab (marked `mock_only`)
 
 **State-Modifying Tests (Require Live Server)**:
 
@@ -79,6 +82,8 @@ The mock framework is implemented in `tests/conftest.py` and consists of:
 - 🔴 test_add_annotation_to_cml_lab (marked `live_only`)
 - 🔴 test_connect_two_nodes (marked `live_only`)
 - 🔴 test_get_nodes_for_cml_lab (marked `live_only`)
+- 🔴 test_download_lab_topology_live (marked `live_only`)
+- 🔴 test_clone_cml_lab_live (marked `live_only`)
 
 ## Usage
 
@@ -133,6 +138,7 @@ The following mock data files are used:
 | `get_annotations_for_cml_lab.json`  | `/labs/{id}/annotations`                     | Lab annotations         |
 | `check_packet_capture_status.json`  | `/labs/{id}/links/{lid}/capture/status`      | Packet capture status   |
 | `get_captured_packet_overview.json` | `/pcap/{key}/packets`                        | Packet capture overview |
+| `download_lab_topology.json`        | `/labs/{id}/topology`                        | Lab topology YAML       |
 
 ## Key Features
 

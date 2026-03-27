@@ -93,7 +93,8 @@ pytest tests/
 Tests are marked with the following pytest markers:
 
 - `@pytest.mark.live_only` - Test requires a live CML server (creates/modifies resources)
-- `@pytest.mark.mock_only` - Test only works with mocks
+- `@pytest.mark.mock_only` - Test only works with mocks (not valid against a live server)
+- No marker - Test works in both modes
 
 Use markers to selectively run tests:
 
@@ -151,7 +152,7 @@ mv .inline-snapshot/external/<hash>.json tests/mocks/get_labs.json
 
 ## Test Coverage
 
-### Read-Only Tests (Work with Mocks)
+### Mock-Compatible Tests (13 in mock mode)
 
 - `test_list_tools` - Verify available MCP tools
 - `test_get_cml_labs` - List all labs
@@ -162,7 +163,10 @@ mv .inline-snapshot/external/<hash>.json tests/mocks/get_labs.json
 - `test_get_cml_statistics` - Get system stats
 - `test_get_cml_licensing_details` - Get licensing info
 - `test_node_defs` - List and get node definitions
-- `test_packet_capture_operations` - Packet capture status and overview (mock mode only)
+- `test_get_annotations_for_cml_lab` - Get lab annotations (`mock_only`)
+- `test_packet_capture_operations` - Packet capture status and overview (`mock_only`)
+- `test_download_lab_topology` - Download lab topology as YAML (`mock_only`)
+- `test_clone_cml_lab` - Clone a lab (`mock_only`)
 
 ### State-Modifying Tests (Require Live Server)
 
@@ -175,6 +179,8 @@ mv .inline-snapshot/external/<hash>.json tests/mocks/get_labs.json
 - `test_add_annotation_to_cml_lab` - Add annotations to labs
 - `test_connect_two_nodes` - Create links between nodes
 - `test_get_nodes_for_cml_lab` - Get nodes (creates test lab first)
+- `test_download_lab_topology_live` - Download topology against live server
+- `test_clone_cml_lab_live` - Clone a lab against live server
 
 ## Continuous Integration
 

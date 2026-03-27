@@ -18,8 +18,8 @@ USE_MOCKS=false pytest -m live_only tests/
 
 ## Test Results Summary
 
-- **Mock Mode**: 10 passed, 9 skipped (live_only tests)
-- **Live Mode**: All 19 tests run against real server
+- **Mock Mode**: 13 passed, 11 skipped (live_only tests)
+- **Live Mode**: All 24 tests run against real server
 
 ## Environment Variables
 
@@ -33,7 +33,8 @@ USE_MOCKS=false pytest -m live_only tests/
 ## Test Markers
 
 - `@pytest.mark.live_only` - Test requires live CML server (creates/modifies resources)
-- No marker - Test works with mocks (read-only operations)
+- `@pytest.mark.mock_only` - Test only works with mocks (not valid against a live server)
+- No marker - Test works in both modes
 
 ## Files
 
