@@ -13,14 +13,14 @@ from collections.abc import AsyncGenerator
 from pathlib import Path
 from typing import Any
 
-import httpx
 import pytest
 from fastmcp.client import Client
 from fastmcp.client.transports import FastMCPTransport
 from mcp.types import TextContent
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.labs import LabRequest, LabTitle, LabAutostart, NodeStaging
+from cml_mcp.cml.simple_webserver.schemas.labs import LabAutostart, LabRequest, LabTitle, NodeStaging
+
 COMMON_TEST_LAB_TITLE = LabTitle("MCP Test Lab")
 
 # Determine if we should use mocks
