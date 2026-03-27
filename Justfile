@@ -13,6 +13,13 @@ test args='':
 test-live args='':
     USE_MOCKS=false uv run -m pytest {{args}}
 
+# Run all code style and lint checks
+[group('qa')]
+check:
+    uv run black --check src/ tests/
+    uv run isort --check-only src/ tests/
+    uv run flake8 src/ tests/
+
 [group('build')]
 build:
     uv build
