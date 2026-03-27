@@ -50,7 +50,9 @@ def _send_cli_command_sync(
                 if device.name != "terminal_server":
                     device.credentials.default.username = _pyats_username.get() or os.getenv("PYATS_USERNAME", "cisco")
                     device.credentials.default.password = _pyats_password.get() or os.getenv("PYATS_PASSWORD", "cisco")
-                    device.credentials.enable.password = _pyats_auth_pass.get() or os.getenv("PYATS_AUTH_PASS", "cisco")
+                    device.credentials.enable.password = _pyats_auth_pass.get() or os.getenv(
+                        "PYATS_AUTH_PASS", device.credentials.default.password
+                    )
 
         except PyatsNotInstalled:
             raise ImportError(
