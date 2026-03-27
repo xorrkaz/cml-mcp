@@ -122,7 +122,7 @@ class LabAutostart(BaseModel, extra="forbid"):
 
 
 LabAutostartMixin = Annotated[
-    LabAutostart,
+    LabAutostart | None, # None added for CML 2.9
     Field(
         default_factory=LabAutostart,
         description="The lab's autostart configuration.",
@@ -148,7 +148,7 @@ class NodeStaging(BaseModel, extra="forbid"):
 
 
 NodeStagingMixin = Annotated[
-    NodeStaging,
+    NodeStaging | None, # None added for CML 2.9
     Field(
         default_factory=NodeStaging,
         description="The lab's node staging configuration.",

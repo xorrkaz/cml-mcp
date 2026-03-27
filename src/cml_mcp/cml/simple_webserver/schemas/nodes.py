@@ -137,7 +137,8 @@ class NodeBaseExtended(NodeBase):
         ge=0,
         le=10000,
     )
-    pyats: PyAtsCredentials = Field(
+    # None added for CML 2.9
+    pyats: PyAtsCredentials | None = Field(
         default_factory=PyAtsCredentials,
         description="pyATS specific credentials for the node.",
     )
