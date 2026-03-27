@@ -26,7 +26,7 @@ This guide will help you set up the CML MCP server so you can control Cisco Mode
 
 **On Your Computer:**
 
-- **Python 3.12 or later** - The programming language runtime ([download here](https://www.python.org/downloads/) if needed)
+- **Python 3.12 or 3.13** - The programming language runtime ([download here](https://www.python.org/downloads/) if needed)
 - **[uv](https://docs.astral.sh/uv/)** - A modern Python package manager that makes installation easy ([install instructions](https://docs.astral.sh/uv/getting-started/installation/))
 
 **Your CML Server:**
@@ -145,6 +145,8 @@ This configuration gives you most features and works on any platform (Linux, Mac
 - Password: `cisco` or `C1sco12345`
 - Enable: same as password or leave blank if no enable secret is configured
 
+**Note:** `PYATS_AUTH_PASS` is optional. If omitted, it falls back to the value of `PYATS_PASSWORD`.
+
 #### With CLI Command Support (Windows/WSL)
 
 Windows users wanting CLI command support should use WSL:
@@ -233,7 +235,7 @@ An alternative is to use FastMCP CLI to install the server into your favorite cl
     cd cml-mcp
     ```
 
-2. Run `uv sync` to install all the correct dependencies, including FastMCP 2.0. **Note:** on Linux and Mac, run `uv sync --all-extras` to get CLI command support.
+2. Run `uv sync` to install all the correct dependencies, including FastMCP 3.x. **Note:** on Linux and Mac, run `uv sync --all-extras` to get CLI command support.
 
 3. Create a `.env` file with the following variables set:
 

@@ -14,7 +14,7 @@ This guide covers how to set up a development environment and contribute to the 
 
 ## Prerequisites
 
-- Python 3.12 or later
+- Python 3.12 or 3.13
 - [uv](https://docs.astral.sh/uv/) - Python package/project manager
 - [just](https://github.com/casey/just) - Command runner (optional but recommended)
 - [direnv](https://direnv.net/) - Environment variable manager (optional but recommended)
@@ -70,6 +70,9 @@ just test
 
 # Run tests against a live CML server
 just test-live
+
+# Run all code style and lint checks (black, isort, flake8)
+just check
 
 # Install/update dependencies
 just install
@@ -137,6 +140,12 @@ Before committing, ensure your code is properly formatted:
 black src/ tests/
 isort src/ tests/
 flake8 src/ tests/
+```
+
+Or use the convenience target:
+
+```sh
+just check
 ```
 
 ## Project Structure
