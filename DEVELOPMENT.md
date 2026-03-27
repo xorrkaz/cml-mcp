@@ -34,7 +34,7 @@ This guide covers how to set up a development environment and contribute to the 
     direnv allow
     ```
 
-    This will automatically create a virtual environment and install dependencies when you `cd` into the directory.
+    This will automatically create a virtual environment and install production dependencies when you `cd` into the directory. You will still need to run `just dev-install` to add development dependencies (pytest, black, isort, flake8).
 
 3. If not using direnv, manually install dependencies:
 
@@ -74,7 +74,10 @@ just test-live
 # Run all code style and lint checks (black, isort, flake8)
 just check
 
-# Install/update dependencies
+# Install with development dependencies
+just dev-install
+
+# Install production dependencies only (no dev extras)
 just install
 
 # Update all dependencies to latest versions

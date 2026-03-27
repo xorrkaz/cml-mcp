@@ -32,7 +32,7 @@ Each module exposes a `register_tools(mcp)` function called from `server.py`.
 | Module | Tools |
 |---|---|
 | `labs.py` | get_cml_labs, create_empty_lab, create_full_lab_topology, modify_cml_lab, start/stop/wipe/delete_cml_lab, get_cml_lab_by_title, download_lab_topology, clone_cml_lab |
-| `nodes.py` | get_nodes_for_cml_lab, add_node_to_cml_lab, configure_cml_node, start/stop/wipe/delete_cml_node, get_console_log, send_cli_command |
+| `nodes.py` | get_nodes_for_cml_lab, add_node_to_cml_lab, configure_cml_node, start/stop/wipe/delete_cml_node |
 | `node_definitions.py` | get_cml_node_definitions, get_node_definition_detail |
 | `interfaces.py` | add_interface_to_node, get_interfaces_for_node |
 | `links.py` | connect_two_nodes, get_all_links_for_lab, apply_link_conditioning, start/stop_cml_link |
@@ -65,7 +65,7 @@ Each module exposes a `register_tools(mcp)` function called from `server.py`.
 ## Transport Modes
 
 - **stdio** (default) — run via `uvx cml-mcp` or `uvx cml-mcp[pyats]`
-- **HTTP** — run `cml-mcp --transport http`; optionally enable ACL via `--acl-file acl.yaml`
+- **HTTP** — set `CML_MCP_TRANSPORT=http` and run `cml-mcp`; optionally enable ACL via `CML_MCP_ACL_FILE=/path/to/acl.yaml`
 
 ### ACL File (HTTP mode only)
 
