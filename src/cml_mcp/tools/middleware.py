@@ -199,7 +199,9 @@ class CustomHttpRequestMiddleware(Middleware):
         _pyats_password.set(None)
         _pyats_auth_pass.set(None)
 
-        headers = get_http_headers()
+        headers = get_http_headers(
+            include={"x-cml-server-url", "x-cml-verify-ssl", "x-authorization", "x-pyats-authorization", "x-pyats-enable"}
+        )
         cml_url = headers.get("x-cml-server-url")
         if not cml_url:
             if settings.cml_url:
