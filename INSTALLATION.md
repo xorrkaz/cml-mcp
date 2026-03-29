@@ -36,7 +36,7 @@ This guide will help you set up the CML MCP server so you can control Cisco Mode
 **Optional Enhancements:**
 
 - **PyATS support** - Automatically included when you install `cml-mcp[pyats]` - enables sending CLI commands directly to your network devices
-- **Node.js** - Only needed for [HTTP Transport mode](#http-transport) with shared deployments
+- **Node.js 18 or later** - Only needed for [HTTP Transport mode](#http-transport) with shared deployments
 
 ### Windows Users - Special Notes
 
@@ -337,7 +337,7 @@ source .venv/bin/activate
 cml-mcp
 ```
 
-The server will start and listen for HTTP connections at `http://0.0.0.0:9000`.
+The server will start and listen for plain HTTP connections at `http://0.0.0.0:9000`. For production or shared deployments, place a TLS-terminating reverse proxy (nginx, Caddy, etc.) in front of it before exposing it to clients.
 
 ### Authentication in HTTP Mode
 
@@ -371,9 +371,9 @@ X-CML-URL: https://cml-server.example.com
 
 **The solution:** Use `mcp-remote`, a small bridge program that connects your AI client to the HTTP server. It translates between the client's expected format and HTTP.
 
-**What you need:** Node.js installed on your computer (includes the `npx` command that runs `mcp-remote`)
+**What you need:** Node.js **18 or later** installed on your computer (includes the `npx` command that runs `mcp-remote`)
 
-- [Download Node.js](https://nodejs.org/en/download/) if you don't have it
+- [Download Node.js](https://nodejs.org/en/download/) if you don't have it (version 18+ required)
 
 **Step 1:** Prepare your credentials (you'll need them Base64-encoded)
 
@@ -424,28 +424,32 @@ Now that you have your Base64-encoded credentials, add this to your MCP client c
       "args": [
         "-y",
         "mcp-remote",
-        "http://<server_host>:9000/mcp",
+        "https://<server_host>/mcp",
         "--header",
-        "X-Authorization: Basic <base64_encoded_cml_credentials>",
+        "X-Authorization:${CML_AUTH_HEADER}",
         "--header",
-        "X-PyATS-Authorization: Basic <base64_encoded_device_credentials>"
-      ]
+        "X-PyATS-Authorization:${PYATS_AUTH_HEADER}"
+      ],
+      "env": {
+        "CML_AUTH_HEADER": "Basic <base64_encoded_cml_credentials>",
+        "PYATS_AUTH_HEADER": "Basic <base64_encoded_device_credentials>"
+      }
     }
   }
 }
 ```
 
+**Why use env vars for the header values?** There is a known bug in Cursor and Claude Desktop on Windows where spaces inside `args` entries are not escaped correctly, silently mangling header values. Putting the credential string in an `env` var (where spaces are safe) and referencing it with no space around the `:` in `args` avoids this on all platforms.
+
 **Customize your configuration:**
 
-- `<server_host>`: The hostname or IP address where your HTTP server is running (e.g., `192.168.1.100` or `cml-mcp.mycompany.com`)
+- `<server_host>`: The hostname or HTTPS address of your reverse proxy (e.g., `cml-mcp.mycompany.com`)
 - `<base64_encoded_cml_credentials>`: Paste the Base64 string you generated for your CML username:password
 - `<base64_encoded_device_credentials>`: Paste the Base64 string you generated for your device username:password
 
-**Tip:** Keep the `Basic` keyword before your Base64 credentials—it's required for HTTP authentication!
-
 #### HTTPS with Self-Signed Certificates
 
-When using HTTPS with a self-signed certificate, you'll need to disable TLS certificate validation:
+If your reverse proxy uses a self-signed certificate, add `NODE_TLS_REJECT_UNAUTHORIZED` to disable Node.js TLS validation:
 
 ```json
 {
@@ -455,13 +459,15 @@ When using HTTPS with a self-signed certificate, you'll need to disable TLS cert
       "args": [
         "-y",
         "mcp-remote",
-        "https://192.168.10.210:8443/mcp",
+        "https://<server_host>/mcp",
         "--header",
-        "X-Authorization: Basic <base64_encoded_cml_credentials>",
+        "X-Authorization:${CML_AUTH_HEADER}",
         "--header",
-        "X-PyATS-Authorization: Basic <base64_encoded_device_credentials>"
+        "X-PyATS-Authorization:${PYATS_AUTH_HEADER}"
       ],
       "env": {
+        "CML_AUTH_HEADER": "Basic <base64_encoded_cml_credentials>",
+        "PYATS_AUTH_HEADER": "Basic <base64_encoded_device_credentials>",
         "NODE_TLS_REJECT_UNAUTHORIZED": "0"
       }
     }
@@ -623,6 +629,24 @@ To configure ACLs, you'll need to know the exact tool names. Here are all availa
 **User & Group Management:** `get_cml_users`, `create_cml_user`, `delete_cml_user`, `get_cml_groups`, `create_cml_group`, `delete_cml_group`
 
 **System Information:** `get_cml_information`, `get_cml_status`, `get_cml_statistics`, `get_cml_licensing_details`
+
+## Troubleshooting mcp-remote
+
+### Diagnosing connection problems
+
+Add `--debug` to the `args` list to write a detailed connection log to `~/.mcp-auth/<server_hash>_debug.log`:
+
+```json
+"args": ["-y", "mcp-remote", "https://<server_host>/mcp", "--debug", ...]
+```
+
+### Headers are being mangled
+
+If credentials appear corrupted, you are likely hitting the Cursor / Windows Claude Desktop spaces-in-args bug. Use the env var pattern shown in [Configuring MCP Clients](#configuring-mcp-clients) (no space around `:` in the arg, value in `env`).
+
+### Check your Node.js version
+
+`mcp-remote` requires Node.js 18 or later. Run `node --version` to check. Claude Desktop uses your system Node, even if a newer version is installed via a version manager.
 
 ## Environment Variables Reference
 
