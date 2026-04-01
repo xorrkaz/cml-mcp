@@ -27,6 +27,7 @@ Middleware module for HTTP request handling and ACL management.
 """
 
 import base64
+import hashlib
 import logging
 import re
 from pathlib import Path
@@ -192,6 +193,7 @@ class CustomHttpRequestMiddleware(Middleware):
             _pyats_password,
             _pyats_username,
             _request_client,
+            cml_client_cache,
         )
 
         # Reset PyATS contextvars for this request
@@ -256,13 +258,21 @@ class CustomHttpRequestMiddleware(Middleware):
                 except Exception:
                     raise McpError(ErrorData(message="Failed to decode Basic authentication credentials for PyATS Enable", code=-31002))
 
-        # Create a new client for this request.
-        request_client = CMLClient(cml_url, username, password, transport="http", verify_ssl=verify_ssl)
-        try:
-            await request_client.login()
-        except Exception as e:
-            logger.error("Authentication failed: %s", str(e), exc_info=True)
-            raise McpError(ErrorData(message=f"Unauthorized: {str(e)}", code=-31002))
+        # Look for the user's client in the cache.
+        # Hash the password so it never appears in log output or dict keys.
+        pwd_hash = hashlib.sha256(password.encode()).hexdigest()
+        client_cache_key = f"{username}:{pwd_hash}:{cml_url}"
+        request_client = await cml_client_cache.get(client_cache_key)
+        if not request_client:
+            # Create a new client for this request.
+            request_client = CMLClient(cml_url, username, password, transport="http", verify_ssl=verify_ssl)
+            try:
+                await request_client.login()
+            except Exception as e:
+                logger.error("Authentication failed: %s", str(e), exc_info=True)
+                raise McpError(ErrorData(message=f"Unauthorized: {str(e)}", code=-31002))
+
+            await cml_client_cache.set(client_cache_key, request_client)
 
         # Store the client in context variable for this request
         _request_client.set(request_client)
@@ -278,16 +288,9 @@ class CustomHttpRequestMiddleware(Middleware):
             )
             raise
         finally:
-            # Clean up the client after the request
-            try:
-                await request_client.close()
-                logger.debug(f"Successfully closed client for request to {cml_url}")
-            except Exception as cleanup_error:
-                # Log but don't raise - we don't want cleanup failures to mask the actual error
-                logger.error(f"Failed to close HTTP client for {cml_url}: {cleanup_error}", exc_info=True)
-            finally:
-                # Always clear the context var even if cleanup fails
-                _request_client.set(None)
+            # Clear the context var so it doesn't leak into any subsequent work
+            # on the same task.  Do NOT close the client here — it lives in the cache.
+            _request_client.set(None)
 
     async def on_list_tools(self, context: MiddlewareContext, call_next) -> list:
         # Import here to avoid circular dependency

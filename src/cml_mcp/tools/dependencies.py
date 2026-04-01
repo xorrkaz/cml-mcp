@@ -32,6 +32,7 @@ from typing import Optional
 
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.settings import settings
+from cml_mcp.tools.cache import ThreadSafeCache
 
 logger = logging.getLogger("cml-mcp.dependencies")
 
@@ -45,9 +46,15 @@ if settings.cml_mcp_transport == "stdio":
         transport=str(settings.cml_mcp_transport),
         verify_ssl=settings.cml_verify_ssl,
     )
+    cml_client_cache = None  # type: ignore[assignment] - not needed in stdio mode since we have a global client
+    # but define for type consistency
 else:
     # In HTTP mode, we don't need a global client - each request creates its own
     cml_client = None  # type: ignore[assignment]
+    cml_client_cache = ThreadSafeCache(
+        ttl=settings.cml_session_ttl
+    )  # Cache for storing clients in HTTP mode, keyed by user, password and CML URL
+
 
 # Context variable to store request-scoped client for HTTP transport
 _request_client: contextvars.ContextVar[Optional[CMLClient]] = contextvars.ContextVar("request_client", default=None)
