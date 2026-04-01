@@ -325,6 +325,9 @@ CML_ALLOWED_URLS=https://cml1.example.com,https://cml2.example.com  # Comma-sepa
 CML_URL_PATTERN=^https://cml\.example\.com  # Regex pattern
 # Optional: Enable access control lists for tool restrictions
 CML_MCP_ACL_FILE=/path/to/acl.yaml  # Path to ACL configuration file
+# Optional: Session cache TTL in seconds (default: 3600). Cached sessions avoid
+# re-authenticating on every request, which reduces CML auth events and telemetry.
+CML_SESSION_TTL=3600
 ```
 
 Then run:
@@ -672,6 +675,7 @@ If credentials appear corrupted, you are likely hitting the Cursor / Windows Cla
 - `CML_ALLOWED_URLS` - Comma-separated list of allowed CML URLs in HTTP mode
 - `CML_URL_PATTERN` - Regex pattern for allowed CML URLs (alternative to `CML_ALLOWED_URLS`)
 - `CML_MCP_ACL_FILE` - Path to YAML file for access control lists (tool restrictions per user)
+- `CML_SESSION_TTL` - How long (in seconds) to cache authenticated CML sessions in HTTP mode (default: `3600`). Set to a lower value if you need sessions to expire sooner, e.g. after credential rotation.
 
 ### Test Environment Variables
 
