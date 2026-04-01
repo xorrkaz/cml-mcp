@@ -286,6 +286,12 @@ class CustomHttpRequestMiddleware(Middleware):
                 f"Request to {cml_url} failed: {type(request_error).__name__}: {request_error}",
                 exc_info=False,  # Don't need full trace for client disconnects
             )
+            # If the client failed to re-authenticate mid-request, evict it from the
+            # cache so the next request gets a fresh client rather than retrying a
+            # broken entry on every call until the TTL expires.
+            if request_client.needs_reauth:
+                logger.debug("Evicting stale cache entry for %s after re-auth failure", client_cache_key)
+                await cml_client_cache.invalidate(client_cache_key)
             raise
         finally:
             # Clear the context var so it doesn't leak into any subsequent work

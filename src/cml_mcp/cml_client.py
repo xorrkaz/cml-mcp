@@ -65,6 +65,7 @@ class CMLClient(object):
 
         self._token = None
         self.admin = None
+        self.needs_reauth = False
 
         self.base_url = host.rstrip("/")
         self.api_base = f"{self.base_url}/api/v0"
@@ -96,9 +97,11 @@ class CMLClient(object):
             )
             resp.raise_for_status()
             self.token = resp.json()
+            self.needs_reauth = False
             logger.info("Authenticated with CML API")
         except Exception as e:
             logger.exception(f"Failed to authenticate with CML API: {e}", exc_info=True)
+            self.needs_reauth = True
             raise e
 
     async def check_authentication(self) -> None:
