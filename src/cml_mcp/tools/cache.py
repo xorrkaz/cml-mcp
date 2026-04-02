@@ -61,6 +61,7 @@ class ThreadSafeCache:
         async with self._lock:
             entry = self._cache.get(key)
             if entry and not entry.is_expired(self._ttl):
+                entry.timestamp = time.time()
                 return entry.value
             elif entry:
                 logger.debug("Cache entry for key %s has expired", key)
