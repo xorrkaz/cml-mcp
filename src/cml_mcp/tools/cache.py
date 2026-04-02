@@ -24,10 +24,11 @@
 
 """Definitions for a cache for session management."""
 
+import asyncio
 import logging
 import time
-from dataclasses import dataclass, field
 from asyncio import Lock
+from dataclasses import dataclass, field
 from typing import Dict, Optional
 
 from cml_mcp.cml_client import CMLClient
@@ -64,6 +65,7 @@ class ThreadSafeCache:
             elif entry:
                 logger.debug("Cache entry for key %s has expired", key)
                 del self._cache[key]
+                await entry.value.close()
             return None
 
     async def set(self, key: str, value: CMLClient) -> None:
@@ -72,13 +74,17 @@ class ThreadSafeCache:
             self._cache[key] = CacheEntry(value=value)
 
     async def clear(self) -> None:
-        """Clear all cache entries."""
+        """Clear all cache entries and close all sessions."""
         async with self._lock:
             logger.debug("Clearing entire cache")
+            entries = list(self._cache.values())
             self._cache.clear()
+        await asyncio.gather(*(e.value.close() for e in entries))
 
     async def invalidate(self, key: str) -> None:
-        """Remove specific cache entry."""
+        """Remove specific cache entry and close its session."""
         async with self._lock:
             logger.debug("Invalidating cache entry for key: %s", key)
-            self._cache.pop(key, None)
+            entry = self._cache.pop(key, None)
+        if entry:
+            await entry.value.close()

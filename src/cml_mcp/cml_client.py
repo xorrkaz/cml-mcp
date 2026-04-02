@@ -238,4 +238,3 @@ class CMLClient(object):
             logger.debug("HTTP client closed successfully")
         except Exception as e:
             logger.error(f"Error closing HTTP client: {e}", exc_info=True)
-            raise
