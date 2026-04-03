@@ -209,6 +209,7 @@ class CustomHttpRequestMiddleware(Middleware):
             if settings.cml_url:
                 cml_url = str(settings.cml_url)
             else:
+                logger.warning("Request rejected: missing X-CML-Server-URL header and no default CML_URL configured")
                 raise McpError(
                     ErrorData(
                         message="Missing X-CML-Server-URL header and no default CML_URL configured",
@@ -223,19 +224,23 @@ class CustomHttpRequestMiddleware(Middleware):
 
         auth_header = headers.get("x-authorization")
         if not auth_header or not auth_header.startswith("Basic "):
+            logger.warning("Request rejected: missing or invalid X-Authorization header")
             raise McpError(ErrorData(message="Unauthorized: Missing or invalid X-Authorization header", code=-31002))
         parts = auth_header.split(" ", 1)
         if len(parts) != 2 or parts[0].lower() != "basic":
+            logger.warning("Request rejected: malformed X-Authorization header")
             raise McpError(ErrorData(message="Invalid X-Authorization header format. Expected 'Basic <credentials>'", code=-31001))
         try:
             decoded = base64.b64decode(parts[1]).decode("utf-8")
             username, password = decoded.split(":", 1)
         except Exception:
+            logger.warning("Request rejected: failed to decode X-Authorization credentials")
             raise McpError(ErrorData(message="Failed to decode Basic authentication credentials", code=-31002))
         pyats_header = headers.get("x-pyats-authorization")
         if pyats_header and pyats_header.startswith("Basic "):
             pyats_parts = pyats_header.split(" ", 1)
             if len(pyats_parts) != 2 or pyats_parts[0].lower() != "basic":
+                logger.warning("Request rejected: malformed X-PyATS-Authorization header")
                 raise McpError(
                     ErrorData(message="Invalid X-PyATS-Authorization header format. Expected 'Basic <credentials>'", code=-31001)
                 )
@@ -245,17 +250,20 @@ class CustomHttpRequestMiddleware(Middleware):
                 _pyats_username.set(pyats_username)
                 _pyats_password.set(pyats_password)
             except Exception:
+                logger.warning("Request rejected: failed to decode X-PyATS-Authorization credentials")
                 raise McpError(ErrorData(message="Failed to decode Basic authentication credentials for PyATS", code=-31002))
             pyats_enable_header = headers.get("x-pyats-enable")
             if pyats_enable_header and pyats_enable_header.startswith("Basic "):
                 pyats_enable_parts = pyats_enable_header.split(" ", 1)
                 if len(pyats_enable_parts) != 2 or pyats_enable_parts[0].lower() != "basic":
+                    logger.warning("Request rejected: malformed X-PyATS-Enable header")
                     raise McpError(ErrorData(message="Invalid X-PyATS-Enable header format. Expected 'Basic <credentials>'", code=-31001))
                 try:
                     pyats_enable_decoded = base64.b64decode(pyats_enable_parts[1]).decode("utf-8")
                     pyats_enable_password = pyats_enable_decoded
                     _pyats_auth_pass.set(pyats_enable_password)
                 except Exception:
+                    logger.warning("Request rejected: failed to decode X-PyATS-Enable credentials")
                     raise McpError(ErrorData(message="Failed to decode Basic authentication credentials for PyATS Enable", code=-31002))
 
         # Look for the user's client in the cache.
@@ -269,7 +277,7 @@ class CustomHttpRequestMiddleware(Middleware):
             try:
                 await request_client.login()
             except Exception as e:
-                logger.error("Authentication failed: %s", str(e), exc_info=True)
+                logger.warning("Authentication failed: %s", str(e), exc_info=True)
                 raise McpError(ErrorData(message=f"Unauthorized: {str(e)}", code=-31002))
 
             await cml_client_cache.set(client_cache_key, request_client)
