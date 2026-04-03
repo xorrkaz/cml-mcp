@@ -456,8 +456,9 @@ class DomInfo(NodeCountsBase, extra="forbid"):
 
 class CpuHealthStats(BasicCpuStats, extra="forbid"):
     model: str = Field(..., description="The CPU model name.")
+    # Give this a default for CML 2.9.1b3 and earlier.
     hyperthreading: bool = Field(
-        ..., description="Indicates if hyperthreading is enabled."
+        default=False, description="Indicates if hyperthreading is enabled."
     )
     predicted: int = Field(..., description="The number of predicted CPUs.", ge=0)
     load: list[float] = Field(..., description="The CPU load (last few entries).")
