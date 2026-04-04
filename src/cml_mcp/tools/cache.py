@@ -81,7 +81,14 @@ class ThreadSafeCache:
             await old_entry.value.close()
 
     async def clear(self) -> None:
-        """Clear all cache entries and close all sessions."""
+        """Clear all cache entries and close all sessions.
+
+        NOTE: Use-after-close race — a concurrent request that already received a
+        client reference via get() may still be mid-flight when this closes it.
+        That request will encounter a 'client already closed' error, but
+        CMLClient.check_authentication() will recover by re-logging in on the
+        next call.  This is acceptable given how rarely clear() is invoked.
+        """
         async with self._lock:
             logger.debug("Clearing entire cache")
             entries = list(self._cache.values())
@@ -89,7 +96,14 @@ class ThreadSafeCache:
         await asyncio.gather(*(e.value.close() for e in entries))
 
     async def invalidate(self, key: str) -> None:
-        """Remove specific cache entry and close its session."""
+        """Remove specific cache entry and close its session.
+
+        NOTE: Use-after-close race — a concurrent request that already received
+        this client via get() may still be using it when it is closed here.
+        In practice invalidate() is only called after a re-auth failure, meaning
+        the client was already broken, so any concurrent request using it would
+        have failed regardless.  CMLClient.check_authentication() handles recovery.
+        """
         async with self._lock:
             logger.debug("Invalidating cache entry for key: %s", key)
             entry = self._cache.pop(key, None)
