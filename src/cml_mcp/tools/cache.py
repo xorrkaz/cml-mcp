@@ -73,9 +73,12 @@ class ThreadSafeCache:
         return None
 
     async def set(self, key: str, value: CMLClient) -> None:
-        """Store value in cache with current timestamp."""
+        """Store value in cache with current timestamp, closing any displaced entry."""
         async with self._lock:
+            old_entry = self._cache.get(key)
             self._cache[key] = CacheEntry(value=value)
+        if old_entry and old_entry.value is not value:
+            await old_entry.value.close()
 
     async def clear(self) -> None:
         """Clear all cache entries and close all sessions."""
