@@ -58,6 +58,7 @@ class ThreadSafeCache:
 
     async def get(self, key: str) -> Optional[CMLClient]:
         """Retrieve value from cache if not expired."""
+        expired_client = None
         async with self._lock:
             entry = self._cache.get(key)
             if entry and not entry.is_expired(self._ttl):
@@ -66,8 +67,10 @@ class ThreadSafeCache:
             elif entry:
                 logger.debug("Cache entry for key %s has expired", key)
                 del self._cache[key]
-                await entry.value.close()
-            return None
+                expired_client = entry.value
+        if expired_client:
+            await expired_client.close()
+        return None
 
     async def set(self, key: str, value: CMLClient) -> None:
         """Store value in cache with current timestamp."""
