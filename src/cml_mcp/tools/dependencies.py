@@ -30,6 +30,10 @@ import contextvars
 import logging
 from typing import Optional
 
+from fastmcp import Context
+from mcp.shared.exceptions import McpError
+from mcp.types import INVALID_REQUEST, METHOD_NOT_FOUND
+
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.settings import settings
 from cml_mcp.tools.cache import ThreadSafeCache
@@ -76,6 +80,37 @@ async def cleanup_global_client() -> None:
             logger.error(f"Error closing global CML client: {e}", exc_info=True)
     else:
         logger.debug("No global CML client to clean up (HTTP mode or client is None)")
+
+
+async def elicit_confirmation(ctx: Context, message: str) -> bool:
+    """
+    Request confirmation via elicitation if the client supports it.
+
+    Checks client capabilities before calling ctx.elicit(). If the client does
+    not advertise elicitation support, returns True (proceed without confirmation).
+    Returns False if the user explicitly declined or cancelled.
+    """
+    try:
+        session = ctx.session
+        client_params = session._client_params
+        if client_params is None or client_params.capabilities.elicitation is None:
+            logger.debug("Client does not support elicitation; proceeding without confirmation")
+            return True
+    except Exception:
+        # If capabilities cannot be determined, fall back to attempting the call.
+        pass
+
+    try:
+        result = await ctx.elicit(message, response_type=None)
+        return result.action == "accept"
+    except McpError as me:
+        if me.error.code in (METHOD_NOT_FOUND, INVALID_REQUEST):
+            logger.debug("Client rejected elicitation (%s); proceeding without confirmation", me.error.code)
+            return True
+        raise
+    except Exception as e:
+        logger.debug("elicit() failed (%s: %s); proceeding without confirmation", type(e).__name__, e)
+        return True
 
 
 def get_cml_client_dep() -> CMLClient:
