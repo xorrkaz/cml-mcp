@@ -269,7 +269,7 @@ class CustomHttpRequestMiddleware(Middleware):
         # Look for the user's client in the cache.
         # Hash the password so it never appears in log output or dict keys.
         pwd_hash = hashlib.sha256(password.encode()).hexdigest()
-        client_cache_key = f"{username}:{pwd_hash}:{cml_url}"
+        client_cache_key = f"{username}:{pwd_hash}:{cml_url}:{verify_ssl}"
         request_client = await cml_client_cache.get(client_cache_key)
         if not request_client:
             # Create a new client for this request.
