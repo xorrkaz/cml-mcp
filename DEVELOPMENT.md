@@ -163,7 +163,8 @@ cml-mcp/
 │   ├── cml/              # CML API schema definitions (Pydantic models)
 │   └── tools/            # Modular tool implementations
 │       ├── __init__.py
-│       ├── dependencies.py    # Shared dependencies (CML client)
+│       ├── dependencies.py    # Shared dependencies (CML client, session cache, elicitation helper)
+│       ├── cache.py           # Thread-safe async session cache (HTTP mode)
 │       ├── middleware.py      # HTTP middleware and ACL support
 │       ├── system.py          # System information tools
 │       ├── users_groups.py    # User and group management
@@ -195,7 +196,8 @@ The server uses a modular architecture where tools are organized by functional c
 
 - **Each module** (e.g., `labs.py`, `nodes.py`) contains related tools
 - **Each module** exports a `register_tools(mcp)` function that registers its tools with the FastMCP server
-- **Dependencies** are centralized in `dependencies.py` (e.g., CML client singleton)
+- **Dependencies** are centralized in `dependencies.py` (e.g., CML client singleton, `elicit_confirmation` helper)
+- **Session cache** in `cache.py` maintains authenticated `CMLClient` instances across requests in HTTP mode, keyed by `username:pwd_hash:cml_url:verify_ssl`. The TTL is an idle timer — reset on every cache hit. Expired or invalidated sessions are closed automatically.
 - **Middleware** in `middleware.py` provides HTTP transport support and ACL enforcement
 
 This design allows for:
