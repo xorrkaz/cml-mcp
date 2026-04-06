@@ -76,6 +76,10 @@ class Settings(BaseSettings):
         default=None,
         description="Path to a YAML file specifying access control lists for various MCP capabilities (only used in HTTP transport mode).",
     )
+    cml_session_ttl: int = Field(
+        default=3600,
+        description="Idle time in seconds before a cached CML client session expires (only applicable in HTTP transport mode).",
+    )
 
 
 settings = Settings()

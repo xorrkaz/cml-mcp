@@ -87,8 +87,8 @@ The server provides 47 MCP tools organized into the following categories:
 - **modify_cml_lab** - Update lab properties (title, description, notes)
 - **start_cml_lab** - Start all nodes in a lab
 - **stop_cml_lab** - Stop all nodes in a lab
-- **wipe_cml_lab** - Wipe all node data/configurations (requires confirmation)
-- **delete_cml_lab** - Delete a lab (requires confirmation)
+- **wipe_cml_lab** - Wipe all node data/configurations (prompts for confirmation if client supports it)
+- **delete_cml_lab** - Delete a lab (prompts for confirmation if client supports it)
 - **get_cml_lab_by_title** - Find a lab by its title
 - **download_lab_topology** - Download lab topology as YAML file
 - **clone_cml_lab** - Clone a lab with optional new title
@@ -102,8 +102,8 @@ The server provides 47 MCP tools organized into the following categories:
 - **configure_cml_node** - Set node startup configuration
 - **start_cml_node** - Start a specific node
 - **stop_cml_node** - Stop a specific node
-- **wipe_cml_node** - Wipe node data (requires confirmation)
-- **delete_cml_node** - Delete a node (requires confirmation)
+- **wipe_cml_node** - Wipe node data (prompts for confirmation if client supports it)
+- **delete_cml_node** - Delete a node (prompts for confirmation if client supports it)
 - **get_console_log** - Get console output history for a node
 - **send_cli_command** - Execute CLI commands on running nodes (requires PyATS)
 
@@ -121,7 +121,7 @@ The server provides 47 MCP tools organized into the following categories:
 
 - **get_annotations_for_cml_lab** - Get all visual annotations in a lab
 - **add_annotation_to_cml_lab** - Add text, rectangle, ellipse, or line annotations
-- **delete_annotation_from_lab** - Delete an annotation (requires confirmation)
+- **delete_annotation_from_lab** - Delete an annotation (prompts for confirmation if client supports it)
 
 ### Packet Capture (PCAP)
 
@@ -135,10 +135,10 @@ The server provides 47 MCP tools organized into the following categories:
 
 - **get_cml_users** - List all CML users
 - **create_cml_user** - Create a new user (requires admin)
-- **delete_cml_user** - Delete a user (requires admin, requires confirmation)
+- **delete_cml_user** - Delete a user (requires admin, prompts for confirmation if client supports it)
 - **get_cml_groups** - List all CML groups
 - **create_cml_group** - Create a new group (requires admin)
-- **delete_cml_group** - Delete a group (requires admin, requires confirmation)
+- **delete_cml_group** - Delete a group (requires admin, prompts for confirmation if client supports it)
 
 ### System Information
 

@@ -325,6 +325,13 @@ CML_ALLOWED_URLS=https://cml1.example.com,https://cml2.example.com  # Comma-sepa
 CML_URL_PATTERN=^https://cml\.example\.com  # Regex pattern
 # Optional: Enable access control lists for tool restrictions
 CML_MCP_ACL_FILE=/path/to/acl.yaml  # Path to ACL configuration file
+# Optional: Session cache idle TTL in seconds (default: 3600). Authenticated CML sessions
+# are cached and reused across requests. The TTL is an idle timer — it resets on every
+# request, so active sessions stay alive indefinitely. Sessions are automatically closed
+# when they expire. If a cached session's CML token expires mid-use, the server will
+# re-authenticate transparently. Lower this value to reclaim resources sooner after
+# users become inactive, or to force re-authentication after credential rotation.
+CML_SESSION_TTL=3600
 ```
 
 Then run:
@@ -672,6 +679,7 @@ If credentials appear corrupted, you are likely hitting the Cursor / Windows Cla
 - `CML_ALLOWED_URLS` - Comma-separated list of allowed CML URLs in HTTP mode
 - `CML_URL_PATTERN` - Regex pattern for allowed CML URLs (alternative to `CML_ALLOWED_URLS`)
 - `CML_MCP_ACL_FILE` - Path to YAML file for access control lists (tool restrictions per user)
+- `CML_SESSION_TTL` - Idle time-to-live (in seconds) for cached CML sessions in HTTP mode (default: `3600`). The timer resets on every request — sessions only expire after this many seconds of inactivity. Expired sessions are closed automatically. If a cached session's CML token expires mid-use, the server re-authenticates transparently. Lower this value to reclaim resources sooner after users become inactive, or to force re-authentication after credential rotation.
 
 ### Test Environment Variables
 

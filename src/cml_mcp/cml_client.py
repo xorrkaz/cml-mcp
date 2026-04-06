@@ -65,6 +65,7 @@ class CMLClient(object):
 
         self._token = None
         self.admin = None
+        self.needs_reauth = False
 
         self.base_url = host.rstrip("/")
         self.api_base = f"{self.base_url}/api/v0"
@@ -96,9 +97,11 @@ class CMLClient(object):
             )
             resp.raise_for_status()
             self.token = resp.json()
+            self.needs_reauth = False
             logger.info("Authenticated with CML API")
         except Exception as e:
             logger.exception(f"Failed to authenticate with CML API: {e}", exc_info=True)
+            self.needs_reauth = True
             raise e
 
     async def check_authentication(self) -> None:
@@ -106,8 +109,7 @@ class CMLClient(object):
         Check if the current session is authenticated.
         If not, re-authenticate.
         """
-        # Token should always be None when HTTP transport is used.
-        if self.token and self.transport == "stdio":
+        if self.token:
             url = f"{self.base_url}/api/v0/authok"
             try:
                 resp = await self.client.get(url)
@@ -125,7 +127,7 @@ class CMLClient(object):
                 raise e
 
         # If token is None or authentication failed, re-authenticate
-        if not self.token or self.transport == "http":
+        if not self.token:
             logger.debug("[Re-]authenticating with CML API")
             await self.login()
 
@@ -134,11 +136,10 @@ class CMLClient(object):
         Check if the current user is an admin.
         Returns True if the user is an admin, False otherwise.
         """
-        if self.admin is not None and self.transport == "stdio":
+        if self.admin is not None:
             return self.admin
 
-        if self.transport == "stdio":
-            await self.check_authentication()
+        await self.check_authentication()
         try:
             resp = await self.client.get(f"{self.base_url}/api/v0/users/{self.username}/id")
             resp.raise_for_status()
@@ -155,8 +156,7 @@ class CMLClient(object):
         """
         Make a GET request to the CML API.
         """
-        if self.transport == "stdio":
-            await self.check_authentication()
+        await self.check_authentication()
         url = f"{self.api_base}{endpoint}"
         try:
             resp = await self.client.get(url, params=params)
@@ -170,8 +170,7 @@ class CMLClient(object):
         """
         Make a POST request to the CML API.
         """
-        if self.transport == "stdio":
-            await self.check_authentication()
+        await self.check_authentication()
         url = f"{self.api_base}{endpoint}"
         try:
             resp = await self.client.post(url, json=data, params=params)
@@ -187,8 +186,7 @@ class CMLClient(object):
         """
         Make a PUT request to the CML API.
         """
-        if self.transport == "stdio":
-            await self.check_authentication()
+        await self.check_authentication()
         url = f"{self.api_base}{endpoint}"
         try:
             resp = await self.client.put(url, json=data)
@@ -204,8 +202,7 @@ class CMLClient(object):
         """
         Make a DELETE request to the CML API.
         """
-        if self.transport == "stdio":
-            await self.check_authentication()
+        await self.check_authentication()
         url = f"{self.api_base}{endpoint}"
         try:
             resp = await self.client.delete(url)
@@ -221,8 +218,7 @@ class CMLClient(object):
         """
         Make a PATCH request to the CML API.
         """
-        if self.transport == "stdio":
-            await self.check_authentication()
+        await self.check_authentication()
         url = f"{self.api_base}{endpoint}"
         try:
             resp = await self.client.patch(url, json=data)
@@ -242,4 +238,3 @@ class CMLClient(object):
             logger.debug("HTTP client closed successfully")
         except Exception as e:
             logger.error(f"Error closing HTTP client: {e}", exc_info=True)
-            raise

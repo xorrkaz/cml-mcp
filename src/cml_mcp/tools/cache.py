@@ -1,0 +1,111 @@
+# Copyright (c) 2025-2026  Cisco Systems, Inc.
+# All rights reserved.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+
+"""Definitions for a cache for session management."""
+
+import asyncio
+import logging
+import time
+from asyncio import Lock
+from dataclasses import dataclass, field
+from typing import Dict, Optional
+
+from cml_mcp.cml_client import CMLClient
+
+logger = logging.getLogger("cml-mcp.cache")
+
+
+@dataclass
+class CacheEntry:
+    """Represents a cache entry with a value and an expiration time."""
+
+    value: CMLClient
+    timestamp: float = field(default_factory=time.time)
+
+    def is_expired(self, ttl: int) -> bool:
+        """Check if cache entry has exceeded TTL."""
+        return (time.time() - self.timestamp) > ttl
+
+
+class ThreadSafeCache:
+    """Thread-safe cache with TTL support."""
+
+    def __init__(self, ttl: int = 3600):
+        self._cache: Dict[str, CacheEntry] = {}
+        self._lock = Lock()
+        self._ttl = ttl
+
+    async def get(self, key: str) -> Optional[CMLClient]:
+        """Retrieve value from cache if not expired."""
+        expired_client = None
+        async with self._lock:
+            entry = self._cache.get(key)
+            if entry and not entry.is_expired(self._ttl):
+                entry.timestamp = time.time()
+                return entry.value
+            elif entry:
+                logger.debug("Cache entry for key %s has expired", key)
+                del self._cache[key]
+                expired_client = entry.value
+        if expired_client:
+            await expired_client.close()
+        return None
+
+    async def set(self, key: str, value: CMLClient) -> None:
+        """Store value in cache with current timestamp, closing any displaced entry."""
+        async with self._lock:
+            old_entry = self._cache.get(key)
+            self._cache[key] = CacheEntry(value=value)
+        if old_entry and old_entry.value is not value:
+            await old_entry.value.close()
+
+    async def clear(self) -> None:
+        """Clear all cache entries and close all sessions.
+
+        NOTE: Use-after-close race — a concurrent request that already received a
+        client reference via get() may still be mid-flight when this closes it.
+        That request will encounter a 'client already closed' error, but
+        CMLClient.check_authentication() will recover by re-logging in on the
+        next call.  This is acceptable given how rarely clear() is invoked.
+        """
+        async with self._lock:
+            logger.debug("Clearing entire cache")
+            entries = list(self._cache.values())
+            self._cache.clear()
+        await asyncio.gather(*(e.value.close() for e in entries))
+
+    async def invalidate(self, key: str) -> None:
+        """Remove specific cache entry and close its session.
+
+        NOTE: Use-after-close race — a concurrent request that already received
+        this client via get() may still be using it when it is closed here.
+        In practice invalidate() is only called after a re-auth failure, meaning
+        the client was already broken, so any concurrent request using it would
+        have failed regardless.  CMLClient.check_authentication() handles recovery.
+        """
+        async with self._lock:
+            logger.debug("Invalidating cache entry for key: %s", key)
+            entry = self._cache.pop(key, None)
+        if entry:
+            await entry.value.close()

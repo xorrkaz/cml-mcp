@@ -11,13 +11,11 @@ import logging
 import httpx
 from fastmcp import Context
 from fastmcp.exceptions import ToolError
-from mcp.shared.exceptions import McpError
-from mcp.types import INVALID_REQUEST, METHOD_NOT_FOUND
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.nodes import Node, NodeConfigurationContent, NodeCreate
 from cml_mcp.cml_client import CMLClient
-from cml_mcp.tools.dependencies import get_cml_client_dep
+from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
 
 logger = logging.getLogger("cml-mcp.tools.nodes")
 
@@ -196,20 +194,7 @@ def register_tools(mcp):  # noqa: C901
         """
         client = get_cml_client_dep()
         try:
-            elicit_supported = True
-            try:
-                result = await ctx.elicit("Are you sure you want to wipe the node?", response_type=None)
-            except McpError as me:
-                if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
-                    elicit_supported = False
-                else:
-                    raise me
-            except Exception as e:
-                # Handle stream closure errors (common in stateless HTTP when client disconnects)
-                # Treat as if elicit is not supported and proceed without confirmation
-                logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
-                elicit_supported = False
-            if elicit_supported and result.action != "accept":
+            if not await elicit_confirmation(ctx, "Are you sure you want to wipe the node?"):
                 raise Exception("Wipe operation cancelled by user.")
             await wipe_node(lid, nid, client)
             return True
@@ -229,20 +214,7 @@ def register_tools(mcp):  # noqa: C901
         """
         client = get_cml_client_dep()
         try:
-            elicit_supported = True
-            try:
-                result = await ctx.elicit("Are you sure you want to delete the node?", response_type=None)
-            except McpError as me:
-                if me.error.code == METHOD_NOT_FOUND or me.error.code == INVALID_REQUEST:
-                    elicit_supported = False
-                else:
-                    raise me
-            except Exception as e:
-                # Handle stream closure errors (common in stateless HTTP when client disconnects)
-                # Treat as if elicit is not supported and proceed without confirmation
-                logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
-                elicit_supported = False
-            if elicit_supported and result.action != "accept":
+            if not await elicit_confirmation(ctx, "Are you sure you want to delete the node?"):
                 raise Exception("Delete operation cancelled by user.")
             await stop_node(lid, nid, client)  # Ensure the node is stopped before deletion
             await wipe_node(lid, nid, client)
