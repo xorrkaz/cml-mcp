@@ -78,7 +78,7 @@ class Settings(BaseSettings):
     )
     cml_session_ttl: int = Field(
         default=3600,
-        description="Time-to-live for CML client sessions in seconds (only applicable in HTTP transport mode).",
+        description="Idle time in seconds before a cached CML client session expires (only applicable in HTTP transport mode).",
     )
 
 
