@@ -355,9 +355,17 @@ async def test_interface_and_link_mgmt(main_mcp_client: Client[FastMCPTransport]
 async def test_annotation_crud(main_mcp_client: Client[FastMCPTransport], compat_lab):
     """Tools: add_annotation, get_annotations, delete_annotation."""
     ellipse = EllipseAnnotation(
-        x1=100, y1=100, x2=200, y2=200,
-        border_color="#FF0000", thickness=2, border_style="",
-        rotation=0, type="ellipse", color="#00FF00", z_index=1,
+        x1=100,
+        y1=100,
+        x2=200,
+        y2=200,
+        border_color="#FF0000",
+        thickness=2,
+        border_style="",
+        rotation=0,
+        type="ellipse",
+        color="#00FF00",
+        z_index=1,
     )
     e_result = await main_mcp_client.call_tool(
         name="add_annotation_to_cml_lab",
@@ -366,10 +374,18 @@ async def test_annotation_crud(main_mcp_client: Client[FastMCPTransport], compat
     annotation_id = _extract_uuid(e_result)
 
     rect = RectangleAnnotation(
-        x1=200, y1=200, x2=300, y2=100,
-        border_color="#0000FF", thickness=2, border_style="",
-        type="rectangle", color="#FFFF00", z_index=2,
-        border_radius=5, rotation=0,
+        x1=200,
+        y1=200,
+        x2=300,
+        y2=100,
+        border_color="#0000FF",
+        thickness=2,
+        border_style="",
+        type="rectangle",
+        color="#FFFF00",
+        z_index=2,
+        border_radius=5,
+        rotation=0,
     )
     await main_mcp_client.call_tool(
         name="add_annotation_to_cml_lab",
@@ -377,11 +393,21 @@ async def test_annotation_crud(main_mcp_client: Client[FastMCPTransport], compat
     )
 
     text = TextAnnotation(
-        x1=300, y1=300, text_content="Compat Test",
-        color="#000000", rotation=0, z_index=3, type="text",
-        text_bold=False, text_italic=False, text_font="Arial",
-        text_size=14, text_unit="px", thickness=1,
-        border_style="", border_color="#000000",
+        x1=300,
+        y1=300,
+        text_content="Compat Test",
+        color="#000000",
+        rotation=0,
+        z_index=3,
+        type="text",
+        text_bold=False,
+        text_italic=False,
+        text_font="Arial",
+        text_size=14,
+        text_unit="px",
+        thickness=1,
+        border_style="",
+        border_color="#000000",
     )
     await main_mcp_client.call_tool(
         name="add_annotation_to_cml_lab",
@@ -423,11 +449,17 @@ async def test_pcap_and_cli(main_mcp_client: Client[FastMCPTransport]):
 
     try:
         n1 = NodeCreate(
-            node_definition="iol-xe", label="PCAP Node 1", x=0, y=0,
+            node_definition="iol-xe",
+            label="PCAP Node 1",
+            x=0,
+            y=0,
             configuration="hostname PCAP-Node-1\ninterface Ethernet0/0\nip address 192.0.2.1 255.255.255.0\nno shut\n!end\n",
         )
         n2 = NodeCreate(
-            node_definition="iol-xe", label="PCAP Node 2", x=200, y=0,
+            node_definition="iol-xe",
+            label="PCAP Node 2",
+            x=200,
+            y=0,
             configuration="hostname PCAP-Node-2\ninterface Ethernet0/0\nip address 192.0.2.2 255.255.255.0\nno shut\n!end\n",
         )
         n1_id = _extract_uuid(await main_mcp_client.call_tool(name="add_node_to_cml_lab", arguments={"lid": lab_id, "node": n1}))

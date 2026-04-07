@@ -71,15 +71,11 @@ class _CMLSchemaFinder(importlib.abc.MetaPathFinder):
 
     def find_spec(self, fullname, path, target=None):
         if fullname == self._NAMESPACE:
-            return importlib.machinery.ModuleSpec(
-                fullname, _NamespaceLoader(), is_package=True
-            )
+            return importlib.machinery.ModuleSpec(fullname, _NamespaceLoader(), is_package=True)
         for prefix, real_prefix in self._REDIRECTS.items():
             if fullname == prefix or fullname.startswith(prefix + "."):
-                real_name = real_prefix + fullname[len(prefix):]
-                return importlib.machinery.ModuleSpec(
-                    fullname, _SchemaAliasLoader(real_name)
-                )
+                real_name = real_prefix + fullname[len(prefix) :]
+                return importlib.machinery.ModuleSpec(fullname, _SchemaAliasLoader(real_name))
         return None
 
 

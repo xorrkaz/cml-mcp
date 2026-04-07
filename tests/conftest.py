@@ -337,6 +337,7 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "mock_only: mark test to run only with mocks")
     config.addinivalue_line("markers", "slow: mark test to run slowly")
 
+
 def pytest_collection_modifyitems(config, items):
     """Skip tests based on USE_MOCKS setting."""
     skip_live = pytest.mark.skip(reason="Skipped in mock mode (USE_MOCKS=true)")

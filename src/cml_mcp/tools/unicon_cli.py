@@ -3,9 +3,9 @@ import logging
 import yaml
 from unicon import Connection
 
-from cml_mcp.cml_client import CMLClient
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.nodes import NodeLabel
+from cml_mcp.cml_client import CMLClient
 
 logger = logging.getLogger("cml-mcp.tools.unicon_cli")
 
@@ -20,6 +20,11 @@ def unicon_send_cli_command_sync(
     commands: str,
     config_command: bool,
 ) -> str:
+    resp = client.vclient._session.get(f"/labs/{lid}")
+    lab_data = resp.json()
+    if "lab_exec" not in lab_data["effective_permissions"]:
+        raise Exception("You do not have permission to execute commands in this lab's nodes")
+
     resp = client.vclient._session.get(f"/labs/{lid}/pyats_testbed")
     pyats_data = yaml.safe_load(resp.text)
     device_pyats_data = pyats_data["devices"][label]
