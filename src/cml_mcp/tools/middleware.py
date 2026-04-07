@@ -223,7 +223,7 @@ class CustomHttpRequestMiddleware(Middleware):
         verify_ssl = verify_ssl_header == "true"
 
         auth_header = headers.get("x-authorization")
-        if not auth_header or not auth_header.startswith("Basic "):
+        if not auth_header or " " not in auth_header:
             logger.warning("Request rejected: missing or invalid X-Authorization header")
             raise McpError(ErrorData(message="Unauthorized: Missing or invalid X-Authorization header", code=-31002))
         parts = auth_header.split(" ", 1)
@@ -237,7 +237,7 @@ class CustomHttpRequestMiddleware(Middleware):
             logger.warning("Request rejected: failed to decode X-Authorization credentials")
             raise McpError(ErrorData(message="Failed to decode Basic authentication credentials", code=-31002))
         pyats_header = headers.get("x-pyats-authorization")
-        if pyats_header and pyats_header.startswith("Basic "):
+        if pyats_header and " " in pyats_header:
             pyats_parts = pyats_header.split(" ", 1)
             if len(pyats_parts) != 2 or pyats_parts[0].lower() != "basic":
                 logger.warning("Request rejected: malformed X-PyATS-Authorization header")
@@ -253,7 +253,7 @@ class CustomHttpRequestMiddleware(Middleware):
                 logger.warning("Request rejected: failed to decode X-PyATS-Authorization credentials")
                 raise McpError(ErrorData(message="Failed to decode Basic authentication credentials for PyATS", code=-31002))
             pyats_enable_header = headers.get("x-pyats-enable")
-            if pyats_enable_header and pyats_enable_header.startswith("Basic "):
+            if pyats_enable_header and " " in pyats_enable_header:
                 pyats_enable_parts = pyats_enable_header.split(" ", 1)
                 if len(pyats_enable_parts) != 2 or pyats_enable_parts[0].lower() != "basic":
                     logger.warning("Request rejected: malformed X-PyATS-Enable header")
