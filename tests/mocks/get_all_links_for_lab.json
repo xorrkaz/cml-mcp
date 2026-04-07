@@ -7,7 +7,7 @@
     "id": "527ea2bc-4ae8-45c0-8639-7ccf6f307ad9",
     "label": "MCP Test Node 1-Ethernet0/0<->MCP Test Node 2-Ethernet0/0",
     "lab_id": "e744eb7d-3099-4ee6-8880-ab2617ecfbff",
-    "link_capture_key": "",
+    "link_capture_key": null,
     "state": "DEFINED_ON_CORE"
   }
 ]

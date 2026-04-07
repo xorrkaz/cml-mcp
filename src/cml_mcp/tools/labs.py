@@ -116,7 +116,7 @@ def register_tools(mcp):  # noqa: C901
                 lab_details = await client.get(f"/labs/{lab}")
                 # Only include labs owned by the specified user
                 if not user or lab_details.get("owner_username") == str(user):
-                    ulabs.append(Lab(**lab_details).model_dump(exclude_unset=True))
+                    ulabs.append(Lab(**lab_details))
             return ulabs
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -143,7 +143,7 @@ def register_tools(mcp):  # noqa: C901
             # representation of the argument object.
             if isinstance(lab, dict):
                 lab = LabRequest(**lab)
-            resp = await client.post("/labs", data=lab.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
+            resp = await client.post("/labs", data=lab.model_dump(mode="json", exclude_none=True))
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -170,7 +170,7 @@ def register_tools(mcp):  # noqa: C901
             # representation of the argument object.
             if isinstance(lab, dict):
                 lab = LabRequest(**lab)
-            await client.patch(f"/labs/{lid}", data=lab.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
+            await client.patch(f"/labs/{lid}", data=lab.model_dump(mode="json", exclude_none=True))
             return True
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -332,7 +332,7 @@ def register_tools(mcp):  # noqa: C901
             for lid in labs:
                 lab = await client.get(f"/labs/{lid}")
                 if lab["lab_title"] == str(title):
-                    return Lab(**lab).model_dump(exclude_unset=True)
+                    return Lab(**lab)
             raise ValueError(f"Lab with title '{title}' not found.")
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")

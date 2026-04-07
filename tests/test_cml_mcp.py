@@ -58,6 +58,8 @@ from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
 from cml_mcp.cml.simple_webserver.schemas.users import UserCreate, UserResponse
 from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse
 
+pytestmark = pytest.mark.slow
+
 
 def _to_model(obj, cls):
     """Coerce a dict or dataclass to a Pydantic model instance."""

@@ -12,13 +12,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 55,
     "link_count": 67,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "599d42fa-5609-44f4-8a7d-7115c8cc0618",
@@ -33,13 +34,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 6,
     "link_count": 5,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "09fc6426-d7c8-4faa-af86-8b90afbcee45",
@@ -54,13 +56,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 9,
     "link_count": 8,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "6588cb6c-0dab-4e36-90c5-2511c3e64fdc",
@@ -75,13 +78,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 10,
     "link_count": 9,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "ce549349-cee0-445b-8152-f00bd184924e",
@@ -96,13 +100,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 2,
     "link_count": 1,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "9ce030fa-bd99-4800-916e-02a342e4a04c",
@@ -117,13 +122,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 9,
     "link_count": 1,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "b36d5424-0edd-43ec-96d7-bd8a010cbca7",
@@ -138,13 +144,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 51,
     "link_count": 80,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "2953376a-74e8-4527-9fa1-2078f9c65e81",
@@ -159,13 +166,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 2,
     "link_count": 1,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "dddf5f77-1c10-4a60-8019-b503841dde6b",
@@ -180,13 +188,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 8,
     "link_count": 9,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "8ceca915-4960-4475-b6f6-313949fe872c",
@@ -201,13 +210,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 7,
     "link_count": 6,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "7877701d-8f1a-4b64-a0dd-9c8d4812dc58",
@@ -222,13 +232,14 @@
     "state": "STOPPED",
     "node_count": 7,
     "link_count": 6,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "24000793-2450-45b6-bba3-4326d2f70891",
@@ -243,19 +254,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 9,
     "link_count": 13,
-    "groups": [
-      {
-        "id": "723612e1-3362-491b-b7c8-b5598503f1ea",
-        "permission": "read_only",
-        "name": "Worker Bees"
-      }
-    ],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "88119b68-9d08-40c4-90f5-6dc533fd0254",
@@ -270,13 +276,14 @@
     "state": "STOPPED",
     "node_count": 8,
     "link_count": 7,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "8fad8991-ea12-4bc2-804f-a18495ef491f",
@@ -291,13 +298,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 3,
     "link_count": 2,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "2f15b408-442d-4fc1-b1a4-34556a53ef7e",
@@ -312,13 +320,14 @@
     "state": "STOPPED",
     "node_count": 2,
     "link_count": 1,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "6e67d6c7-ae19-46b9-a895-14ae4b89088b",
@@ -333,13 +342,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 6,
     "link_count": 7,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "412897eb-296b-4a18-b308-91b2b4ef197f",
@@ -354,13 +364,14 @@
     "state": "STOPPED",
     "node_count": 5,
     "link_count": 4,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "410f59f7-a25d-480f-b8c9-6cd8d3221c6a",
@@ -375,13 +386,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 37,
     "link_count": 58,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "23ce1eb6-9142-491d-a759-00575f2d0aa9",
@@ -396,13 +408,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 8,
     "link_count": 7,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "608f7f3c-ca50-4437-aa64-e684580372e0",
@@ -417,13 +430,14 @@
     "state": "STOPPED",
     "node_count": 7,
     "link_count": 8,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "053a7ed9-541d-43eb-afc3-7ff152f50166",
@@ -438,13 +452,14 @@
     "state": "STOPPED",
     "node_count": 6,
     "link_count": 8,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "e765ee1a-e617-46e2-b499-a4365dc17f13",
@@ -459,13 +474,14 @@
     "state": "STOPPED",
     "node_count": 2,
     "link_count": 1,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "754534dc-9ab2-4582-aedc-e8e5c6a69353",
@@ -480,13 +496,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 12,
     "link_count": 22,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "d501982b-9ecc-43f4-9d27-bf7fbf48de4e",
@@ -501,13 +518,14 @@
     "state": "STOPPED",
     "node_count": 6,
     "link_count": 6,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "391af840-5a60-4770-bace-c058da29b18a",
@@ -522,13 +540,14 @@
     "state": "STOPPED",
     "node_count": 4,
     "link_count": 3,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "a606d900-513b-4af2-ab31-d184b4b246ab",
@@ -543,13 +562,14 @@
     "state": "STOPPED",
     "node_count": 2,
     "link_count": 1,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "418c0400-77d3-41f2-be6a-ddc9473c278f",
@@ -564,20 +584,21 @@
     "state": "STOPPED",
     "node_count": 7,
     "link_count": 6,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "90db8bf9-6ec1-4777-82c0-65b4e66279c3",
     "created": "2022-11-04T17:44:59+00:00",
     "modified": "2023-10-10T17:08:48+00:00",
     "lab_description": "",
-    "lab_notes": "**ENARSI BGP Troubleshooting**\n\nTo complete this lab you must do the following:\n\nFull-mesh IBGP peering in AS 65001 uses Loopback1 interfaces instead of directly connected interfaces. R2 and R3 advertise correct next hop information to their IBGP peers. EBGP peering between R2 and R4 uses Loopback1 interfaces instead of directly connected interfaces.\n\nR6 should prefer the path through R7 to reach the 10.1.1.0/24 network.\n\nWhy isn’t BGP working throughout? There are five neighbour relationship issues, one routing issues, and one path selection issue.\n\nFind and fix the problems and make sure all loopbacks are pingable!\n\nImport the `topology.yaml` file to have a base with which to work. If you get stuck, import the `topology-solution.yaml` file to see the fully working topology.",
+    "lab_notes": "**ENARSI BGP Troubleshooting**\n\nTo complete this lab you must do the following:\n\nFull-mesh IBGP peering in AS 65001 uses Loopback1 interfaces instead of directly connected interfaces. R2 and R3 advertise correct next hop information to their IBGP peers. EBGP peering between R2 and R4 uses Loopback1 interfaces instead of directly connected interfaces.\n\nR6 should prefer the path through R7 to reach the 10.1.1.0/24 network.\n\nWhy isn\u2019t BGP working throughout? There are five neighbour relationship issues, one routing issues, and one path selection issue.\n\nFind and fix the problems and make sure all loopbacks are pingable!\n\nImport the `topology.yaml` file to have a base with which to work. If you get stuck, import the `topology-solution.yaml` file to see the fully working topology.",
     "lab_title": "Sample Lab 2 (BGP Troubleshooting)",
     "owner": "4cfc3696-4df0-49a3-a0dd-7bbd9271fe67",
     "owner_username": "admin",
@@ -585,13 +606,14 @@
     "state": "STOPPED",
     "node_count": 8,
     "link_count": 9,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "f511271e-c8f5-4d64-8672-2785bd99f625",
@@ -606,13 +628,14 @@
     "state": "STOPPED",
     "node_count": 2,
     "link_count": 1,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "c745f1b4-45b3-40f8-b330-05d1898b0380",
@@ -627,13 +650,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 10,
     "link_count": 9,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "3364f127-5f97-48b8-9870-7d7f9d190d10",
@@ -641,20 +665,21 @@
     "modified": "2023-05-02T19:44:57+00:00",
     "lab_description": "",
     "lab_notes": "",
-    "lab_title": "µT Policy Routing",
+    "lab_title": "\u00b5T Policy Routing",
     "owner": "4cfc3696-4df0-49a3-a0dd-7bbd9271fe67",
     "owner_username": "admin",
     "owner_fullname": "",
     "state": "STOPPED",
     "node_count": 8,
     "link_count": 6,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "9a1499eb-9688-4d38-83db-7cb03692f562",
@@ -669,13 +694,14 @@
     "state": "STOPPED",
     "node_count": 8,
     "link_count": 9,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "64736e65-3a27-41f1-b03a-81faaf3aba11",
@@ -690,13 +716,14 @@
     "state": "STOPPED",
     "node_count": 2,
     "link_count": 1,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "2bfa2324-d646-4c06-a085-8d803dd24af1",
@@ -711,13 +738,14 @@
     "state": "STOPPED",
     "node_count": 8,
     "link_count": 9,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "f7f8d748-a877-4e7c-8580-ef216b1a953b",
@@ -732,13 +760,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 8,
     "link_count": 9,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "28543b17-0a67-478f-8ac1-6cacbf5319b8",
@@ -753,13 +782,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 7,
     "link_count": 6,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "91f2bddd-39f3-4a06-b80a-c50a6b4ef998",
@@ -774,13 +804,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 7,
     "link_count": 6,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "ecd628a3-9797-4e7e-8984-624b6a5e8869",
@@ -795,13 +826,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 2,
     "link_count": 1,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "331c5d82-fa75-4f55-98e2-8e43b474e33b",
@@ -816,13 +848,14 @@
     "state": "STOPPED",
     "node_count": 7,
     "link_count": 6,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "c57d75b9-fa7d-4901-9096-567db0cc1942",
@@ -837,13 +870,14 @@
     "state": "STOPPED",
     "node_count": 7,
     "link_count": 6,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "668c9047-45a9-486d-a633-952444eb4410",
@@ -858,13 +892,14 @@
     "state": "STOPPED",
     "node_count": 7,
     "link_count": 6,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "23412ef4-c912-4b8b-a4f4-6faae9e56d6f",
@@ -879,13 +914,14 @@
     "state": "STOPPED",
     "node_count": 8,
     "link_count": 14,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "b11489d4-40a3-4af2-a468-3282e8333ad7",
@@ -900,13 +936,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 2,
     "link_count": 1,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "931162a6-e65b-4020-b650-390347588d7b",
@@ -921,13 +958,14 @@
     "state": "STOPPED",
     "node_count": 5,
     "link_count": 4,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "09f04b1e-2a30-4876-8a13-7fed7097f59e",
@@ -942,13 +980,14 @@
     "state": "STOPPED",
     "node_count": 5,
     "link_count": 4,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "f033596a-fe83-4d05-aaac-45865d0a50b5",
@@ -963,13 +1002,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 3,
     "link_count": 2,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "0ad7cae7-1f6d-46d9-af3a-7848053ed922",
@@ -984,13 +1024,14 @@
     "state": "STOPPED",
     "node_count": 2,
     "link_count": 1,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "cdc6541f-3fc6-4fa3-8cd1-4c5335b3817f",
@@ -1005,13 +1046,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 2,
     "link_count": 0,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "9c84336d-777e-4ee1-87a3-f644733a3921",
@@ -1026,13 +1068,14 @@
     "state": "STOPPED",
     "node_count": 3,
     "link_count": 1,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "eaf93adc-5336-467b-8ce4-ca4edc0a5a46",
@@ -1047,13 +1090,14 @@
     "state": "STOPPED",
     "node_count": 3,
     "link_count": 2,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "f6af1643-c484-4923-9108-99223dad4ee0",
@@ -1068,13 +1112,14 @@
     "state": "DEFINED_ON_CORE",
     "node_count": 2,
     "link_count": 1,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "cf84bb0a-5ea8-4217-8e2c-6d44002f6feb",
@@ -1089,13 +1134,14 @@
     "state": "STARTED",
     "node_count": 4,
     "link_count": 3,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "c49af25b-2fa9-465f-9a56-2342b7b4f0d2",
@@ -1110,13 +1156,14 @@
     "state": "STOPPED",
     "node_count": 8,
     "link_count": 7,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   },
   {
     "id": "5d0569c9-7327-4b5f-ab67-48a581f47c65",
@@ -1131,12 +1178,13 @@
     "state": "STARTED",
     "node_count": 5,
     "link_count": 4,
-    "groups": [],
     "effective_permissions": [
       "lab_exec",
       "lab_view",
       "lab_edit",
       "lab_admin"
-    ]
+    ],
+    "autostart": {},
+    "node_staging": {}
   }
 ]

@@ -25,6 +25,10 @@ build:
     uv build
     docker buildx build --platform linux/amd64,linux/arm64 -t xorrkaz/cml-mcp:latest -t xorrkaz/cml-mcp:$(uv version --short) .
 
+[group('build')]
+build-cml:
+    pip wheel --no-deps --wheel-dir dist .
+
 # Update dependencies
 [group('lifecycle')]
 update:

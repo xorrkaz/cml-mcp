@@ -8,12 +8,11 @@
     "groups": [],
     "associations": [],
     "resource_pool": null,
-    "opt_in": true,
+    "opt_in": "accepted",
     "tour_version": "2.6.0+build.5",
     "id": "4cfc3696-4df0-49a3-a0dd-7bbd9271fe67",
     "created": "2020-04-16T13:41:10+00:00",
     "modified": "2025-11-26T15:23:04+00:00",
-    "directory_dn": null,
     "labs": [
       "6db4c3fb-e5a4-4b9d-9610-bf9353dc137b",
       "599d42fa-5609-44f4-8a7d-7115c8cc0618",
@@ -90,12 +89,11 @@
       }
     ],
     "resource_pool": null,
-    "opt_in": true,
+    "opt_in": "accepted",
     "tour_version": "2.9.0+build.3",
     "id": "437a0a68-7429-4d97-b76d-d754faa973c3",
     "created": "2020-05-14T16:47:16+00:00",
     "modified": "2025-10-04T19:04:58+00:00",
-    "directory_dn": null,
     "labs": [
       "f6af1643-c484-4923-9108-99223dad4ee0"
     ],
@@ -110,12 +108,11 @@
     "groups": [],
     "associations": [],
     "resource_pool": null,
-    "opt_in": null,
+    "opt_in": "unset",
     "tour_version": "",
     "id": "ab917397-dadc-43b0-b968-bd9bfe0cb0df",
     "created": "2020-05-20T12:27:52+00:00",
     "modified": "2020-05-20T12:27:52+00:00",
-    "directory_dn": null,
     "labs": [],
     "pubkey_info": ""
   },
@@ -130,12 +127,11 @@
     ],
     "associations": [],
     "resource_pool": null,
-    "opt_in": null,
+    "opt_in": "unset",
     "tour_version": "",
     "id": "f02a2009-714c-402c-b4c1-192f0e3a243c",
     "created": "2021-03-15T14:02:35+00:00",
     "modified": "2021-03-15T14:02:35+00:00",
-    "directory_dn": null,
     "labs": [],
     "pubkey_info": ""
   }

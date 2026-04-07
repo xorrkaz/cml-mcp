@@ -19,7 +19,13 @@ from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.nodes import NodeLabel
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import _pyats_auth_pass, _pyats_password, _pyats_username, get_cml_client_dep
+from cml_mcp.tools.unicon_cli import TERMWS_BINARY, unicon_send_cli_command_sync
 from cml_mcp.types import ConsoleLogOutput
+
+try:
+    from pyats.topology.loader.base import TestbedFileLoader as _PyatsTFLoader
+except ImportError:
+    _PyatsTFLoader = None
 
 logger = logging.getLogger("cml-mcp.tools.cli")
 
@@ -134,6 +140,10 @@ def register_tools(mcp):
         config_command=false (default): exec/operational mode. config_command=true: config mode (omit "configure terminal"/"end").
         Returns command output text.
         """
+        if _PyatsTFLoader is None and os.path.exists(TERMWS_BINARY):
+            exec_tool = unicon_send_cli_command_sync
+        else:
+            exec_tool = _send_cli_command_sync
         client = get_cml_client_dep()
 
         # Verify vclient is available
@@ -145,7 +155,7 @@ def register_tools(mcp):
         # Use asyncio.to_thread to prevent blocking the event loop with synchronous operations
         # and to avoid os.chdir() race conditions between concurrent requests
         try:
-            output = await asyncio.to_thread(_send_cli_command_sync, client, lid, label, commands, config_command)
+            output = await asyncio.to_thread(exec_tool, client, lid, label, commands, config_command)
             return output
         except Exception as e:
             logger.error(f"Error sending CLI command '{commands}' to node {label} in lab {lid}: {str(e)}", exc_info=True)

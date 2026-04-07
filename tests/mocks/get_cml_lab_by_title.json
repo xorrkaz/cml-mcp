@@ -11,11 +11,12 @@
   "state": "DEFINED_ON_CORE",
   "node_count": 0,
   "link_count": 0,
-  "groups": [],
   "effective_permissions": [
     "lab_view",
     "lab_admin",
     "lab_exec",
     "lab_edit"
-  ]
+  ],
+  "autostart": {},
+  "node_staging": {}
 }

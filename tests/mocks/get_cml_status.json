@@ -14,7 +14,10 @@
       "valid": true,
       "admission_state": "READY",
       "is_controller": true,
-      "hostname": "cml-controller"
+      "hostname": "cml-controller",
+      "cpu_overload": false,
+      "memory_overload": false,
+      "disk_overload": false
     }
   },
   "is_licensed": true,
@@ -23,6 +26,10 @@
     "core_connected": true,
     "nodes_loaded": true,
     "images_loaded": true,
-    "valid": true
+    "valid": true,
+    "airhandler": true,
+    "dispatcher": true,
+    "ipsnooper": true,
+    "pcapdemux": true
   }
 }
