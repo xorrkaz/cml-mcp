@@ -90,32 +90,30 @@ def register_tools(mcp):
     ) -> list[ConsoleLogOutput]:
         """
         Get console output history by lab and node UUID. Node must be started.
-        Returns list of log entries with time (ms since start) and message. Includes all console ports.
+        Returns log entries from the selected serial console (default 0) with
+        time (ms since start) and message.
         Useful for troubleshooting, monitoring boot progress, and verifying CLI command results.
         """
         client = get_cml_client_dep()
         return_lines = []
-        for i in range(0, 2):  # Assume a maximum of 2 consoles per node
-            try:
-                resp = await client.get(f"/labs/{lid}/nodes/{nid}/consoles/{i}/log")
-            except httpx.HTTPStatusError as e:
-                if e.response.status_code == 400:
-                    continue  # Console index does not exist, try the next one
-                else:
-                    raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
-            except Exception as e:
-                logger.error(f"Error getting console log for node {nid} in lab {lid}: {str(e)}", exc_info=True)
-                raise ToolError(e)
-            lines = re.split(r"\r?\n", resp)
-            for line in lines:
-                if not line.startswith("|"):
-                    if len(return_lines) > 0:
-                        # Append to the last message if the line does not start with a timestamp
-                        return_lines[-1].message += "\n" + line
-                    continue
-                _, log_time, msg = line.split("|", 2)
-                return_lines.append(ConsoleLogOutput(time=int(log_time), message=msg))
-
+        try:
+            resp = await client.get(f"/labs/{lid}/nodes/{nid}/consoles/{console}/log")
+        except httpx.HTTPStatusError as e:
+            if e.response.status_code == 400:
+                raise ToolError(f"Console index {console} does not exist for node {nid}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+        except Exception as e:
+            logger.exception("Error getting console log for node %s in lab %s", nid, lid)
+            raise ToolError(e)
+        lines = re.split(r"\r?\n", resp)
+        for line in lines:
+            if not line.startswith("|"):
+                if len(return_lines) > 0:
+                    # Append to the last message if the line does not start with a timestamp
+                    return_lines[-1].message += "\n" + line
+                continue
+            _, log_time, msg = line.split("|", 2)
+            return_lines.append(ConsoleLogOutput(time=int(log_time), message=msg))
         return return_lines
 
     @mcp.tool(
@@ -145,7 +143,7 @@ def register_tools(mcp):
         # Use asyncio.to_thread to prevent blocking the event loop with synchronous operations
         # and to avoid os.chdir() race conditions between concurrent requests
         try:
-            output = await asyncio.to_thread(_send_cli_command_sync, client, lid, label, commands, config_command)
+            output = await asyncio.to_thread(_send_cli_command_sync, client, lid, label, commands, config_command, console)
             return output
         except Exception as e:
             logger.error(f"Error sending CLI command '{commands}' to node {label} in lab {lid}: {str(e)}", exc_info=True)
