@@ -76,8 +76,8 @@ async def cleanup_global_client() -> None:
         try:
             await cml_client.close()
             logger.info("Successfully closed global CML client")
-        except Exception as e:
-            logger.error(f"Error closing global CML client: {e}", exc_info=True)
+        except Exception:
+            logger.exception("Error closing global CML client")
     else:
         logger.debug("No global CML client to clean up (HTTP mode or client is None)")
 

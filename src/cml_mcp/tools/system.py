@@ -37,7 +37,7 @@ def register_tools(mcp):
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error getting CML information: {str(e)}", exc_info=True)
+            logger.exception("Error getting CML information")
             raise ToolError(e)
 
     @mcp.tool(
@@ -57,7 +57,7 @@ def register_tools(mcp):
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error getting CML status: {str(e)}", exc_info=True)
+            logger.exception("Error getting CML status")
             raise ToolError(e)
 
     @mcp.tool(
@@ -77,7 +77,7 @@ def register_tools(mcp):
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error getting CML statistics: {str(e)}", exc_info=True)
+            logger.exception("Error getting CML statistics")
             raise ToolError(e)
 
     @mcp.tool(
@@ -100,5 +100,5 @@ def register_tools(mcp):
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error getting CML licensing details: {str(e)}", exc_info=True)
+            logger.exception("Error getting CML licensing details")
             raise ToolError(e)

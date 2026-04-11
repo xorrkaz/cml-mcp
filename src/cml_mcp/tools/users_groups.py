@@ -41,7 +41,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error getting CML user information: {str(e)}", exc_info=True)
+            logger.exception("Error getting CML user information")
             raise ToolError(e)
 
     @mcp.tool(
@@ -69,7 +69,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error creating CML user: {str(e)}", exc_info=True)
+            logger.exception("Error creating CML user")
             raise ToolError(e)
 
     @mcp.tool(
@@ -99,7 +99,7 @@ def register_tools(mcp):  # noqa: C901
             except Exception as e:
                 # Handle stream closure errors (common in stateless HTTP when client disconnects)
                 # Treat as if elicit is not supported and proceed without confirmation
-                logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
+                logger.debug("elicit() failed (possibly client disconnect): %s: %s", type(e).__name__, e)
                 elicit_supported = False
             if elicit_supported and result.action != "accept":
                 raise Exception("Delete operation cancelled by user.")
@@ -108,7 +108,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error deleting CML user: {str(e)}", exc_info=True)
+            logger.exception("Error deleting CML user")
             raise ToolError(e)
 
     @mcp.tool(
@@ -128,7 +128,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error getting CML group information: {str(e)}", exc_info=True)
+            logger.exception("Error getting CML group information")
             raise ToolError(e)
 
     @mcp.tool(
@@ -156,7 +156,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error creating CML group: {str(e)}", exc_info=True)
+            logger.exception("Error creating CML group")
             raise ToolError(e)
 
     @mcp.tool(
@@ -186,7 +186,7 @@ def register_tools(mcp):  # noqa: C901
             except Exception as e:
                 # Handle stream closure errors (common in stateless HTTP when client disconnects)
                 # Treat as if elicit is not supported and proceed without confirmation
-                logger.debug(f"elicit() failed (possibly client disconnect): {type(e).__name__}: {e}")
+                logger.debug("elicit() failed (possibly client disconnect): %s: %s", type(e).__name__, e)
                 elicit_supported = False
             if elicit_supported and result.action != "accept":
                 raise Exception("Delete operation cancelled by user.")
@@ -195,5 +195,5 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error deleting CML group: {str(e)}", exc_info=True)
+            logger.exception("Error deleting CML group")
             raise ToolError(e)
