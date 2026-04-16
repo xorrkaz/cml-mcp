@@ -36,18 +36,20 @@ The easiest way to get started is using `uvx` with Claude Desktop (or other MCP-
 **Configuration:** Find and edit your Claude Desktop configuration file (`claude_desktop_config.json`). Add the following:
 
 ```json
-"mcpServers": {                                                               
-    "cml-mcp": {                                                                
-      "type": "stdio",                                                          
-      "command": "{FULL_PATH}/uvx",                                  
-      "args": [                                                                 
-        "cml-mcp[pyats]"                                                        
-      ],                                                                        
-      "env": {
-        "CML_URL": "{CML_URL}",                           
-        "CML_USERNAME": "{CML_USERNAME}",                                                 
-        "CML_PASSWORD": "{CML_PASSWORD}!"
-      }                                                                         
+{
+    "mcpServers": {                                                               
+        "cml-mcp": {                                                                
+          "type": "stdio",                                                          
+          "command": "{FULL_PATH}/uvx",                                  
+          "args": [                                                                 
+            "cml-mcp[pyats]"                                                        
+          ],                                                                        
+          "env": {
+            "CML_URL": "{CML_URL}",                           
+            "CML_USERNAME": "{CML_USERNAME}",                                                 
+            "CML_PASSWORD": "{CML_PASSWORD}!"
+          }                                                                         
+        }
     }
 }
 ```
