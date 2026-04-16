@@ -68,6 +68,14 @@ This is the standard way to connect your AI assistant (like Claude Desktop) dire
 
 **What is uvx?** It's a tool that automatically downloads and runs Python packages without manual installation steps. Perfect for getting started quickly!
 
+> [!NOTE]
+> **About command paths in MCP configs:** MCP clients like Claude Desktop and Cursor launch tools in a restricted environment that does not always inherit your terminal's `PATH`. If you get a "command not found" error for `uvx`, `uv`, `npx`, or another command, replace the command name in the `"command"` field with its full path. To find the full path:
+> - **macOS/Linux:** Run `which uvx` (or `which uv`, `which npx`) in your terminal
+> - **Windows (Command Prompt):** Run `where uvx`
+> - **Windows (PowerShell):** Run `(Get-Command uvx).Source`
+>
+> For example, replace `"uvx"` with `"/Users/alice/.local/bin/uvx"` on macOS, or `"C:\Users\alice\.local\bin\uvx.exe"` on Windows.
+
 #### Basic Installation (No CLI Support)
 
 This configuration gives you most features and works on any platform (Linux, Mac, Windows). You'll be able to create labs, add devices, configure them, and more. The only thing you won't be able to do is execute show commands directly on running devices.
@@ -453,6 +461,9 @@ Now that you have your Base64-encoded credentials, add this to your MCP client c
 - `<server_host>`: The hostname or HTTPS address of your reverse proxy (e.g., `cml-mcp.mycompany.com`)
 - `<base64_encoded_cml_credentials>`: Paste the Base64 string you generated for your CML username:password
 - `<base64_encoded_device_credentials>`: Paste the Base64 string you generated for your device username:password
+
+> [!TIP]
+> **`npx` not found?** `npx` is included with Node.js but may not be on the PATH seen by your MCP client. Run `which npx` (macOS/Linux) or `where npx` (Windows) in a terminal to get the full path, then replace `"npx"` in the `"command"` field with that value (e.g., `"/usr/local/bin/npx"`).
 
 #### HTTPS with Self-Signed Certificates
 

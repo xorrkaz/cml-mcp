@@ -40,7 +40,7 @@ The easiest way to get started is using `uvx` with Claude Desktop (or other MCP-
     "mcpServers": {                                                               
         "cml-mcp": {                                                                
           "type": "stdio",                                                          
-          "command": "{FULL_PATH}/uvx",                                  
+          "command": "uvx",
           "args": [                                                                 
             "cml-mcp[pyats]"                                                        
           ],                                                                        
@@ -59,6 +59,9 @@ The easiest way to get started is using `uvx` with Claude Desktop (or other MCP-
 - `CML_URL`: Your CML server address (e.g., `https://cml.example.com` or `https://10.10.20.50`)
 - `CML_USERNAME` and `CML_PASSWORD`: Your CML login credentials
 - Set `CML_VERIFY_SSL` to `"false"` if using self-signed certificates (common in lab environments)
+
+> [!TIP]
+> **"Command not found" for `uvx`?** MCP clients like Claude Desktop run in a restricted environment that does not always inherit your shell's `PATH`. If `uvx` can't be found, use its full path in the `"command"` field. To find it, run `which uvx` in a terminal on macOS/Linux, or `where uvx` in Command Prompt on Windows (e.g., `"/Users/alice/.local/bin/uvx"` on macOS, `"C:\Users\alice\.local\bin\uvx.exe"` on Windows). The same applies to `uv`, `npx`, or any other command used in MCP configurations.
 
 **Need more capabilities?**
 
