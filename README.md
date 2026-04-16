@@ -37,18 +37,20 @@ The easiest way to get started is using `uvx` with Claude Desktop (or other MCP-
 
 ```json
 {
-  "mcpServers": {
-    "Cisco Modeling Labs (CML)": {
-      "command": "uvx",
-      "args": ["cml-mcp"],
-      "env": {
-        "CML_URL": "https://your-cml-server.example.com",
-        "CML_USERNAME": "your_username",
-        "CML_PASSWORD": "your_password",
-        "CML_VERIFY_SSL": "false"
-      }
+    "mcpServers": {                                                               
+        "cml-mcp": {                                                                
+          "type": "stdio",                                                          
+          "command": "{FULL_PATH}/uvx",                                  
+          "args": [                                                                 
+            "cml-mcp[pyats]"                                                        
+          ],                                                                        
+          "env": {
+            "CML_URL": "{CML_URL}",                           
+            "CML_USERNAME": "{CML_USERNAME}",                                                 
+            "CML_PASSWORD": "{CML_PASSWORD}!"
+          }                                                                         
+        }
     }
-  }
 }
 ```
 
