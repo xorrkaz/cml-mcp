@@ -70,6 +70,7 @@ This is the standard way to connect your AI assistant (like Claude Desktop) dire
 
 > [!NOTE]
 > **About command paths in MCP configs:** MCP clients like Claude Desktop and Cursor launch tools in a restricted environment that does not always inherit your terminal's `PATH`. If you get a "command not found" error for `uvx`, `uv`, `npx`, or another command, replace the command name in the `"command"` field with its full path. To find the full path:
+>
 > - **macOS/Linux:** Run `which uvx` (or `which uv`, `which npx`) in your terminal
 > - **Windows (Command Prompt):** Run `where uvx`
 > - **Windows (PowerShell):** Run `(Get-Command uvx).Source`
