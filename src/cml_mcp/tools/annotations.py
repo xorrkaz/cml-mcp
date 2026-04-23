@@ -63,7 +63,7 @@ def register_tools(mcp):
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error getting annotations for lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error getting annotations for lab %s", lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -114,7 +114,7 @@ def register_tools(mcp):
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error adding annotation to lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error adding annotation to lab %s", lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -142,5 +142,5 @@ def register_tools(mcp):
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error deleting annotation {annotation_id} from lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error deleting annotation %s from lab %s", annotation_id, lid)
             raise ToolError(e)

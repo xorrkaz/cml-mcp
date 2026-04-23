@@ -76,7 +76,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error getting nodes for CML lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error getting nodes for CML lab %s", lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -109,7 +109,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error adding CML node to lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error adding CML node to lab %s", lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -132,7 +132,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error configuring CML node {nid} in lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error configuring CML node %s in lab %s", nid, lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -149,7 +149,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error stopping CML node {nid} in lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error stopping CML node %s in lab %s", nid, lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -181,7 +181,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error starting CML node {nid} in lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error starting CML node %s in lab %s", nid, lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -201,7 +201,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error wiping CML node {nid} in lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error wiping CML node %s in lab %s", nid, lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -223,5 +223,5 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error deleting CML node {nid} in lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error deleting CML node %s in lab %s", nid, lid)
             raise ToolError(e)

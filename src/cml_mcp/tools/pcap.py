@@ -47,7 +47,7 @@ def register_tools(mcp):
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error starting packet capture on link {link_id} in lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error starting packet capture on link %s in lab %s", link_id, lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -64,7 +64,7 @@ def register_tools(mcp):
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error stopping packet capture on link {link_id} in lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error stopping packet capture on link %s in lab %s", link_id, lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -82,7 +82,7 @@ def register_tools(mcp):
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error checking packet capture status on link {link_id} in lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error checking packet capture status on link %s in lab %s", link_id, lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -100,7 +100,7 @@ def register_tools(mcp):
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error getting packet capture overview on link {link_id} in lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error getting packet capture overview on link %s in lab %s", link_id, lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -123,5 +123,5 @@ def register_tools(mcp):
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error getting packet capture data from link {link_id} in lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error getting packet capture data from link %s in lab %s", link_id, lid)
             raise ToolError(e)

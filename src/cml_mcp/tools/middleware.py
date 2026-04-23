@@ -79,7 +79,7 @@ def _validate_acl_data(raw_acl_data: dict | None) -> dict | None:
     validated_users = {}
     for username, user_config in users.items():
         if not isinstance(user_config, dict):
-            logger.warning(f"Invalid configuration for user {username} in ACLs; skipping user")
+            logger.warning("Invalid configuration for user %s in ACLs; skipping user", username)
             continue
 
         enabled_tools = user_config.get("enabled_tools")
@@ -87,10 +87,10 @@ def _validate_acl_data(raw_acl_data: dict | None) -> dict | None:
 
         # Validate tool lists if present
         if enabled_tools is not None and not isinstance(enabled_tools, list):
-            logger.warning(f"Invalid enabled_tools for user {username} in ACLs; skipping user")
+            logger.warning("Invalid enabled_tools for user %s in ACLs; skipping user", username)
             continue
         if disabled_tools is not None and not isinstance(disabled_tools, list):
-            logger.warning(f"Invalid disabled_tools for user {username} in ACLs; skipping user")
+            logger.warning("Invalid disabled_tools for user %s in ACLs; skipping user", username)
             continue
 
         validated_users[username] = {
@@ -116,11 +116,11 @@ def load_acl_data() -> None:
                         validated_data = _validate_acl_data(raw_acl_data)
                         if validated_data:
                             acl_data.update(validated_data)
-                except Exception as e:
-                    logger.error(f"Failed to load ACL file {str(aclf)}: {e}", exc_info=True)
+                except Exception:
+                    logger.exception("Failed to load ACL file %s", aclf)
                     acl_data.clear()
             else:
-                logger.warning(f"ACL file {str(aclf)} does not exist or is not a file. Continuing without ACLs.")
+                logger.warning("ACL file %s does not exist or is not a file. Continuing without ACLs.", aclf)
 
 
 class CustomHttpRequestMiddleware(Middleware):
@@ -277,7 +277,7 @@ class CustomHttpRequestMiddleware(Middleware):
             try:
                 await request_client.login()
             except Exception as e:
-                logger.warning("Authentication failed: %s", str(e), exc_info=True)
+                logger.warning("Authentication failed: %s", e)
                 raise McpError(ErrorData(message=f"Unauthorized: {str(e)}", code=-31002))
 
             await cml_client_cache.set(client_cache_key, request_client)
@@ -286,13 +286,15 @@ class CustomHttpRequestMiddleware(Middleware):
         _request_client.set(request_client)
         try:
             result = await call_next(context)
-            logger.debug(f"Request to {cml_url} completed successfully")
+            logger.debug("Request to %s completed successfully", cml_url)
             return result
         except Exception as request_error:
             # Log request processing errors for diagnostics
             logger.warning(
-                f"Request to {cml_url} failed: {type(request_error).__name__}: {request_error}",
-                exc_info=False,  # Don't need full trace for client disconnects
+                "Request to %s failed: %s: %s",
+                cml_url,
+                type(request_error).__name__,
+                request_error,
             )
             # If the client failed to re-authenticate mid-request, evict it from the
             # cache so the next request gets a fresh client rather than retrying a
