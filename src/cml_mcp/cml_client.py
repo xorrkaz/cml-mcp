@@ -100,7 +100,7 @@ class CMLClient(object):
             self.needs_reauth = False
             logger.info("Authenticated with CML API")
         except Exception as e:
-            logger.exception(f"Failed to authenticate with CML API: {e}", exc_info=True)
+            logger.exception("Failed to authenticate with CML API")
             self.needs_reauth = True
             raise e
 
@@ -120,10 +120,10 @@ class CMLClient(object):
                     logger.debug("Authentication failed, re-authenticating")
                     self.token = None
                 else:
-                    logger.error(f"Error checking authentication: {e}", exc_info=True)
+                    logger.exception("Error checking authentication")
                     raise e
             except httpx.RequestError as e:
-                logger.error(f"Error checking authentication: {e}", exc_info=True)
+                logger.exception("Error checking authentication")
                 raise e
 
         # If token is None or authentication failed, re-authenticate
@@ -148,8 +148,8 @@ class CMLClient(object):
             resp.raise_for_status()
             self.admin = resp.json().get("admin", False)
             return self.admin
-        except Exception as e:
-            logger.error(f"Error checking admin status: {e}", exc_info=True)
+        except Exception:
+            logger.exception("Error checking admin status")
             return False
 
     async def get(self, endpoint: str, params: dict | None = None, is_binary: bool = False) -> Any:
@@ -163,7 +163,7 @@ class CMLClient(object):
             resp.raise_for_status()
             return resp.json() if not is_binary else resp.content
         except httpx.RequestError as e:
-            logger.error(f"Error making GET request to {url}: {e}", exc_info=True)
+            logger.exception("Error making GET request to %s", url)
             raise e
 
     async def post(self, endpoint: str, data: dict | None = None, params: dict | None = None) -> Any | None:
@@ -179,7 +179,7 @@ class CMLClient(object):
                 return None
             return resp.json()
         except httpx.RequestError as e:
-            logger.error(f"Error making POST request to {url}: {e}", exc_info=True)
+            logger.exception("Error making POST request to %s", url)
             raise e
 
     async def put(self, endpoint: str, data: dict | None = None) -> Any | None:
@@ -195,7 +195,7 @@ class CMLClient(object):
                 return None
             return resp.json()
         except httpx.RequestError as e:
-            logger.error(f"Error making PUT request to {url}: {e}", exc_info=True)
+            logger.exception("Error making PUT request to %s", url)
             raise e
 
     async def delete(self, endpoint: str) -> dict | None:
@@ -211,7 +211,7 @@ class CMLClient(object):
                 return None
             return resp.json()
         except httpx.RequestError as e:
-            logger.error(f"Error making DELETE request to {url}: {e}", exc_info=True)
+            logger.exception("Error making DELETE request to %s", url)
             raise e
 
     async def patch(self, endpoint: str, data: dict | None = None) -> Any | None:
@@ -227,7 +227,7 @@ class CMLClient(object):
                 return None
             return resp.json()
         except httpx.RequestError as e:
-            logger.error(f"Error making PATCH request to {url}: {e}", exc_info=True)
+            logger.exception("Error making PATCH request to %s", url)
             raise e
 
     async def close(self) -> None:
@@ -236,5 +236,5 @@ class CMLClient(object):
             # Close the httpx async client which should clean up connection pools and semaphores
             await self.client.aclose()
             logger.debug("HTTP client closed successfully")
-        except Exception as e:
-            logger.error(f"Error closing HTTP client: {e}", exc_info=True)
+        except Exception:
+            logger.exception("Error closing HTTP client")

@@ -63,7 +63,7 @@ def register_tools(mcp):
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error adding interface to node {intf.node} in lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error adding interface to node %s in lab %s", intf.node, lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -86,5 +86,5 @@ def register_tools(mcp):
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error getting interfaces for node {nid} in lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error getting interfaces for node %s in lab %s", nid, lid)
             raise ToolError(e)

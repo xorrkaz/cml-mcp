@@ -54,7 +54,7 @@ def register_tools(mcp):
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error getting CML node definitions: {str(e)}", exc_info=True)
+            logger.exception("Error getting CML node definitions")
             raise ToolError(e)
 
     @mcp.tool(
@@ -73,5 +73,5 @@ def register_tools(mcp):
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error getting node definition detail for {did}: {str(e)}", exc_info=True)
+            logger.exception("Error getting node definition detail for %s", did)
             raise ToolError(e)

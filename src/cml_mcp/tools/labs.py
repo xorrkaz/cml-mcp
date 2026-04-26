@@ -121,7 +121,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error getting CML labs: {str(e)}", exc_info=True)
+            logger.exception("Error getting CML labs")
             raise ToolError(e)
 
     @mcp.tool(
@@ -148,7 +148,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error creating empty lab topology: {str(e)}", exc_info=True)
+            logger.exception("Error creating empty lab topology")
             raise ToolError(e)
 
     @mcp.tool(
@@ -175,7 +175,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error modifying lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error modifying lab %s", lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -202,7 +202,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error creating lab topology: {str(e)}", exc_info=True)
+            logger.exception("Error creating lab topology")
             raise ToolError(e)
 
     @mcp.tool(
@@ -228,7 +228,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error starting CML lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error starting CML lab %s", lid)
             raise ToolError(e)
 
     async def stop_lab(lid: UUID4Type, client: CMLClient) -> None:
@@ -265,7 +265,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error stopping CML lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error stopping CML lab %s", lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -290,7 +290,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error wiping CML lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error wiping CML lab %s", lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -316,7 +316,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error deleting CML lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error deleting CML lab %s", lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -337,7 +337,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error getting CML lab by title {title}: {str(e)}", exc_info=True)
+            logger.exception("Error getting CML lab by title %s", title)
             raise ToolError(e)
 
     @mcp.tool(
@@ -354,7 +354,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error downloading lab topology for lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error downloading lab topology for lab %s", lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -379,5 +379,5 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.error(f"Error cloning CML lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error cloning CML lab %s", lid)
             raise ToolError(e)

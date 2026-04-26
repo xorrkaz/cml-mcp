@@ -147,5 +147,5 @@ def register_tools(mcp):
             output = await asyncio.to_thread(_send_cli_command_sync, client, lid, label, commands, config_command, console)
             return output
         except Exception as e:
-            logger.error(f"Error sending CLI command '{commands}' to node {label} in lab {lid}: {str(e)}", exc_info=True)
+            logger.exception("Error sending CLI command to node %s in lab %s", label, lid)
             raise ToolError(e)
