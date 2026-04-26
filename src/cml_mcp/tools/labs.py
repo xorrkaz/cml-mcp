@@ -80,7 +80,7 @@ async def create_full_topology_from_obj(topology: Topology, client: CMLClient) -
     Returns:
         UUID4Type: The lab UUID.
     """
-    resp = await client.post("/import", data=topology.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
+    resp = await client.post("/import", data=topology.model_dump(mode="json", exclude_unset=True, exclude_none=True))
     return UUID4Type(resp["id"])
 
 
