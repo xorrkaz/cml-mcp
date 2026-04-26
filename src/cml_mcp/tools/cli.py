@@ -91,7 +91,8 @@ def register_tools(mcp):
         """
         Get console output history by lab and node UUID. Node must be started.
         Returns log entries from the selected serial console (default 0) with
-        time (ms since start) and message.
+        time (ms since start) and message.  Note: some nodes (like Docker-based nodes)
+        use both serial 0 and serial 1.
         Useful for troubleshooting, monitoring boot progress, and verifying CLI command results.
         """
         client = get_cml_client_dep()
