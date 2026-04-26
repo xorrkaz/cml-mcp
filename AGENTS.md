@@ -15,6 +15,9 @@ src/cml_mcp/
   types.py             # Shared response types used across tool modules
   cml/                 # Auto-generated Pydantic schemas from CML (Cisco license)
   tools/               # One module per functional area (see below)
+    cache.py           # Thread-safe async session cache for HTTP mode
+    dependencies.py    # Shared CML client dependency and elicitation helper
+    middleware.py      # HTTP middleware and ACL enforcement
 tests/
   conftest.py          # Fixtures; USE_MOCKS env var switches mock ↔ live mode
   mocks/               # Pre-recorded JSON responses for offline testing
@@ -58,6 +61,8 @@ Each module exposes a `register_tools(mcp)` function called from `server.py`.
 | `CML_USERNAME` | Yes | CML login username |
 | `CML_PASSWORD` | Yes | CML login password |
 | `CML_VERIFY_SSL` | No | Set `false` for self-signed certs |
+| `CML_MCP_TRANSPORT` | No | `http` for HTTP mode (default: `stdio`) |
+| `CML_SESSION_TTL` | No | Idle TTL in seconds for cached HTTP sessions (default: `3600`) |
 | `PYATS_USERNAME` | No | Device login username |
 | `PYATS_PASSWORD` | No | Device login password |
 | `PYATS_AUTH_PASS` | No | Device enable password |
@@ -96,5 +101,5 @@ Tests live in `tests/test_cml_mcp.py`. Mock JSON fixtures are in `tests/mocks/`.
 
 ## Dependencies
 
-Core: `httpx`, `fastmcp>=2.13.1,<3.0.0`, `fastapi`, `pydantic_strict_partial`, `typer`, `virl2_client`  
+Core: `httpx`, `fastmcp>=3.1.1,<4`, `fastapi`, `pydantic_strict_partial`, `typer`, `virl2_client`  
 Optional: `pyats`, `genie` (install as `cml-mcp[pyats]`)
