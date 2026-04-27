@@ -30,6 +30,7 @@ def _send_cli_command_sync(
     label: NodeLabel,  # pyright: ignore[reportInvalidTypeForm]
     commands: str,
     config_command: bool,
+    console: int,
 ) -> str:
     """
     Synchronous helper for send_cli_command to isolate blocking operations in a thread.
@@ -58,6 +59,10 @@ def _send_cli_command_sync(
             raise ImportError(
                 "PyATS and Genie are required to send commands to running devices.  See the documentation on how to install them."
             )
+
+        if console != 0:
+            pylab.switch_serial_console(str(label), console)
+
         if config_command:
             # Send the command as a configuration command
             results = pylab.run_config_command(str(label), commands)
@@ -87,6 +92,7 @@ def register_tools(mcp):
     async def get_console_log(
         lid: UUID4Type,
         nid: UUID4Type,
+        console: int = 0,
     ) -> list[ConsoleLogOutput]:
         """
         Get console output history by lab and node UUID. Node must be started.
@@ -125,9 +131,11 @@ def register_tools(mcp):
         label: NodeLabel,  # pyright: ignore[reportInvalidTypeForm]
         commands: str,
         config_command: bool = False,
+        console: int = 0,
     ) -> str:
         """
         Send CLI commands to running node by lab UUID and node label (not UUID). Node must be in BOOTED state.
+        Optionally use a serial console index other than the default 0 (might be needed for Docker-based nodes with multiple consoles).
         CRITICAL: Can modify device state. Review commands before executing, especially with config_command=true.
         Separate multiple commands with newlines.
         config_command=false (default): exec/operational mode. config_command=true: config mode (omit "configure terminal"/"end").
