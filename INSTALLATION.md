@@ -375,11 +375,11 @@ Example headers:
 ```http
 X-Authorization: Basic <base64_encoded_cml_username:cml_password>
 X-PyATS-Authorization: Basic <base64_encoded_device_username:device_password>
-X-PyATS-Enable: <base64_encoded_enable_password>
+X-PyATS-Enable: Basic <base64_encoded_enable_password>
 X-CML-URL: https://cml-server.example.com
 ```
 
-**Note:** The `X-PyATS-Enable` header only needs the Base64-encoded enable password (not Basic auth format with username:password).
+**Note:** The `X-PyATS-Enable` header only needs the Base64-encoded enable password (not typical Basic auth format with username:password).
 
 ### Configuring MCP Clients
 
