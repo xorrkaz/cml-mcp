@@ -39,6 +39,7 @@ from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabRequest, LabTitle
 from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
+from cml_mcp.tools.model_helpers import lenient_construct
 
 logger = logging.getLogger("cml-mcp.tools.labs")
 
@@ -131,7 +132,7 @@ def register_tools(mcp):  # noqa: C901
             "destructiveHint": False,
         },
     )
-    async def create_empty_lab(lab: LabRequest | dict) -> UUID4Type:
+    async def create_empty_lab(lab: LabRequest | dict | str) -> UUID4Type:
         """
         Create empty lab. Returns lab UUID.
         Optional: title (str, 1-64 chars), owner (UUID), description (str, max 4096 chars), notes (str, max 32768 chars),
@@ -139,10 +140,8 @@ def register_tools(mcp):  # noqa: C901
         """
         client = get_cml_client_dep()
         try:
-            # XXX The dict usage is a workaround for some LLMs that pass a JSON string
-            # representation of the argument object.
-            if isinstance(lab, dict):
-                lab = LabRequest(**lab)
+            if isinstance(lab, (dict, str)):
+                lab = lenient_construct(LabRequest, lab)
             resp = await client.post("/labs", data=lab.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
@@ -159,17 +158,15 @@ def register_tools(mcp):  # noqa: C901
             "idempotentHint": True,
         },
     )
-    async def modify_cml_lab(lid: UUID4Type, lab: LabRequest | dict) -> bool:
+    async def modify_cml_lab(lid: UUID4Type, lab: LabRequest | dict | str) -> bool:
         """
         Update lab metadata by UUID.
         Modifiable: title, owner, description, notes, associations (group/user permissions).
         """
         client = get_cml_client_dep()
         try:
-            # XXX The dict usage is a workaround for some LLMs that pass a JSON string
-            # representation of the argument object.
-            if isinstance(lab, dict):
-                lab = LabRequest(**lab)
+            if isinstance(lab, (dict, str)):
+                lab = lenient_construct(LabRequest, lab)
             await client.patch(f"/labs/{lid}", data=lab.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
             return True
         except httpx.HTTPStatusError as e:
@@ -185,7 +182,7 @@ def register_tools(mcp):  # noqa: C901
             "destructiveHint": False,
         },
     )
-    async def create_full_lab_topology(topology: Topology | dict) -> UUID4Type:
+    async def create_full_lab_topology(topology: Topology | dict | str) -> UUID4Type:
         """
         Create complete lab from Topology. Returns lab UUID.
         Required: lab (title, version), nodes (id, x, y, label, node_definition, interfaces), links (id, i1, i2, n1, n2).
@@ -194,10 +191,8 @@ def register_tools(mcp):  # noqa: C901
         """
         client = get_cml_client_dep()
         try:
-            # XXX The dict usage is a workaround for some LLMs that pass a JSON string
-            # representation of the argument object.
-            if isinstance(topology, dict):
-                topology = Topology(**topology)
+            if isinstance(topology, (dict, str)):
+                topology = lenient_construct(Topology, topology)
             return await create_full_topology_from_obj(topology, client)
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")

@@ -13,6 +13,7 @@ from fastmcp.exceptions import ToolError
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.links import LinkConditionConfiguration, LinkCreate, LinkResponse
 from cml_mcp.tools.dependencies import get_cml_client_dep
+from cml_mcp.tools.model_helpers import lenient_construct
 
 logger = logging.getLogger("cml-mcp.tools.links")
 
@@ -29,7 +30,7 @@ def register_tools(mcp):
     )
     async def connect_two_nodes(
         lid: UUID4Type,
-        link_info: LinkCreate | dict,
+        link_info: LinkCreate | dict | str,
     ) -> UUID4Type:
         """
         Create link between two interfaces. Returns link UUID.
@@ -38,10 +39,8 @@ def register_tools(mcp):
         """
         client = get_cml_client_dep()
         try:
-            # XXX The dict usage is a workaround for some LLMs that pass a JSON string
-            # representation of the argument object.
-            if isinstance(link_info, dict):
-                link_info = LinkCreate(**link_info)
+            if isinstance(link_info, (dict, str)):
+                link_info = lenient_construct(LinkCreate, link_info)
             resp = await client.post(f"/labs/{lid}/links", data=link_info.model_dump(mode="json"))
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
@@ -76,7 +75,7 @@ def register_tools(mcp):
     async def apply_link_conditioning(
         lid: UUID4Type,
         link_id: UUID4Type,
-        condition: LinkConditionConfiguration | dict,
+        condition: LinkConditionConfiguration | dict | str,
     ) -> bool:
         """
         Configure link network conditions by lab and link UUID.
@@ -87,10 +86,8 @@ def register_tools(mcp):
         """
         client = get_cml_client_dep()
         try:
-            # XXX The dict usage is a workaround for some LLMs that pass a JSON string
-            # representation of the argument object.
-            if isinstance(condition, dict):
-                condition = LinkConditionConfiguration(**condition)
+            if isinstance(condition, (dict, str)):
+                condition = lenient_construct(LinkConditionConfiguration, condition)
             await client.patch(f"/labs/{lid}/links/{link_id}/condition", data=condition.model_dump(mode="json", exclude_none=True))
             return True
         except httpx.HTTPStatusError as e:

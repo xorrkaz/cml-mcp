@@ -15,6 +15,7 @@ from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.pcap import PCAPItem, PCAPStart, PCAPStatusResponse
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import get_cml_client_dep
+from cml_mcp.tools.model_helpers import lenient_construct
 
 logger = logging.getLogger("cml-mcp.tools.pcap")
 
@@ -35,13 +36,15 @@ def register_tools(mcp):
     @mcp.tool(
         annotations={"title": "Start a Packet Capture on a Link", "readOnlyHint": False, "destructiveHint": False},
     )
-    async def start_packet_capture(lid: UUID4Type, link_id: UUID4Type, pcap: PCAPStart) -> bool:
+    async def start_packet_capture(lid: UUID4Type, link_id: UUID4Type, pcap: PCAPStart | dict | str) -> bool:
         """
         Start a packet capture by lab and link UUID. At least one of maxtime or maxpackets is
         required in pcap.  Returns true if successful.
         """
         client = get_cml_client_dep()
         try:
+            if isinstance(pcap, (dict, str)):
+                pcap = lenient_construct(PCAPStart, pcap)
             await client.put(f"/labs/{lid}/links/{link_id}/capture/start", data=pcap.model_dump(mode="json", exclude_none=True))
             return True
         except httpx.HTTPStatusError as e:

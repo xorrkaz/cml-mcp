@@ -16,6 +16,7 @@ from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.nodes import Node, NodeConfigurationContent, NodeCreate
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
+from cml_mcp.tools.model_helpers import lenient_construct
 
 logger = logging.getLogger("cml-mcp.tools.nodes")
 
@@ -88,7 +89,7 @@ def register_tools(mcp):  # noqa: C901
     )
     async def add_node_to_cml_lab(
         lid: UUID4Type,
-        node: NodeCreate | dict,
+        node: NodeCreate | dict | str,
     ) -> UUID4Type:
         """
         Add node to lab. Returns node UUID. Auto-creates default interfaces per node definition.
@@ -98,10 +99,8 @@ def register_tools(mcp):  # noqa: C901
         """
         client = get_cml_client_dep()
         try:
-            # XXX The dict usage is a workaround for some LLMs that pass a JSON string
-            # representation of the argument object.
-            if isinstance(node, dict):
-                node = NodeCreate(**node)
+            if isinstance(node, (dict, str)):
+                node = lenient_construct(NodeCreate, node)
             resp = await client.post(
                 f"/labs/{lid}/nodes", params={"populate_interfaces": True}, data=node.model_dump(mode="json", exclude_defaults=True)
             )

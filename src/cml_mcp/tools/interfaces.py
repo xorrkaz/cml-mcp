@@ -14,6 +14,7 @@ from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.interfaces import InterfaceCreate
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import get_cml_client_dep
+from cml_mcp.tools.model_helpers import lenient_construct
 from cml_mcp.types import SimplifiedInterfaceResponse
 
 logger = logging.getLogger("cml-mcp.tools.interfaces")
@@ -47,7 +48,7 @@ def register_tools(mcp):
     )
     async def add_interface_to_node(
         lid: UUID4Type,
-        intf: InterfaceCreate | dict,
+        intf: InterfaceCreate | dict | str,
     ) -> SimplifiedInterfaceResponse:
         """
         Add interface to node. Returns interface with id, node, slot, type, and MAC address.
@@ -55,10 +56,8 @@ def register_tools(mcp):
         """
         client = get_cml_client_dep()
         try:
-            # XXX The dict usage is a workaround for some LLMs that pass a JSON string
-            # representation of the argument object.
-            if isinstance(intf, dict):
-                intf = InterfaceCreate(**intf)
+            if isinstance(intf, (dict, str)):
+                intf = lenient_construct(InterfaceCreate, intf)
             return await add_interface(lid, intf, client)
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")

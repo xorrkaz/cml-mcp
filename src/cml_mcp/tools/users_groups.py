@@ -17,6 +17,7 @@ from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.groups import GroupCreate, GroupResponse
 from cml_mcp.cml.simple_webserver.schemas.users import UserCreate, UserResponse
 from cml_mcp.tools.dependencies import get_cml_client_dep
+from cml_mcp.tools.model_helpers import lenient_construct
 
 logger = logging.getLogger("cml-mcp.tools.users_groups")
 
@@ -51,7 +52,7 @@ def register_tools(mcp):  # noqa: C901
             "destructiveHint": False,
         },
     )
-    async def create_cml_user(user: UserCreate | dict) -> UUID4Type:
+    async def create_cml_user(user: UserCreate | dict | str) -> UUID4Type:
         """
         Create user. Requires admin. Returns user UUID.
         Required: username, password. Optional: fullname, description, email, groups (UUID list), admin (bool), resource_pool (UUID).
@@ -60,10 +61,8 @@ def register_tools(mcp):  # noqa: C901
         try:
             if not await client.is_admin():
                 raise ValueError("Only admin users can create new users.")
-            # XXX The dict usage is a workaround for some LLMs that pass a JSON string
-            # representation of the argument object.
-            if isinstance(user, dict):
-                user = UserCreate(**user)
+            if isinstance(user, (dict, str)):
+                user = lenient_construct(UserCreate, user)
             resp = await client.post("/users", data=user.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
@@ -138,7 +137,7 @@ def register_tools(mcp):  # noqa: C901
             "destructiveHint": False,
         },
     )
-    async def create_cml_group(group: GroupCreate | dict) -> UUID4Type:
+    async def create_cml_group(group: GroupCreate | dict | str) -> UUID4Type:
         """
         Create group. Requires admin. Returns group UUID.
         Required: name. Optional: description, members (user UUID list), associations (lab permissions).
@@ -147,10 +146,8 @@ def register_tools(mcp):  # noqa: C901
         try:
             if not await client.is_admin():
                 raise ValueError("Only admin users can create new groups.")
-            # XXX The dict usage is a workaround for some LLMs that pass a JSON string
-            # representation of the argument object.
-            if isinstance(group, dict):
-                group = GroupCreate(**group)
+            if isinstance(group, (dict, str)):
+                group = lenient_construct(GroupCreate, group)
             resp = await client.post("/groups", data=group.model_dump(mode="json", exclude_none=True))
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:

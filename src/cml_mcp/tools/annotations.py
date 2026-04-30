@@ -24,6 +24,7 @@ from cml_mcp.cml.simple_webserver.schemas.annotations import (
 )
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
+from cml_mcp.tools.model_helpers import lenient_construct, parse_json_arg
 
 logger = logging.getLogger("cml-mcp.tools.annotations")
 
@@ -75,7 +76,7 @@ def register_tools(mcp):
     )
     async def add_annotation_to_cml_lab(
         lid: UUID4Type,
-        annotation: EllipseAnnotation | LineAnnotation | RectangleAnnotation | TextAnnotation | dict,
+        annotation: EllipseAnnotation | LineAnnotation | RectangleAnnotation | TextAnnotation | dict | str,
     ) -> UUID4Type:
         """
         Add visual annotation to lab. Returns annotation UUID.
@@ -94,21 +95,20 @@ def register_tools(mcp):
         """
         client = get_cml_client_dep()
         try:
-            # XXX The dict usage is a workaround for some LLMs that pass a JSON string
-            # representation of the argument object.
-            if isinstance(annotation, dict):
-                if annotation["type"] == "text":
-                    annotation = TextAnnotation(**annotation)
-                elif annotation["type"] == "rectangle":
-                    annotation = RectangleAnnotation(**annotation)
-                elif annotation["type"] == "ellipse":
-                    annotation = EllipseAnnotation(**annotation)
-                elif annotation["type"] == "line":
-                    annotation = LineAnnotation(**annotation)
+            if isinstance(annotation, (dict, str)):
+                if isinstance(annotation, str):
+                    annotation = parse_json_arg(annotation)
+                ann_type = annotation.get("type", "")
+                if ann_type == "text":
+                    annotation = lenient_construct(TextAnnotation, annotation)
+                elif ann_type == "rectangle":
+                    annotation = lenient_construct(RectangleAnnotation, annotation)
+                elif ann_type == "ellipse":
+                    annotation = lenient_construct(EllipseAnnotation, annotation)
+                elif ann_type == "line":
+                    annotation = lenient_construct(LineAnnotation, annotation)
                 else:
-                    raise ValueError(
-                        f"Invalid annotation type: {annotation['type']}. Must be one of 'text', 'rectangle', 'ellipse', or 'line'."
-                    )
+                    raise ValueError(f"Invalid annotation type: {ann_type!r}. Must be one of 'text', 'rectangle', 'ellipse', or 'line'.")
             resp = await client.post(f"/labs/{lid}/annotations", data=annotation.model_dump(mode="json", exclude_defaults=True))
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
