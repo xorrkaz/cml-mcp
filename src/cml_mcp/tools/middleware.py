@@ -205,6 +205,15 @@ class CustomHttpRequestMiddleware(Middleware):
             include={"x-cml-server-url", "x-cml-verify-ssl", "x-authorization", "x-pyats-authorization", "x-pyats-enable"}
         )
         cml_url = headers.get("x-cml-server-url")
+        auth_header = headers.get("x-authorization")
+        # Allow unauthenticated requests through for MCP protocol discovery
+        # (initialize, tools/list). Actual tool calls are guarded in on_call_tool.
+        if not cml_url and not settings.cml_url and not auth_header:
+            logger.debug("No CML credentials provided; allowing request for MCP protocol discovery")
+            _request_client.set(None)
+
+            return await call_next(context)
+
         if not cml_url:
             if settings.cml_url:
                 cml_url = str(settings.cml_url)
@@ -222,20 +231,26 @@ class CustomHttpRequestMiddleware(Middleware):
         verify_ssl_header = headers.get("x-cml-verify-ssl", "").lower()
         verify_ssl = verify_ssl_header == "true"
 
-        auth_header = headers.get("x-authorization")
         if not auth_header or " " not in auth_header:
-            logger.warning("Request rejected: missing or invalid X-Authorization header")
-            raise McpError(ErrorData(message="Unauthorized: Missing or invalid X-Authorization header", code=-31002))
-        parts = auth_header.split(" ", 1)
-        if len(parts) != 2 or parts[0].lower() != "basic":
-            logger.warning("Request rejected: malformed X-Authorization header")
-            raise McpError(ErrorData(message="Invalid X-Authorization header format. Expected 'Basic <credentials>'", code=-31001))
-        try:
-            decoded = base64.b64decode(parts[1]).decode("utf-8")
-            username, password = decoded.split(":", 1)
-        except Exception:
-            logger.warning("Request rejected: failed to decode X-Authorization credentials")
-            raise McpError(ErrorData(message="Failed to decode Basic authentication credentials", code=-31002))
+            # Fall back to default credentials from settings if configured
+            if settings.cml_username and settings.cml_password:
+                logger.debug("Using default CML credentials from settings")
+                username = settings.cml_username
+                password = settings.cml_password
+            else:
+                logger.warning("Request rejected: missing or invalid X-Authorization header")
+                raise McpError(ErrorData(message="Unauthorized: Missing or invalid X-Authorization header", code=-31002))
+        else:
+            parts = auth_header.split(" ", 1)
+            if len(parts) != 2 or parts[0].lower() != "basic":
+                logger.warning("Request rejected: malformed X-Authorization header")
+                raise McpError(ErrorData(message="Invalid X-Authorization header format. Expected 'Basic <credentials>'", code=-31001))
+            try:
+                decoded = base64.b64decode(parts[1]).decode("utf-8")
+                username, password = decoded.split(":", 1)
+            except Exception:
+                logger.warning("Request rejected: failed to decode X-Authorization credentials")
+                raise McpError(ErrorData(message="Failed to decode Basic authentication credentials", code=-31002))
         pyats_header = headers.get("x-pyats-authorization")
         if pyats_header and " " in pyats_header:
             pyats_parts = pyats_header.split(" ", 1)
@@ -323,7 +338,10 @@ class CustomHttpRequestMiddleware(Middleware):
         # Import here to avoid circular dependency
         from cml_mcp.tools.dependencies import get_cml_client_dep
 
-        client = get_cml_client_dep()
+        try:
+            client = get_cml_client_dep()
+        except RuntimeError:
+            raise ToolError("CML credentials required. Provide X-CML-Server-URL and X-Authorization headers to call tools.")
         if not await CustomHttpRequestMiddleware.check_tool_enabled(context.message.name, client):
             raise ToolError(f"Tool '{context.message.name}' is disabled by server configuration")
 
