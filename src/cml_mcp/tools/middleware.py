@@ -329,7 +329,14 @@ class CustomHttpRequestMiddleware(Middleware):
 
         result = await call_next(context)
 
-        client = get_cml_client_dep()
+        # If no client available (unauthenticated discovery), return all tools
+        # so that skills registries can enumerate available capabilities.
+        try:
+            client = get_cml_client_dep()
+        except RuntimeError:
+            logger.debug("No CML client available during tools/list; returning all tools without ACL filtering")
+            return result
+
         filtered_tools = [tool for tool in result if await CustomHttpRequestMiddleware.check_tool_enabled(tool.name, client)]
 
         return filtered_tools
