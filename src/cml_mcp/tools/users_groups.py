@@ -17,6 +17,7 @@ from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.groups import GroupResponse
 from cml_mcp.cml.simple_webserver.schemas.users import UserResponse
 from cml_mcp.tools.dependencies import get_cml_client_dep
+from cml_mcp.tools.model_helpers import build_payload
 
 logger = logging.getLogger("cml-mcp.tools.users_groups")
 
@@ -92,21 +93,20 @@ def register_tools(mcp):  # noqa: C901
             if not await client.is_admin():
                 raise ValueError("Only admin users can create new users.")
 
-            payload: dict = {"username": username, "password": password}
-            for key, value in (
-                ("fullname", fullname),
-                ("description", description),
-                ("email", email),
-                ("admin", admin),
-                ("groups", groups),
-                ("associations", associations),
-                ("resource_pool", str(resource_pool) if resource_pool is not None else None),
-                ("opt_in", opt_in),
-                ("tour_version", tour_version),
-                ("pubkey", pubkey),
-            ):
-                if value is not None:
-                    payload[key] = value
+            payload = build_payload(
+                username=username,
+                password=password,
+                fullname=fullname,
+                description=description,
+                email=email,
+                admin=admin,
+                groups=groups,
+                associations=associations,
+                resource_pool=str(resource_pool) if resource_pool is not None else None,
+                opt_in=opt_in,
+                tour_version=tour_version,
+                pubkey=pubkey,
+            )
             resp = await client.post("/users", data=payload)
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
@@ -219,11 +219,12 @@ def register_tools(mcp):  # noqa: C901
             if not await client.is_admin():
                 raise ValueError("Only admin users can create new groups.")
 
-            payload: dict = {"name": name, "members": members or []}
-            if description is not None:
-                payload["description"] = description
-            if associations is not None:
-                payload["associations"] = associations
+            payload = build_payload(
+                name=name,
+                members=members or [],
+                description=description,
+                associations=associations,
+            )
             resp = await client.post("/groups", data=payload)
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:

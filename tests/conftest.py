@@ -19,7 +19,7 @@ from fastmcp.client.transports import FastMCPTransport
 from mcp.types import TextContent
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.labs import LabAutostart, LabRequest, LabTitle, NodeStaging
+from cml_mcp.cml.simple_webserver.schemas.labs import LabTitle
 
 COMMON_TEST_LAB_TITLE = LabTitle("MCP Test Lab")
 
@@ -326,18 +326,9 @@ def pytest_collection_modifyitems(config, items):
 
 
 @pytest.fixture
-async def created_lab(main_mcp_client: Client[FastMCPTransport]) -> AsyncGenerator[tuple[UUID4Type, LabRequest], None]:
+async def created_lab(main_mcp_client: Client[FastMCPTransport]) -> AsyncGenerator[UUID4Type, None]:
     # --- Setup: create lab ---
     title = COMMON_TEST_LAB_TITLE
-    autostart = LabAutostart()
-    node_staging = NodeStaging()
-    lab_create = LabRequest(
-        title=title,
-        description="This is a test lab created by MCP tests",
-        notes="Some _markdown_ notes for the lab.",
-        autostart=autostart,
-        node_staging=node_staging,
-    )
 
     lab_payload = {
         "title": title,
@@ -356,7 +347,7 @@ async def created_lab(main_mcp_client: Client[FastMCPTransport]) -> AsyncGenerat
 
     lab_id = UUID4Type(result.content[0].text)
 
-    yield lab_id, lab_create
+    yield lab_id
 
     # --- Teardown: delete lab ---
     del_result = await main_mcp_client.call_tool(

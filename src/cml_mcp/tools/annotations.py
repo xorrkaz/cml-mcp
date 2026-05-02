@@ -10,21 +10,26 @@ import logging
 import httpx
 from fastmcp import Context
 from fastmcp.exceptions import ToolError
+from pydantic import BaseModel
 
 from cml_mcp.cml.simple_webserver.schemas.annotations import (
-    EllipseAnnotation,
     EllipseAnnotationResponse,
-    LineAnnotation,
     LineAnnotationResponse,
-    RectangleAnnotation,
     RectangleAnnotationResponse,
-    TextAnnotation,
     TextAnnotationResponse,
 )
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
+from cml_mcp.tools.model_helpers import build_payload
 
 logger = logging.getLogger("cml-mcp.tools.annotations")
+
+_ANNOTATION_RESPONSE_TYPES: dict[str, type[BaseModel]] = {
+    "text": TextAnnotationResponse,
+    "rectangle": RectangleAnnotationResponse,
+    "ellipse": EllipseAnnotationResponse,
+    "line": LineAnnotationResponse,
+}
 
 
 def register_tools(mcp):
@@ -51,19 +56,11 @@ def register_tools(mcp):
             resp = await client.get(f"/labs/{lid}/annotations")
             ann_list = []
             for annotation in resp:
-                if annotation.get("type") == "text":
-                    annotation_obj = TextAnnotationResponse(**annotation)
-                elif annotation.get("type") == "rectangle":
-                    annotation_obj = RectangleAnnotationResponse(**annotation)
-                elif annotation.get("type") == "ellipse":
-                    annotation_obj = EllipseAnnotationResponse(**annotation)
-                elif annotation.get("type") == "line":
-                    annotation_obj = LineAnnotationResponse(**annotation)
-                else:
-                    raise ValueError(
-                        f"Invalid annotation type: {annotation.get('type')}. Must be one of 'text', 'rectangle', 'ellipse', or 'line'."
-                    )
-                ann_list.append(annotation_obj.model_dump(exclude_unset=True))
+                ann_type = annotation.get("type")
+                model = _ANNOTATION_RESPONSE_TYPES.get(ann_type)
+                if model is None:
+                    raise ToolError(f"Unknown annotation type: {ann_type!r}. " f"Expected one of {sorted(_ANNOTATION_RESPONSE_TYPES)}.")
+                ann_list.append(model(**annotation).model_dump(exclude_unset=True))
             return ann_list
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -102,6 +99,8 @@ def register_tools(mcp):
         """
         Add a text label annotation to a lab canvas. Returns the annotation UUID.
 
+        Coordinates: x1/y1 are the text anchor (top-left). All coords -15000..15000.
+
         Required: x1, y1 (coords -15000 to 15000), text_content (0-8192 chars), text_font (0-128 chars),
         text_size (1-128), text_unit ("pt"/"px"/"em"), text_bold, text_italic (bool),
         border_color, color (e.g., "#FF0000"), border_style (""/"2,2"/"4,2"), thickness (1-32),
@@ -114,7 +113,7 @@ def register_tools(mcp):
         """
         client = get_cml_client_dep()
         try:
-            annotation = TextAnnotation(
+            payload = build_payload(
                 type="text",
                 x1=x1,
                 y1=y1,
@@ -131,10 +130,7 @@ def register_tools(mcp):
                 z_index=z_index,
                 rotation=rotation,
             )
-            resp = await client.post(
-                f"/labs/{lid}/annotations",
-                data=annotation.model_dump(mode="json", exclude_defaults=True, exclude_none=True),
-            )
+            resp = await client.post(f"/labs/{lid}/annotations", data=payload)
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -169,6 +165,9 @@ def register_tools(mcp):
         """
         Add a rectangle shape annotation to a lab canvas. Returns the annotation UUID.
 
+        Coordinates: x1/y1 = top-left anchor; x2/y2 are WIDTH and HEIGHT (not bottom-right).
+        All coords -15000..15000.
+
         Required: x1, y1 (anchor coords -15000 to 15000), x2, y2 (WIDTH and HEIGHT from anchor, not corners!),
         border_color, color (e.g., "#FF0000"), border_style (""/"2,2"/"4,2"), thickness (1-32),
         z_index (-10240 to 10240), rotation (0-360 degrees), border_radius (0-128).
@@ -180,7 +179,7 @@ def register_tools(mcp):
         """
         client = get_cml_client_dep()
         try:
-            annotation = RectangleAnnotation(
+            payload = build_payload(
                 type="rectangle",
                 x1=x1,
                 y1=y1,
@@ -194,10 +193,7 @@ def register_tools(mcp):
                 rotation=rotation,
                 border_radius=border_radius,
             )
-            resp = await client.post(
-                f"/labs/{lid}/annotations",
-                data=annotation.model_dump(mode="json", exclude_defaults=True, exclude_none=True),
-            )
+            resp = await client.post(f"/labs/{lid}/annotations", data=payload)
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -231,6 +227,9 @@ def register_tools(mcp):
         """
         Add an ellipse shape annotation to a lab canvas. Returns the annotation UUID.
 
+        Coordinates: x1/y1 = anchor; x2/y2 are WIDTH and HEIGHT (per CML's X2Y2Mixin schema --
+        the same convention as rectangles). All coords -15000..15000.
+
         Required: x1, y1 (anchor coords -15000 to 15000), x2, y2 (WIDTH and HEIGHT from anchor),
         border_color, color (e.g., "#FF0000"), border_style (""/"2,2"/"4,2"), thickness (1-32),
         z_index (-10240 to 10240), rotation (0-360 degrees).
@@ -242,7 +241,7 @@ def register_tools(mcp):
         """
         client = get_cml_client_dep()
         try:
-            annotation = EllipseAnnotation(
+            payload = build_payload(
                 type="ellipse",
                 x1=x1,
                 y1=y1,
@@ -255,10 +254,7 @@ def register_tools(mcp):
                 z_index=z_index,
                 rotation=rotation,
             )
-            resp = await client.post(
-                f"/labs/{lid}/annotations",
-                data=annotation.model_dump(mode="json", exclude_defaults=True, exclude_none=True),
-            )
+            resp = await client.post(f"/labs/{lid}/annotations", data=payload)
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -293,6 +289,9 @@ def register_tools(mcp):
         """
         Add a line annotation to a lab canvas. Returns the annotation UUID.
 
+        Coordinates: x1/y1 = start point; x2/y2 = end point (absolute, not width/height).
+        All coords -15000..15000.
+
         Required: x1, y1 (start coords -15000 to 15000), x2, y2 (absolute end coords),
         border_color, color (e.g., "#0000FF"), border_style (""/"2,2"/"4,2"), thickness (1-32),
         z_index (-10240 to 10240), line_start, line_end ("arrow"/"square"/"circle" or None).
@@ -304,7 +303,7 @@ def register_tools(mcp):
         """
         client = get_cml_client_dep()
         try:
-            annotation = LineAnnotation(
+            payload = build_payload(
                 type="line",
                 x1=x1,
                 y1=y1,
@@ -315,13 +314,12 @@ def register_tools(mcp):
                 color=color,
                 thickness=thickness,
                 z_index=z_index,
-                line_start=line_start,
-                line_end=line_end,
             )
-            resp = await client.post(
-                f"/labs/{lid}/annotations",
-                data=annotation.model_dump(mode="json", exclude_defaults=True, exclude_none=True),
-            )
+            # line_start / line_end are required by the schema but may legitimately be None,
+            # so include them explicitly rather than dropping via build_payload.
+            payload["line_start"] = line_start
+            payload["line_end"] = line_end
+            resp = await client.post(f"/labs/{lid}/annotations", data=payload)
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")

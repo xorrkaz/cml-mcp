@@ -13,6 +13,7 @@ from fastmcp.exceptions import ToolError
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import get_cml_client_dep
+from cml_mcp.tools.model_helpers import build_payload
 from cml_mcp.types import SimplifiedInterfaceResponse
 
 logger = logging.getLogger("cml-mcp.tools.interfaces")
@@ -66,11 +67,11 @@ def register_tools(mcp):
 
         client = get_cml_client_dep()
         try:
-            payload: dict = {"node": str(node)}
-            if slot is not None:
-                payload["slot"] = slot
-            if mac_address is not None:
-                payload["mac_address"] = mac_address
+            payload = build_payload(
+                node=str(node),
+                slot=slot,
+                mac_address=mac_address,
+            )
             return await add_interface(lid, payload, client)
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")

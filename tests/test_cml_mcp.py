@@ -43,7 +43,7 @@ from cml_mcp.cml.simple_webserver.schemas.annotations import (
 )
 from cml_mcp.cml.simple_webserver.schemas.common import DefinitionID, UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.groups import GroupResponse
-from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabRequest, LabTitle
+from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabTitle
 from cml_mcp.cml.simple_webserver.schemas.links import LinkResponse
 from cml_mcp.cml.simple_webserver.schemas.node_definitions import NodeDefinition
 from cml_mcp.cml.simple_webserver.schemas.nodes import Node
@@ -52,6 +52,7 @@ from cml_mcp.cml.simple_webserver.schemas.system import SystemHealth, SystemInfo
 from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
 from cml_mcp.cml.simple_webserver.schemas.users import UserResponse
 from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse
+from tests.conftest import COMMON_TEST_LAB_TITLE
 
 
 def _to_model(obj, cls):
@@ -73,7 +74,7 @@ async def test_list_tools(main_mcp_client: Client[FastMCPTransport]):
     assert len(list_tools) == snapshot(51)
 
 
-async def test_get_cml_labs(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
+async def test_get_cml_labs(main_mcp_client: Client[FastMCPTransport], created_lab: UUID4Type):
     result = await main_mcp_client.call_tool(name="get_cml_labs", arguments={})
     # outsource(result.data, ".json")
 
@@ -388,10 +389,10 @@ async def test_packet_capture_operations(main_mcp_client: Client[FastMCPTranspor
 
 
 @pytest.mark.live_only
-async def test_empty_lab_mgmt(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
-    lid, lab_create = created_lab
+async def test_empty_lab_mgmt(main_mcp_client: Client[FastMCPTransport], created_lab: UUID4Type):
+    lid = created_lab
     # Fetch the lab details
-    lab_result = await main_mcp_client.call_tool(name="get_cml_lab_by_title", arguments={"title": lab_create.title})
+    lab_result = await main_mcp_client.call_tool(name="get_cml_lab_by_title", arguments={"title": str(COMMON_TEST_LAB_TITLE)})
 
     # outsource(lab_result.structured_content, ".json")
     if isinstance(lab_result.structured_content, dict):
@@ -401,10 +402,10 @@ async def test_empty_lab_mgmt(main_mcp_client: Client[FastMCPTransport], created
 
 
 @pytest.mark.live_only
-async def test_modify_cml_lab(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
-    lab_id, lab_create = created_lab
-    lab_create.title = LabTitle("MCP Modified Lab Title")
-    mod_result = await main_mcp_client.call_tool(name="modify_cml_lab", arguments={"lid": lab_id, "lab": lab_create})
+async def test_modify_cml_lab(main_mcp_client: Client[FastMCPTransport], created_lab: UUID4Type):
+    lab_id = created_lab
+    new_title = LabTitle("MCP Modified Lab Title")
+    mod_result = await main_mcp_client.call_tool(name="modify_cml_lab", arguments={"lid": lab_id, "title": str(new_title)})
 
     assert mod_result.data is True
 
@@ -427,8 +428,8 @@ async def test_full_cml_topology(main_mcp_client: Client[FastMCPTransport]):
 
 
 @pytest.mark.live_only
-async def test_intf_management(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
-    lab_id = created_lab[0]
+async def test_intf_management(main_mcp_client: Client[FastMCPTransport], created_lab: UUID4Type):
+    lab_id = created_lab
 
     node_result = await main_mcp_client.call_tool(
         name="add_node_to_cml_lab",
@@ -468,8 +469,8 @@ async def test_intf_management(main_mcp_client: Client[FastMCPTransport], create
 
 
 @pytest.mark.live_only
-async def test_add_annotation_to_cml_lab(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
-    lab_id = created_lab[0]
+async def test_add_annotation_to_cml_lab(main_mcp_client: Client[FastMCPTransport], created_lab: UUID4Type):
+    lab_id = created_lab
 
     ellipse_result = await main_mcp_client.call_tool(
         name="add_ellipse_annotation",
@@ -588,8 +589,8 @@ async def test_add_annotation_to_cml_lab(main_mcp_client: Client[FastMCPTranspor
 
 
 @pytest.mark.live_only
-async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
-    lab_id = created_lab[0]
+async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], created_lab: UUID4Type):
+    lab_id = created_lab
 
     node1_result = await main_mcp_client.call_tool(
         name="add_node_to_cml_lab",
@@ -731,8 +732,8 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
 
 
 @pytest.mark.live_only
-async def test_get_nodes_for_cml_lab(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
-    lab_id = created_lab[0]
+async def test_get_nodes_for_cml_lab(main_mcp_client: Client[FastMCPTransport], created_lab: UUID4Type):
+    lab_id = created_lab
 
     for i in range(3):
         node_result = await main_mcp_client.call_tool(
@@ -763,9 +764,9 @@ async def test_get_nodes_for_cml_lab(main_mcp_client: Client[FastMCPTransport], 
 
 @pytest.mark.mock_only
 @pytest.mark.asyncio
-async def test_download_lab_topology(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
+async def test_download_lab_topology(main_mcp_client: Client[FastMCPTransport], created_lab: UUID4Type):
     """Test downloading a lab topology as YAML."""
-    lab_id = created_lab[0]
+    lab_id = created_lab
 
     # Download the lab topology
     download_result = await main_mcp_client.call_tool(name="download_lab_topology", arguments={"lid": lab_id})
@@ -780,9 +781,9 @@ async def test_download_lab_topology(main_mcp_client: Client[FastMCPTransport], 
 
 @pytest.mark.mock_only
 @pytest.mark.asyncio
-async def test_clone_cml_lab(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
+async def test_clone_cml_lab(main_mcp_client: Client[FastMCPTransport], created_lab: UUID4Type):
     """Test cloning a CML lab with a router node."""
-    source_lab_id = created_lab[0]
+    source_lab_id = created_lab
 
     # Add a router node to the source lab
     node_result = await main_mcp_client.call_tool(
@@ -813,9 +814,9 @@ async def test_clone_cml_lab(main_mcp_client: Client[FastMCPTransport], created_
 
 @pytest.mark.live_only
 @pytest.mark.asyncio
-async def test_download_lab_topology_live(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
+async def test_download_lab_topology_live(main_mcp_client: Client[FastMCPTransport], created_lab: UUID4Type):
     """Test downloading a lab topology as YAML against live CML server."""
-    lab_id = created_lab[0]
+    lab_id = created_lab
 
     # Download the lab topology
     download_result = await main_mcp_client.call_tool(name="download_lab_topology", arguments={"lid": lab_id})
@@ -835,9 +836,9 @@ async def test_download_lab_topology_live(main_mcp_client: Client[FastMCPTranspo
 
 @pytest.mark.live_only
 @pytest.mark.asyncio
-async def test_clone_cml_lab_live(main_mcp_client: Client[FastMCPTransport], created_lab: tuple[UUID4Type, LabRequest]):
+async def test_clone_cml_lab_live(main_mcp_client: Client[FastMCPTransport], created_lab: UUID4Type):
     """Test cloning a CML lab with a router node against live CML server."""
-    source_lab_id, _ = created_lab
+    source_lab_id = created_lab
     node_result = await main_mcp_client.call_tool(
         name="add_node_to_cml_lab",
         arguments={

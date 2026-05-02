@@ -16,6 +16,7 @@ from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.nodes import Node, NodeConfigurationContent
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
+from cml_mcp.tools.model_helpers import build_payload
 
 logger = logging.getLogger("cml-mcp.tools.nodes")
 
@@ -132,26 +133,24 @@ def register_tools(mcp):  # noqa: C901
         """
         client = get_cml_client_dep()
         try:
-            payload: dict = {"node_definition": node_definition}
-            for key, value in (
-                ("label", label),
-                ("x", x),
-                ("y", y),
-                ("image_definition", image_definition),
-                ("ram", ram),
-                ("cpus", cpus),
-                ("cpu_limit", cpu_limit),
-                ("data_volume", data_volume),
-                ("boot_disk_size", boot_disk_size),
-                ("tags", tags),
-                ("configuration", configuration),
-                ("parameters", parameters),
-                ("hide_links", hide_links),
-                ("priority", priority),
-                ("pyats", pyats),
-            ):
-                if value is not None:
-                    payload[key] = value
+            payload = build_payload(
+                node_definition=node_definition,
+                label=label,
+                x=x,
+                y=y,
+                image_definition=image_definition,
+                ram=ram,
+                cpus=cpus,
+                cpu_limit=cpu_limit,
+                data_volume=data_volume,
+                boot_disk_size=boot_disk_size,
+                tags=tags,
+                configuration=configuration,
+                parameters=parameters,
+                hide_links=hide_links,
+                priority=priority,
+                pyats=pyats,
+            )
             resp = await client.post(
                 f"/labs/{lid}/nodes",
                 params={"populate_interfaces": True},

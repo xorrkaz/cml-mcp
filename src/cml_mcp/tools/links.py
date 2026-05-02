@@ -13,6 +13,7 @@ from fastmcp.exceptions import ToolError
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.links import LinkResponse
 from cml_mcp.tools.dependencies import get_cml_client_dep
+from cml_mcp.tools.model_helpers import build_payload
 
 logger = logging.getLogger("cml-mcp.tools.links")
 
@@ -49,7 +50,7 @@ def register_tools(mcp):
 
         client = get_cml_client_dep()
         try:
-            payload = {"src_int": str(src_int), "dst_int": str(dst_int)}
+            payload = build_payload(src_int=str(src_int), dst_int=str(dst_int))
             resp = await client.post(f"/labs/{lid}/links", data=payload)
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
@@ -97,18 +98,18 @@ def register_tools(mcp):
         enabled: bool | None = None,
         bandwidth: int | None = None,
         latency: int | None = None,
-        delay_corr: float | int | None = None,
+        delay_corr: float | None = None,
         limit: int | None = None,
-        loss: float | int | None = None,
-        loss_corr: float | int | None = None,
+        loss: float | None = None,
+        loss_corr: float | None = None,
         gap: int | None = None,
-        duplicate: float | int | None = None,
-        duplicate_corr: float | int | None = None,
+        duplicate: float | None = None,
+        duplicate_corr: float | None = None,
         jitter: int | None = None,
-        reorder_prob: float | int | None = None,
-        reorder_corr: float | int | None = None,
-        corrupt_prob: float | int | None = None,
-        corrupt_corr: float | int | None = None,
+        reorder_prob: float | None = None,
+        reorder_corr: float | None = None,
+        corrupt_prob: float | None = None,
+        corrupt_corr: float | None = None,
     ) -> bool:
         """
         Apply network impairment to a link (bandwidth limit, latency, loss, jitter, etc.) by
@@ -125,26 +126,23 @@ def register_tools(mcp):
         """
         client = get_cml_client_dep()
         try:
-            payload: dict = {}
-            for key, value in (
-                ("enabled", enabled),
-                ("bandwidth", bandwidth),
-                ("latency", latency),
-                ("delay_corr", delay_corr),
-                ("limit", limit),
-                ("loss", loss),
-                ("loss_corr", loss_corr),
-                ("gap", gap),
-                ("duplicate", duplicate),
-                ("duplicate_corr", duplicate_corr),
-                ("jitter", jitter),
-                ("reorder_prob", reorder_prob),
-                ("reorder_corr", reorder_corr),
-                ("corrupt_prob", corrupt_prob),
-                ("corrupt_corr", corrupt_corr),
-            ):
-                if value is not None:
-                    payload[key] = value
+            payload = build_payload(
+                enabled=enabled,
+                bandwidth=bandwidth,
+                latency=latency,
+                delay_corr=delay_corr,
+                limit=limit,
+                loss=loss,
+                loss_corr=loss_corr,
+                gap=gap,
+                duplicate=duplicate,
+                duplicate_corr=duplicate_corr,
+                jitter=jitter,
+                reorder_prob=reorder_prob,
+                reorder_corr=reorder_corr,
+                corrupt_prob=corrupt_prob,
+                corrupt_corr=corrupt_corr,
+            )
             await client.patch(f"/labs/{lid}/links/{link_id}/condition", data=payload)
             return True
         except httpx.HTTPStatusError as e:

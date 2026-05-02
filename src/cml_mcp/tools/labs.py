@@ -39,7 +39,7 @@ from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabTitle
 from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
-from cml_mcp.tools.model_helpers import lenient_construct
+from cml_mcp.tools.model_helpers import build_payload, lenient_construct
 
 logger = logging.getLogger("cml-mcp.tools.labs")
 
@@ -192,15 +192,12 @@ def register_tools(mcp):  # noqa: C901
         """
         client = get_cml_client_dep()
         try:
-            payload: dict = {}
-            if title is not None:
-                payload["title"] = title
-            if description is not None:
-                payload["description"] = description
-            if notes is not None:
-                payload["notes"] = notes
-            if owner is not None:
-                payload["owner"] = str(owner)
+            payload = build_payload(
+                title=title,
+                description=description,
+                notes=notes,
+                owner=str(owner) if owner is not None else None,
+            )
             resp = await client.post("/labs", data=payload)
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
@@ -239,15 +236,12 @@ def register_tools(mcp):  # noqa: C901
         client = get_cml_client_dep()
         try:
             # PATCH-friendly: only include non-None values
-            payload = {}
-            if title is not None:
-                payload["title"] = title
-            if description is not None:
-                payload["description"] = description
-            if notes is not None:
-                payload["notes"] = notes
-            if owner is not None:
-                payload["owner"] = str(owner)
+            payload = build_payload(
+                title=title,
+                description=description,
+                notes=notes,
+                owner=str(owner) if owner is not None else None,
+            )
             await client.patch(f"/labs/{lid}", data=payload)
             return True
         except httpx.HTTPStatusError as e:
@@ -289,11 +283,7 @@ def register_tools(mcp):  # noqa: C901
         try:
             _validate_lab_associations(groups, "group")
             _validate_lab_associations(users, "user")
-            payload = {"associations": {}}
-            if groups is not None:
-                payload["associations"]["groups"] = groups
-            if users is not None:
-                payload["associations"]["users"] = users
+            payload = {"associations": build_payload(groups=groups, users=users)}
             await client.patch(f"/labs/{lid}", data=payload)
             return True
         except ToolError:
@@ -320,6 +310,16 @@ def register_tools(mcp):  # noqa: C901
         optionally `annotations`. Do NOT pass a raw string such as a lab title, a YAML blob,
         or a non-Topology JSON string — those will fail. For simpler use cases, prefer
         `create_empty_lab` followed by `add_node_to_cml_lab` and `connect_two_nodes`.
+
+        Expected shape:
+          {
+            "lab": {"title": "...", "version": "0.3.0"},
+            "nodes": [{"id": "n0", "label": "R1", "node_definition": "iol-xe",
+                       "x": 0, "y": 0, "interfaces": [...]}],
+            "links": [{"id": "l0", "n1": "n0", "n2": "n1", "i1": "...", "i2": "..."}]
+          }
+
+        See ``tests/input_data/IOL_OSPF_Lab.yaml`` for a complete real-world example.
 
         Required: lab (title, version), nodes (id, x, y, label, node_definition, interfaces),
         links (id, i1, i2, n1, n2). Optional: annotations, smart_annotations.
