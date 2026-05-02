@@ -28,8 +28,14 @@ def register_tools(mcp):
     )
     async def get_cml_information() -> SystemInformation:
         """
-        Get server info: version, hostname, system_uptime, ready status, and configuration details.
+        Get CML server info: version, hostname, uptime, ready status, and configuration details.
+
+        Examples:
+        - "What version of CML is this?"
+        - "Show me the CML server info"
+        - "How long has the CML server been up?"
         """
+
         client = get_cml_client_dep()
         try:
             info = await client.get("/system_information")
@@ -48,7 +54,12 @@ def register_tools(mcp):
     )
     async def get_cml_status() -> SystemHealth:
         """
-        Get health status: compute, controller, virl2, and overall system health indicators.
+        Get CML system health: compute, controller, virl2, and overall health indicators.
+
+        Examples:
+        - "Is CML healthy?"
+        - "Check the CML server status"
+        - "Are all CML components running?"
         """
         client = get_cml_client_dep()
         try:
@@ -68,7 +79,13 @@ def register_tools(mcp):
     )
     async def get_cml_statistics() -> SystemStats:
         """
-        Get resource usage: CPU, memory, disk, running labs/nodes/links counts, and cluster statistics.
+        Get CML resource usage: CPU, memory, disk, and counts of running labs/nodes/links and
+        cluster stats.
+
+        Examples:
+        - "How much CPU and memory is CML using?"
+        - "Show me how busy the CML server is"
+        - "How many labs and nodes are running?"
         """
         client = get_cml_client_dep()
         try:
@@ -88,7 +105,12 @@ def register_tools(mcp):
     )
     async def get_cml_licensing_details() -> dict[str, Any]:
         """
-        Get licensing info: registration status, features, node limits, and expiration dates.
+        Get CML licensing info: registration status, features, node limits, and expiration dates.
+
+        Examples:
+        - "Is CML licensed?"
+        - "When does my CML license expire?"
+        - "How many nodes can I run on this license?"
         """
         client = get_cml_client_dep()
         try:

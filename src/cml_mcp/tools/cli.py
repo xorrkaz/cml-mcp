@@ -95,12 +95,18 @@ def register_tools(mcp):
         console: int = 0,
     ) -> list[ConsoleLogOutput]:
         """
-        Get console output history by lab and node UUID. Node must be started.
-        Returns log entries from the selected serial console (default 0) with
-        time (ms since start) and message.  Note: some nodes (like Docker-based nodes)
-        use both serial 0 and serial 1.
-        Useful for troubleshooting, monitoring boot progress, and verifying CLI command results.
+        Get the console output history for a node by lab and node UUID. The node must be started.
+
+        Returns log entries (time in ms since start + message) from the selected serial console
+        (default 0). Some nodes (e.g. Docker-based) expose multiple consoles -- use console=1 for
+        the second port. Useful for boot troubleshooting and verifying CLI command results.
+
+        Examples:
+        - "Show me the console output for router R1"
+        - "Get the boot log for the firewall node"
+        - "Tail the second console (console 1) on the Alpine container"
         """
+
         client = get_cml_client_dep()
         return_lines = []
         try:
@@ -134,12 +140,21 @@ def register_tools(mcp):
         console: int = 0,
     ) -> str:
         """
-        Send CLI commands to running node by lab UUID and node label (not UUID). Node must be in BOOTED state.
-        Optionally use a serial console index other than the default 0 (might be needed for Docker-based nodes with multiple consoles).
-        CRITICAL: Can modify device state. Review commands before executing, especially with config_command=true.
-        Separate multiple commands with newlines.
-        config_command=false (default): exec/operational mode. config_command=true: config mode (omit "configure terminal"/"end").
-        Returns command output text.
+        Send CLI commands to a running node via PyATS/Unicon. Identify the node by lab UUID and
+        node label (NOT node UUID). Node must be in BOOTED state. Returns command output text.
+
+        - Separate multiple commands with newlines.
+        - config_command=false (default): exec/operational mode (e.g. "show version").
+        - config_command=true: configuration mode -- DO NOT include "configure terminal" or "end".
+        - Optional console: pick a non-default serial console (e.g. console=1 for some Docker nodes).
+
+        CRITICAL: Can modify device state. Review commands carefully before executing, especially
+        when config_command=true.
+
+        Examples:
+        - "Run 'show ip route' on router R1 in lab abc123"
+        - "Configure interface Gi0/1 with IP 10.0.0.1/24 on R1"
+        - "Show the running config of the firewall"
         """
         client = get_cml_client_dep()
 

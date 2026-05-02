@@ -56,8 +56,15 @@ def register_tools(mcp):  # noqa: C901
     )
     async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node]:
         """
-        Get lab nodes by UUID. Returns list with id, label, node_definition, x, y, state, interfaces, and operational data (CPU/RAM/serial).
+        List all nodes in a lab by lab UUID. Returns id, label, node_definition, x/y, state,
+        interfaces, and operational data (CPU, RAM, serial consoles).
+
+        Examples:
+        - "List all nodes in my CML lab"
+        - "What devices are in lab abc123?"
+        - "Show me the topology nodes"
         """
+
         client = get_cml_client_dep()
         try:
             resp = await client.get(f"/labs/{lid}/nodes", params={"data": True, "operational": True, "exclude_configurations": True})
@@ -92,10 +99,17 @@ def register_tools(mcp):  # noqa: C901
         node: NodeCreate | dict | str,
     ) -> UUID4Type:
         """
-        Add node to lab. Returns node UUID. Auto-creates default interfaces per node definition.
-        Required: x (-15000 to 15000), y (-15000 to 15000), label (1-128 chars), node_definition (e.g., "alpine", "iosv").
-        node_definition values come from get_cml_node_definitions.
-        Optional: image_definition, ram (MB), cpus, cpu_limit (%), data_volume (GB), boot_disk_size (GB), tags, configuration, parameters.
+        Add a node to an existing lab. Returns the new node's UUID. Default interfaces are auto-created.
+
+        Required on `node`: x and y (-15000..15000), label (1-128 chars), node_definition
+        (e.g. "alpine", "iosv", "csr1000v" -- discover via get_cml_node_definitions).
+        Optional: image_definition, ram (MB), cpus, cpu_limit (%), data_volume (GB),
+        boot_disk_size (GB), tags, configuration, parameters.
+
+        Examples:
+        - "Add a CSR1000v router called 'R3' to my lab"
+        - "Insert an IOSv switch into the topology"
+        - "Add an Alpine node to lab abc123"
         """
         client = get_cml_client_dep()
         try:
@@ -120,8 +134,16 @@ def register_tools(mcp):  # noqa: C901
         config: NodeConfigurationContent,
     ) -> bool:
         """
-        Set node startup config by lab and node UUID. config is a plain string of device commands.
-        Node must be in CREATED state (new or wiped). More efficient than starting node and sending CLI.
+        Set the startup configuration for a node by lab and node UUID. The `config` is a plain
+        string of device CLI commands. Node must be in the CREATED state (newly added or wiped).
+
+        Prefer this over starting the node and using send_cli_command -- it is faster and avoids
+        needing the node to be running.
+
+        Examples:
+        - "Set the startup config for R1 in lab abc123"
+        - "Apply this bootstrap config to the ASAv node"
+        - "Load the IOS config onto router xyz"
         """
         client = get_cml_client_dep()
         payload = {"configuration": str(config)}
@@ -139,7 +161,12 @@ def register_tools(mcp):  # noqa: C901
     )
     async def stop_cml_node(lid: UUID4Type, nid: UUID4Type) -> bool:
         """
-        Stop node by lab and node UUID. Powers down the node.
+        Stop (power down) a single node by lab and node UUID.
+
+        Examples:
+        - "Stop node R1 in my lab"
+        - "Power down the firewall"
+        - "Shut down node xyz"
         """
         client = get_cml_client_dep()
         try:
@@ -165,7 +192,13 @@ def register_tools(mcp):  # noqa: C901
         wait_for_convergence: bool = False,
     ) -> bool:
         """
-        Start node by lab and node UUID. Set wait_for_convergence=true to wait until node reaches stable state.
+        Start (boot) a single node by lab and node UUID.
+        Set wait_for_convergence=true to block until the node reaches a stable state.
+
+        Examples:
+        - "Start router R1"
+        - "Boot the firewall node"
+        - "Power on node xyz and wait for convergence"
         """
         client = get_cml_client_dep()
         try:
@@ -188,8 +221,15 @@ def register_tools(mcp):  # noqa: C901
     )
     async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
         """
-        Wipe node by lab and node UUID. Erases all node data. Node must be stopped first. CRITICAL: Always ask "Confirm wipe of [item]?"
-        and wait for user's "yes" before wiping.
+        Wipe a single node's disks by lab and node UUID. Erases all node data. Node must be stopped first.
+
+        CRITICAL: Destructive and irreversible. Always ask "Confirm wipe of [node]?" and wait for the
+        user's "yes" before invoking this tool.
+
+        Examples:
+        - "Wipe node R1"
+        - "Reset the firewall node to factory defaults"
+        - "Erase the disk on node xyz"
         """
         client = get_cml_client_dep()
         try:
@@ -208,8 +248,15 @@ def register_tools(mcp):  # noqa: C901
     )
     async def delete_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
         """
-        Delete node by lab and node UUID. Auto-stops and wipes if needed. CRITICAL: Always ask "Confirm deletion of [item]?" and wait for
-        user's "yes" before deleting.
+        Delete a node from a lab by lab and node UUID. Auto-stops and wipes the node first.
+
+        CRITICAL: Destructive and irreversible. Always ask "Confirm deletion of [node]?" and wait for the
+        user's "yes" before invoking this tool.
+
+        Examples:
+        - "Delete node R1 from my lab"
+        - "Remove the firewall from the topology"
+        - "Get rid of node xyz"
         """
         client = get_cml_client_dep()
         try:

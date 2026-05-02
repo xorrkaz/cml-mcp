@@ -44,9 +44,17 @@ def register_tools(mcp):
     )
     async def get_cml_node_definitions() -> list[SuperSimplifiedNodeDefinitionResponse]:
         """
-        Get available node types. Returns list with id, label, general_nature (switch/router/server/desktop), and schema_version.
-        Use for discovering valid node_definition values when creating nodes.
+        List all available node types on this CML server. Returns id, label, general_nature
+        (switch/router/server/desktop), and schema_version.
+
+        Use this to discover valid `node_definition` values before calling add_node_to_cml_lab.
+
+        Examples:
+        - "What node types can I use in CML?"
+        - "List all available device definitions"
+        - "Show me the supported routers and switches"
         """
+
         client = get_cml_client_dep()
         try:
             node_definitions = await client.get("/simplified_node_definitions")
@@ -65,7 +73,13 @@ def register_tools(mcp):
     )
     async def get_node_definition_detail(did: DefinitionID) -> NodeDefinition:
         """
-        Get detailed node definition by id: interfaces, device config, boot options, and resource requirements.
+        Get full details for one node definition by id: interfaces, default device config,
+        boot options, and resource requirements.
+
+        Examples:
+        - "Tell me more about the csr1000v node definition"
+        - "How many interfaces does iosv have by default?"
+        - "What's the default RAM for an ASAv?"
         """
         client = get_cml_client_dep()
         try:

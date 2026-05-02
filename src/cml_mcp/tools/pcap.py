@@ -38,9 +38,15 @@ def register_tools(mcp):
     )
     async def start_packet_capture(lid: UUID4Type, link_id: UUID4Type, pcap: PCAPStart | dict | str) -> bool:
         """
-        Start a packet capture by lab and link UUID. At least one of maxtime or maxpackets is
-        required in pcap.  Returns true if successful.
+        Start a packet capture on a link by lab and link UUID. At least one of `maxtime` (seconds)
+        or `maxpackets` is required in the `pcap` argument. Returns true on success.
+
+        Examples:
+        - "Start capturing packets on the link between R1 and R2 for 60 seconds"
+        - "Capture 1000 packets on link xyz"
+        - "Begin a pcap on the WAN link"
         """
+
         client = get_cml_client_dep()
         try:
             if isinstance(pcap, (dict, str)):
@@ -58,7 +64,12 @@ def register_tools(mcp):
     )
     async def stop_packet_capture(lid: UUID4Type, link_id: UUID4Type) -> bool:
         """
-        Stop a packet capture by lab and link UUID.  Returns true if successful.
+        Stop an active packet capture on a link by lab and link UUID.
+
+        Examples:
+        - "Stop the packet capture on link xyz"
+        - "End the pcap between R1 and R2"
+        - "Stop capturing on the WAN link"
         """
         client = get_cml_client_dep()
         try:
@@ -75,8 +86,13 @@ def register_tools(mcp):
     )
     async def check_packet_capture_status(lid: UUID4Type, link_id: UUID4Type) -> PCAPStatusResponse:
         """
-        Check if a packet capture is active on a link by lab and link UUID.
-        Returns capture config and number of packets captured so far.
+        Check whether a packet capture is active on a link, plus its config and packet count
+        so far. Returns a PCAPStatusResponse.
+
+        Examples:
+        - "Is a capture running on link xyz?"
+        - "How many packets have I captured so far?"
+        - "Show packet capture status for the WAN link"
         """
         client = get_cml_client_dep()
         try:
@@ -93,7 +109,13 @@ def register_tools(mcp):
     )
     async def get_captured_packet_overview(lid: UUID4Type, link_id: UUID4Type) -> list[PCAPItem]:
         """
-        Get a brief summary of each packet captured on a link by lab and link UUID. Returns list of PCAPItem objects.
+        Get a brief one-line summary of each packet captured on a link (timestamps, src/dst,
+        protocol). Lightweight alternative to downloading the full PCAP.
+
+        Examples:
+        - "Summarize the captured packets on link xyz"
+        - "Show me a packet list for the WAN capture"
+        - "What was captured between R1 and R2?"
         """
         client = get_cml_client_dep()
         try:
@@ -111,8 +133,14 @@ def register_tools(mcp):
     )
     async def get_packet_capture_data(lid: UUID4Type, link_id: UUID4Type) -> str:
         """
-        Download complete packet capture by lab and link UUID. Returns base64-encoded PCAP file.
-        Decode and save as .pcap file for use with Wireshark, tcpdump, or other packet analysis tools.
+        Download the complete PCAP file for a link by lab and link UUID. Returns base64-encoded
+        binary PCAP data -- decode and save as a .pcap file for Wireshark, tcpdump, or other
+        analysis tools.
+
+        Examples:
+        - "Download the pcap from link xyz"
+        - "Give me the capture file for the WAN link"
+        - "Get the full packet capture for the link between R1 and R2"
         """
         client = get_cml_client_dep()
         try:

@@ -51,9 +51,17 @@ def register_tools(mcp):
         intf: InterfaceCreate | dict | str,
     ) -> SimplifiedInterfaceResponse:
         """
-        Add interface to node. Returns interface with id, node, slot, type, and MAC address.
-        Required: node (node UUID). Optional: slot (0-128), mac_address ("00:11:22:33:44:55" format).
+        Add a new interface to a node. Returns interface details (id, node, slot, type, MAC).
+
+        Required on `intf`: node (node UUID). Optional: slot (0-128),
+        mac_address (e.g. "00:11:22:33:44:55").
+
+        Examples:
+        - "Add a new interface to node R1"
+        - "Give the firewall another GigabitEthernet port"
+        - "Add interface slot 3 to node xyz"
         """
+
         client = get_cml_client_dep()
         try:
             if isinstance(intf, (dict, str)):
@@ -76,7 +84,13 @@ def register_tools(mcp):
         nid: UUID4Type,
     ) -> list[SimplifiedInterfaceResponse]:
         """
-        Get node interfaces by lab and node UUID. Returns list with id, node, label, slot, type, MAC address, and IP config.
+        List all interfaces on a node by lab and node UUID. Returns id, node, label, slot, type,
+        MAC address, and IP configuration.
+
+        Examples:
+        - "List the interfaces on R1"
+        - "Show me the ports on the firewall"
+        - "What interfaces does node xyz have?"
         """
         client = get_cml_client_dep()
         try:

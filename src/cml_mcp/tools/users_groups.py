@@ -33,8 +33,15 @@ def register_tools(mcp):  # noqa: C901
     )
     async def get_cml_users() -> list[UserResponse]:
         """
-        Retrieve all users. Returns list with id, username, fullname, email, admin status, groups, and resource_pool.
+        List all CML users. Returns id, username, fullname, email, admin status, groups,
+        and resource_pool.
+
+        Examples:
+        - "Show me all CML users"
+        - "Who has accounts on this CML server?"
+        - "List the users and their groups"
         """
+
         client = get_cml_client_dep()
         try:
             users = await client.get("/users")
@@ -54,8 +61,15 @@ def register_tools(mcp):  # noqa: C901
     )
     async def create_cml_user(user: UserCreate | dict | str) -> UUID4Type:
         """
-        Create user. Requires admin. Returns user UUID.
-        Required: username, password. Optional: fullname, description, email, groups (UUID list), admin (bool), resource_pool (UUID).
+        Create a new CML user. Requires admin privileges. Returns the new user's UUID.
+
+        Required: username, password. Optional: fullname, description, email, groups
+        (UUID list), admin (bool), resource_pool (UUID).
+
+        Examples:
+        - "Create a user named alice with password ChangeMe123"
+        - "Add a new admin account 'bob'"
+        - "Provision a CML user for carol"
         """
         client = get_cml_client_dep()
         try:
@@ -80,8 +94,15 @@ def register_tools(mcp):  # noqa: C901
     )
     async def delete_cml_user(user_id: UUID4Type, ctx: Context) -> bool:
         """
-        Delete user by UUID. Requires admin. CRITICAL: Always ask "Confirm deletion of [item]?" and wait for
-        user's "yes" before deleting.
+        Delete a CML user by UUID. Requires admin privileges.
+
+        CRITICAL: Destructive and irreversible. Always ask "Confirm deletion of [user]?" and
+        wait for the user's "yes" before invoking this tool.
+
+        Examples:
+        - "Delete user alice"
+        - "Remove the bob account from CML"
+        - "Get rid of user xyz"
         """
         client = get_cml_client_dep()
         try:
@@ -118,7 +139,13 @@ def register_tools(mcp):  # noqa: C901
     )
     async def get_cml_groups() -> list[GroupResponse]:
         """
-        Retrieve all groups. Returns list with id, name, description, members (user UUIDs), and lab associations.
+        List all CML groups. Returns id, name, description, members (user UUIDs), and lab
+        associations.
+
+        Examples:
+        - "List all CML groups"
+        - "Who's in the engineers group?"
+        - "Show me group memberships"
         """
         client = get_cml_client_dep()
         try:
@@ -139,8 +166,15 @@ def register_tools(mcp):  # noqa: C901
     )
     async def create_cml_group(group: GroupCreate | dict | str) -> UUID4Type:
         """
-        Create group. Requires admin. Returns group UUID.
-        Required: name. Optional: description, members (user UUID list), associations (lab permissions).
+        Create a new CML group. Requires admin privileges. Returns the new group's UUID.
+
+        Required: name. Optional: description, members (user UUID list), associations (lab
+        permissions).
+
+        Examples:
+        - "Create a group called 'engineers'"
+        - "Add a new CML group named 'students'"
+        - "Set up a group for the QA team"
         """
         client = get_cml_client_dep()
         try:
@@ -165,8 +199,15 @@ def register_tools(mcp):  # noqa: C901
     )
     async def delete_cml_group(group_id: UUID4Type, ctx: Context) -> bool:
         """
-        Delete group by UUID. Requires admin. CRITICAL: Always ask "Confirm deletion of [item]?" and wait for
-        user's "yes" before deleting.
+        Delete a CML group by UUID. Requires admin privileges.
+
+        CRITICAL: Destructive and irreversible. Always ask "Confirm deletion of [group]?" and
+        wait for the user's "yes" before invoking this tool.
+
+        Examples:
+        - "Delete the 'students' group"
+        - "Remove group xyz"
+        - "Get rid of the QA team group"
         """
         client = get_cml_client_dep()
         try:

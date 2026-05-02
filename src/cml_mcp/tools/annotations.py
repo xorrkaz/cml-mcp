@@ -40,8 +40,14 @@ def register_tools(mcp):
     )
     async def get_annotations_for_cml_lab(lid: UUID4Type) -> list[AnnotationResponse]:
         """
-        Get all visual annotations for a lab by lab UUID. Returns list of AnnotationResponse objects.
+        Get all visual annotations (text labels, shapes, lines) on a lab's canvas by lab UUID.
+
+        Examples:
+        - "Show me the annotations on my lab"
+        - "List all labels and shapes in lab abc123"
+        - "What's drawn on the OSPF lab canvas?"
         """
+
         client = get_cml_client_dep()
         try:
             resp = await client.get(f"/labs/{lid}/annotations")
@@ -79,7 +85,9 @@ def register_tools(mcp):
         annotation: EllipseAnnotation | LineAnnotation | RectangleAnnotation | TextAnnotation | dict | str,
     ) -> UUID4Type:
         """
-        Add visual annotation to lab. Returns annotation UUID.
+        Add a visual annotation (text label, rectangle, ellipse, or line) to a lab canvas.
+        Returns the annotation UUID.
+
         Required field: type ("text"/"rectangle"/"ellipse"/"line").
 
         Common fields: x1, y1 (coords -15000 to 15000), color, border_color, border_style (""/"2,2"/"4,2"),
@@ -92,6 +100,11 @@ def register_tools(mcp):
 
         Text: text_content (max 8192 chars), text_font (required), text_size (1-128), text_unit ("pt"/"px"/"em"),
         text_bold/text_italic (bool), rotation (0-360).
+
+        Examples:
+        - "Add a 'Core Network' text label at position 0,0 in my lab"
+        - "Draw a red rectangle around the routers in lab abc123"
+        - "Add an arrow pointing from R1 to R2"
         """
         client = get_cml_client_dep()
         try:
@@ -130,8 +143,15 @@ def register_tools(mcp):
         ctx: Context,
     ) -> bool:
         """
-        Delete annotation by lab and annotation UUID. CRITICAL: Always ask "Confirm deletion of [item]?" and wait for
-        user's "yes" before deleting.
+        Delete a single annotation by lab and annotation UUID.
+
+        CRITICAL: Destructive. Always ask "Confirm deletion of [annotation]?" and wait for the
+        user's "yes" before invoking this tool.
+
+        Examples:
+        - "Delete the 'Core Network' label"
+        - "Remove annotation xyz from my lab"
+        - "Get rid of the red rectangle"
         """
         client = get_cml_client_dep()
         try:

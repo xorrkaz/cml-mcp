@@ -33,10 +33,17 @@ def register_tools(mcp):
         link_info: LinkCreate | dict | str,
     ) -> UUID4Type:
         """
-        Create link between two interfaces. Returns link UUID.
-        Required: src_int (source interface UUID), dst_int (destination interface UUID).
-        Use interface UUIDs from get_interfaces_for_node.
+        Create a link between two interfaces in the same lab. Returns the new link's UUID.
+
+        Required on `link_info`: src_int (source interface UUID) and dst_int (destination
+        interface UUID). Get interface UUIDs from get_interfaces_for_node.
+
+        Examples:
+        - "Connect router R1 to switch SW1"
+        - "Link the firewall to the core router"
+        - "Wire R1 Gi0/0 to R2 Gi0/0"
         """
+
         client = get_cml_client_dep()
         try:
             if isinstance(link_info, (dict, str)):
@@ -57,7 +64,13 @@ def register_tools(mcp):
     )
     async def get_all_links_for_lab(lid: UUID4Type) -> list[LinkResponse]:
         """
-        Get lab links by UUID. Returns list with id, label, interface_a, interface_b, node_a, node_b, state, and capture_key.
+        List all links in a lab by lab UUID. Returns id, label, interface_a, interface_b,
+        node_a, node_b, state, and capture_key (for packet capture).
+
+        Examples:
+        - "Show all links in lab abc123"
+        - "List the connections in my topology"
+        - "What's wired up in my OSPF lab?"
         """
         client = get_cml_client_dep()
         try:
@@ -78,11 +91,18 @@ def register_tools(mcp):
         condition: LinkConditionConfiguration | dict | str,
     ) -> bool:
         """
-        Configure link network conditions by lab and link UUID.
-        Omit fields to leave existing values unchanged.
-        Fields (all optional): bandwidth (kbps, 0-10M), latency (ms, 0-10K), loss (%, 0-100), jitter (ms, 0-10K),
-        duplicate (%, 0-100), corrupt_prob (%, 0-100), gap (ms), limit (ms), reorder_prob (%, 0-100),
-        delay_corr/loss_corr/duplicate_corr/reorder_corr/corrupt_corr (%, 0-100), enabled (bool).
+        Apply network impairment to a link (bandwidth limit, latency, loss, jitter, etc.) by
+        lab and link UUID. Omitted fields keep their existing value.
+
+        Optional fields: bandwidth (kbps, 0-10M), latency (ms, 0-10K), loss (%, 0-100),
+        jitter (ms, 0-10K), duplicate (%), corrupt_prob (%), gap (ms), limit (ms),
+        reorder_prob (%), delay_corr/loss_corr/duplicate_corr/reorder_corr/corrupt_corr (%),
+        enabled (bool).
+
+        Examples:
+        - "Add 100ms latency to the link between R1 and R2"
+        - "Limit the WAN link to 1 Mbps with 1% packet loss"
+        - "Simulate a flaky connection on link xyz"
         """
         client = get_cml_client_dep()
         try:
@@ -106,7 +126,12 @@ def register_tools(mcp):
     )
     async def start_cml_link(lid: UUID4Type, link_id: UUID4Type) -> bool:
         """
-        Start link by lab and link UUID. Enables connectivity.
+        Start a link (enable connectivity) by lab and link UUID.
+
+        Examples:
+        - "Start the link between R1 and R2"
+        - "Enable link xyz"
+        - "Bring up the WAN connection"
         """
         client = get_cml_client_dep()
         try:
@@ -128,7 +153,12 @@ def register_tools(mcp):
     )
     async def stop_cml_link(lid: UUID4Type, link_id: UUID4Type) -> bool:
         """
-        Stop link by lab and link UUID. Disables connectivity.
+        Stop a link (disable connectivity, simulate cable pull) by lab and link UUID.
+
+        Examples:
+        - "Stop the link between R1 and R2"
+        - "Disable link xyz"
+        - "Simulate a cable pull on the WAN link"
         """
         client = get_cml_client_dep()
         try:

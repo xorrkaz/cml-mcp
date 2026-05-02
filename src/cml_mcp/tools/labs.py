@@ -96,9 +96,17 @@ def register_tools(mcp):  # noqa: C901
     )
     async def get_cml_labs(user: UserName | None = None) -> list[Lab]:
         """
-        Retrieve labs filtered by username. Omit user to get all labs (admin) or current user's labs (non-admin).
-        Returns list of Lab objects with id, lab_title, owner_username, description, state, and metadata.
+        List CML labs, optionally filtered by owner username.
+
+        Returns Lab objects with id, lab_title, owner_username, description, state, and metadata.
+        Omit `user` to get all labs (admin) or current user's labs (non-admin).
+
+        Examples:
+        - "Show me all my CML labs"
+        - "List all available labs in CML"
+        - "What labs does alice own?"
         """
+
         client = get_cml_client_dep()
 
         # # Clients like to pass "null" as a string vs. null as a None type.
@@ -134,9 +142,15 @@ def register_tools(mcp):  # noqa: C901
     )
     async def create_empty_lab(lab: LabRequest | dict | str) -> UUID4Type:
         """
-        Create empty lab. Returns lab UUID.
-        Optional: title (str, 1-64 chars), owner (UUID), description (str, max 4096 chars), notes (str, max 32768 chars),
-        associations (group/user permissions).
+        Create an empty CML lab (no nodes/links). Returns the new lab UUID.
+
+        Optional fields on `lab`: title (1-64 chars), owner (UUID), description (<=4096 chars),
+        notes (<=32768 chars), associations (group/user permissions).
+
+        Examples:
+        - "Create a new empty lab called 'OSPF Practice'"
+        - "Make me a blank CML lab"
+        - "Start a new lab titled 'Customer Demo'"
         """
         client = get_cml_client_dep()
         try:
@@ -160,8 +174,12 @@ def register_tools(mcp):  # noqa: C901
     )
     async def modify_cml_lab(lid: UUID4Type, lab: LabRequest | dict | str) -> bool:
         """
-        Update lab metadata by UUID.
-        Modifiable: title, owner, description, notes, associations (group/user permissions).
+        Update lab metadata (title, owner, description, notes, associations) by lab UUID.
+
+        Examples:
+        - "Rename lab abc123 to 'Production Test'"
+        - "Change the owner of my lab to bob"
+        - "Update the description on lab abc123"
         """
         client = get_cml_client_dep()
         try:
@@ -184,10 +202,16 @@ def register_tools(mcp):  # noqa: C901
     )
     async def create_full_lab_topology(topology: Topology | dict | str) -> UUID4Type:
         """
-        Create complete lab from Topology. Returns lab UUID.
-        Required: lab (title, version), nodes (id, x, y, label, node_definition, interfaces), links (id, i1, i2, n1, n2).
-        Optional: annotations (text/rectangle/ellipse/line), smart_annotations.
-        Supports full configuration: RAM, CPU, images, interface MAC addresses, link conditioning, and node configs.
+        Build a complete CML lab from a Topology object in one call. Returns the new lab UUID.
+
+        Required: lab (title, version), nodes (id, x, y, label, node_definition, interfaces),
+        links (id, i1, i2, n1, n2). Optional: annotations, smart_annotations.
+        Supports RAM, CPU, images, MAC addresses, link conditioning, and node startup configs.
+
+        Examples:
+        - "Create a full CML lab with 2 routers, 1 switch, and a firewall in a hub-spoke"
+        - "Build a triangle topology with 3 CSR1000v routers"
+        - "Set up a lab with an IOSv router connected to an ASAv firewall"
         """
         client = get_cml_client_dep()
         try:
@@ -208,7 +232,14 @@ def register_tools(mcp):  # noqa: C901
         wait_for_convergence: bool = False,
     ) -> bool:
         """
-        Start lab by UUID. Set wait_for_convergence=true to wait until all nodes reach stable state.
+        Start (boot) a CML lab and all its nodes by lab UUID.
+
+        Set wait_for_convergence=true to block until every node reports a stable state.
+
+        Examples:
+        - "Start the lab with ID abc123"
+        - "Boot up my OSPF lab"
+        - "Power on lab xyz and wait until it converges"
         """
         client = get_cml_client_dep()
         try:
@@ -251,7 +282,12 @@ def register_tools(mcp):  # noqa: C901
     )
     async def stop_cml_lab(lid: UUID4Type) -> bool:
         """
-        Stop lab by UUID. Stops all running nodes.
+        Stop (power off) all running nodes in a CML lab by lab UUID.
+
+        Examples:
+        - "Stop my CML lab"
+        - "Shut down lab abc123"
+        - "Power off all nodes in the OSPF lab"
         """
         client = get_cml_client_dep()
         try:
@@ -273,8 +309,15 @@ def register_tools(mcp):  # noqa: C901
     )
     async def wipe_cml_lab(lid: UUID4Type, ctx: Context) -> bool:
         """
-        Wipe lab by UUID. Erases all node data/configurations. CRITICAL: Always ask "Confirm wipe of [item]?" and wait for user's "yes"
-        before wiping.
+        Wipe a CML lab by UUID -- erases all node disk data and configurations. Lab is stopped first if needed.
+
+        CRITICAL: Destructive and irreversible. Always ask "Confirm wipe of [lab]?" and wait for the
+        user's "yes" before invoking this tool.
+
+        Examples:
+        - "Wipe the OSPF lab"
+        - "Reset lab abc123 to a clean state"
+        - "Erase all node data in my CML lab"
         """
         client = get_cml_client_dep()
         try:
@@ -297,8 +340,15 @@ def register_tools(mcp):  # noqa: C901
     )
     async def delete_cml_lab(lid: UUID4Type, ctx: Context) -> bool:
         """
-        Delete lab by UUID. Auto-stops and wipes if needed. CRITICAL: Always ask "Confirm deletion of [item]?" and wait for user's "yes"
-        before deleting.
+        Delete a CML lab by UUID. Auto-stops and wipes the lab first.
+
+        CRITICAL: Destructive and irreversible. Always ask "Confirm deletion of [lab]?" and wait for the
+        user's "yes" before invoking this tool.
+
+        Examples:
+        - "Delete lab abc123"
+        - "Remove my OSPF lab"
+        - "Get rid of the test lab"
         """
         client = get_cml_client_dep()
         try:
@@ -319,7 +369,12 @@ def register_tools(mcp):  # noqa: C901
     )
     async def get_cml_lab_by_title(title: LabTitle) -> Lab:
         """
-        Find lab by exact, case-sensitive title. Returns Lab object with id, state, nodes, and metadata.
+        Look up a single CML lab by its exact, case-sensitive title. Returns the Lab object.
+
+        Examples:
+        - "Get the lab titled 'OSPF Practice'"
+        - "Find my lab named 'Customer Demo'"
+        - "Look up the 'BGP Lab' by name"
         """
         client = get_cml_client_dep()
         try:
@@ -340,8 +395,13 @@ def register_tools(mcp):  # noqa: C901
     )
     async def download_lab_topology(lid: UUID4Type) -> str:
         """
-        Download lab topology by UUID. Returns the topology as a YAML string.
-        This string should be presented to the user as a YAML file for saving.
+        Download the full topology for a lab by UUID as a YAML string. Present this to the user
+        for saving to a .yaml file (e.g. for backup or sharing).
+
+        Examples:
+        - "Export lab abc123 as YAML"
+        - "Download my OSPF lab topology"
+        - "Give me a backup of lab xyz"
         """
         client = get_cml_client_dep()
         try:
@@ -357,8 +417,13 @@ def register_tools(mcp):  # noqa: C901
     )
     async def clone_cml_lab(lid: UUID4Type, new_title: LabTitle | None = None) -> UUID4Type:
         """
-        Clone lab by UUID. Returns UUID of the new lab.
-        Optional new_title; if omitted, the clone is titled "Copy of " followed by the original title.
+        Clone an existing lab by UUID, optionally with a new title. Returns the new lab's UUID.
+        If new_title is omitted, the clone is named "Copy of <original title>".
+
+        Examples:
+        - "Clone lab abc123"
+        - "Make a copy of my OSPF lab called 'OSPF Lab v2'"
+        - "Duplicate the BGP lab"
         """
         client = get_cml_client_dep()
         try:
