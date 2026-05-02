@@ -32,7 +32,9 @@ async def add_interface(lid: UUID4Type, payload: dict, client: CMLClient) -> Sim
         InterfaceResponse: The added interface details.
     """
     resp = await client.post(f"/labs/{lid}/interfaces", data=payload)
-    return SimplifiedInterfaceResponse(**resp)
+    # See model_helpers.py: declared return type is the Pydantic model so MCP clients
+    # get a typed schema, but we return a dumped dict to bypass FastMCP's double marshalling.
+    return SimplifiedInterfaceResponse(**resp).model_dump(exclude_unset=True)
 
 
 def register_tools(mcp):
@@ -101,7 +103,8 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         try:
             resp = await client.get(f"/labs/{lid}/nodes/{nid}/interfaces", params={"data": True, "operational": False})
-            return [SimplifiedInterfaceResponse(**iface) for iface in resp]
+            # See model_helpers.py: dump after construction to bypass FastMCP double marshalling.
+            return [SimplifiedInterfaceResponse(**iface).model_dump(exclude_unset=True) for iface in resp]
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:

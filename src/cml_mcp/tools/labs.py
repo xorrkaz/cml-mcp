@@ -319,8 +319,6 @@ def register_tools(mcp):  # noqa: C901
             "links": [{"id": "l0", "n1": "n0", "n2": "n1", "i1": "...", "i2": "..."}]
           }
 
-        See ``tests/input_data/IOL_OSPF_Lab.yaml`` for a complete real-world example.
-
         Required: lab (title, version), nodes (id, x, y, label, node_definition, interfaces),
         links (id, i1, i2, n1, n2). Optional: annotations, smart_annotations.
         Supports RAM, CPU, images, MAC addresses, link conditioning, and node startup configs.
