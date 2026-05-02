@@ -79,26 +79,49 @@ Each module exposes a `register_tools(mcp)` function called from `server.py`.
 
 ## Development Workflow
 
+This project uses [`just`](https://github.com/casey/just) as its task runner. **Always prefer `just` recipes over invoking `uv`, `pytest`, `black`, etc. directly** — recipes wrap commands in `uv run` and apply project-standard arguments. List recipes with `just` (no args) or `just --list`.
+
+| Recipe | Purpose |
+|---|---|
+| `just dev-install` | Sync the venv with all extras + dev deps (`uv sync --all-extras`) |
+| `just install` | Sync prod-only deps (`uv sync --all-extras --no-dev`) |
+| `just update` | Upgrade all dependencies |
+| `just test [args]` | Run offline test suite with mocks (default `USE_MOCKS=true`). Pass pytest args, e.g. `just test "-x -k packet"` |
+| `just test-live [args]` | Run tests against a real CML server (`USE_MOCKS=false`) |
+| `just check` | Run all lint/style checks: `black --check`, `isort --check-only`, `flake8` over `src/` + `tests/` |
+| `just build` | Build wheel + multi-arch Docker image |
+| `just publish` | Publish to PyPI, MCP registry, and Docker Hub |
+| `just clean` / `just fresh` | Remove caches/venv (prompts for confirmation) |
+
+**Before finishing any code change, run `just check` and `just test`.** Both must be green.
+
+If `just check` reports formatting drift, fix it with:
 ```sh
-uv sync --all-extras      # install all deps including dev + pyats
-just test                 # offline tests (USE_MOCKS=true, no CML needed)
-just test-live            # live tests against a real CML server
-just build                # build wheel + Docker multi-arch image
-just publish              # publish to PyPI, MCP registry, and Docker Hub
+uv run black src/ tests/
+uv run isort src/ tests/
 ```
 
-Linting must pass before committing:
-```sh
-black src/ tests/
-isort src/ tests/
-flake8 src/ tests/
-```
-
-Line length is 140. Auto-generated schemas under `src/cml_mcp/cml/` are excluded from formatting.
+Line length is 140. Auto-generated schemas under `src/cml_mcp/cml/` are excluded from formatting and lint.
 
 ## Testing
 
-Tests live in `tests/test_cml_mcp.py`. Mock JSON fixtures are in `tests/mocks/`. Set `USE_MOCKS=false` to run against a live CML server (creates and deletes real resources). Requires CML 2.9+.
+Tests live in `tests/test_cml_mcp.py`; mock JSON fixtures are in `tests/mocks/`. The `USE_MOCKS` env var (default `true`) toggles between mock and live mode — `live_only` / `mock_only` markers in `conftest.py` skip tests that don't apply to the current mode. Live mode requires CML 2.9+ and creates/deletes real resources.
+
+When adding a new tool that calls a new CML REST endpoint, capture a sample JSON response into `tests/mocks/<tool_name>.json` so the offline suite can exercise it. See [tests/MOCK_FRAMEWORK.md](tests/MOCK_FRAMEWORK.md) for the mocking pattern.
+
+## Tool Authoring Conventions
+
+When adding a new `@mcp.tool` to a module under `src/cml_mcp/tools/`:
+
+1. **Get the client via the dependency helper:** `client = get_cml_client_dep()` (do not import settings or instantiate `CMLClient` directly inside a tool).
+2. **Annotate destructive/read-only behavior** in the `annotations={...}` dict on `@mcp.tool` (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `title`).
+3. **Accept Pydantic models leniently** — declare the parameter as `Model | dict | str` and convert with `lenient_construct(Model, value)` from `tools/model_helpers.py`. This keeps clients that JSON-encode arguments working.
+4. **Wrap the body in `try/except`** — catch `httpx.HTTPStatusError` first and re-raise as `ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")`, then a generic `Exception` handler that logs with `logger.exception(...)` and re-raises as `ToolError(e)`.
+5. **For destructive tools**, call `await elicit_confirmation(ctx, "...")` (from `tools/dependencies.py`) and put a `CRITICAL:` line in the docstring so LLMs ask the user even when `elicit` is unavailable.
+6. **For admin-only tools**, gate with `if not await client.is_admin(): raise ValueError(...)`.
+7. **Docstring format** (see existing tools for examples) — a one-line action summary, a few terse fact lines (required/optional fields, return shape, constraints), and an `Examples:` block with 2–3 sample user prompts to aid LLM tool selection on smaller models.
+
+Register the tool by adding (or relying on) the module's `register_tools(mcp)` call in `src/cml_mcp/server.py`.
 
 ## Dependencies
 
