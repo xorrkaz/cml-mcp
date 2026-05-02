@@ -115,7 +115,7 @@ When adding a new `@mcp.tool` to a module under `src/cml_mcp/tools/`:
 
 1. **Get the client via the dependency helper:** `client = get_cml_client_dep()` (do not import settings or instantiate `CMLClient` directly inside a tool).
 2. **Annotate destructive/read-only behavior** in the `annotations={...}` dict on `@mcp.tool` (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `title`).
-3. **Accept Pydantic models leniently** — declare the parameter as `Model | dict | str` and convert with `lenient_construct(Model, value)` from `tools/model_helpers.py`. This keeps clients that JSON-encode arguments working.
+3. **Prefer flat primitive parameters** — see [Flat primitive arguments](#flat-primitive-arguments) below. Reserve `Model | dict | str` parameter unions for genuinely deep recursive structures (currently only `create_full_lab_topology`'s `topology`); for those, convert with `lenient_construct(Model, value)` from `tools/model_helpers.py`.
 4. **Wrap the body in `try/except`** — catch `httpx.HTTPStatusError` first and re-raise as `ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")`, then a generic `Exception` handler that logs with `logger.exception(...)` and re-raises as `ToolError(e)`.
 5. **For destructive tools**, call `await elicit_confirmation(ctx, "...")` (from `tools/dependencies.py`) and put a `CRITICAL:` line in the docstring so LLMs ask the user even when `elicit` is unavailable.
 6. **For admin-only tools**, gate with `if not await client.is_admin(): raise ValueError(...)`.
@@ -144,6 +144,23 @@ Tools that wrap a CML schema model (e.g. `LabRequest`, `NodeCreate`, `UserCreate
 - Update the field-coverage comment.
 - Run `just check && just test`.
 - `tests/test_schema_drift.py` programmatically checks that each flattened tool's input schema covers the source model's required fields.
+
+#### Sample prompt for agents auditing a schema bump
+
+When `virl2_client` is upgraded (or `src/cml_mcp/cml/` is regenerated), run a fresh agent with the following prompt — it forces a complete diff/update cycle and leaves no flattened tool stale:
+
+> Audit this repo for CML schema drift after a `virl2_client` / `src/cml_mcp/cml/` update.
+>
+> 1. Run `git diff <previous-tag>..HEAD -- src/cml_mcp/cml/` and list every changed Pydantic model (focus on `*Request`, `*Create`, `*Update`, and any model referenced by a flattened tool — see `FLAT_TOOL_SCHEMAS` in `tests/test_schema_drift.py`).
+> 2. For each changed model, find the wrapping tool(s) under `src/cml_mcp/tools/` (grep for the model name and the `# Source schema:` comment).
+> 3. For each tool:
+>    - Compare the model's current fields to the tool's parameter list and the `# Exposed:` / `# Omitted:` comment block.
+>    - **Added field** → add a primitive kwarg (default `None` if optional, required otherwise), append it to the dict-payload builder, and update the `# Exposed:` line.
+>    - **Removed field** → mark the kwarg deprecated with a `DeprecationWarning` for one release before deletion; remove from the comment block.
+>    - **Type or constraint change** (e.g. min/max, enum values) → update the docstring's "Required/Optional" lines.
+> 4. Run `just check && just test`. Both must pass; `tests/test_schema_drift.py::test_schema_coverage` must remain green.
+> 5. Update the tool count in `tests/test_cml_mcp.py::test_list_tools`, `README.md` ("provides N MCP tools"), and the `AGENTS.md` tool table if any tool was added or removed.
+> 6. Summarize: list each affected tool, the fields added/removed/changed, and any docstring updates.
 
 Register the tool by adding (or relying on) the module's `register_tools(mcp)` call in `src/cml_mcp/server.py`.
 

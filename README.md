@@ -82,7 +82,7 @@ The easiest way to get started is using `uvx` with Claude Desktop (or other MCP-
 
 ## Available MCP Tools
 
-The server provides 47 MCP tools organized into the following categories:
+The server provides 51 MCP tools organized into the following categories:
 
 ### Lab Management
 
@@ -90,6 +90,7 @@ The server provides 47 MCP tools organized into the following categories:
 - **create_empty_lab** - Create a new empty lab with optional metadata
 - **create_full_lab_topology** - Create a complete lab from a topology definition
 - **modify_cml_lab** - Update lab properties (title, description, notes)
+- **set_cml_lab_permissions** - Configure group/user access (LAB_ADMIN, LAB_EDIT, LAB_EXEC, LAB_VIEW)
 - **start_cml_lab** - Start all nodes in a lab
 - **stop_cml_lab** - Stop all nodes in a lab
 - **wipe_cml_lab** - Wipe all node data/configurations (prompts for confirmation if client supports it)
@@ -125,7 +126,10 @@ The server provides 47 MCP tools organized into the following categories:
 ### Annotations (Visual Elements)
 
 - **get_annotations_for_cml_lab** - Get all visual annotations in a lab
-- **add_annotation_to_cml_lab** - Add text, rectangle, ellipse, or line annotations
+- **add_text_annotation** - Add a text annotation
+- **add_rectangle_annotation** - Add a rectangle annotation
+- **add_ellipse_annotation** - Add an ellipse annotation
+- **add_line_annotation** - Add a line annotation
 - **delete_annotation_from_lab** - Delete an annotation (prompts for confirmation if client supports it)
 
 ### Packet Capture (PCAP)
