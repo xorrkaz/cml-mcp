@@ -79,7 +79,7 @@ Both should pass before you make any changes.
 The project uses [`just`](https://github.com/casey/just) as its task runner. **Always prefer `just` recipes over invoking `uv`, `pytest`, `black`, etc. directly** — recipes wrap commands in `uv run` and apply project-standard arguments. List recipes with `just` (no args) or `just --list`.
 
 | Recipe | Purpose |
-|---|---|
+| --- | --- |
 | `just dev-install` | Sync the venv with all extras + dev deps |
 | `just install` | Sync prod-only deps |
 | `just update` | Upgrade all dependencies |
