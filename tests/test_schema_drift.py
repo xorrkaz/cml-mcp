@@ -19,7 +19,7 @@ from cml_mcp.cml.simple_webserver.schemas.annotations import (
 )
 from cml_mcp.cml.simple_webserver.schemas.groups import GroupCreate
 from cml_mcp.cml.simple_webserver.schemas.interfaces import InterfaceCreate
-from cml_mcp.cml.simple_webserver.schemas.labs import LabRequest
+from cml_mcp.cml.simple_webserver.schemas.labs import LabAssociations, LabRequest
 from cml_mcp.cml.simple_webserver.schemas.links import LinkConditionConfiguration, LinkCreate
 from cml_mcp.cml.simple_webserver.schemas.nodes import NodeCreate
 from cml_mcp.cml.simple_webserver.schemas.pcap import PCAPStart
@@ -29,6 +29,7 @@ from cml_mcp.cml.simple_webserver.schemas.users import UserCreate
 FLAT_TOOL_SCHEMAS: dict[str, type[BaseModel]] = {
     "create_empty_lab": LabRequest,
     "modify_cml_lab": LabRequest,
+    "set_cml_lab_permissions": LabAssociations,
     "add_node_to_cml_lab": NodeCreate,
     "add_interface_to_node": InterfaceCreate,
     "connect_two_nodes": LinkCreate,
@@ -45,6 +46,7 @@ FLAT_TOOL_SCHEMAS: dict[str, type[BaseModel]] = {
 # Server-managed or intentionally-omitted required fields per model
 OMIT_REQUIRED: dict[type[BaseModel], set[str]] = {
     LabRequest: set(),  # All required fields exposed
+    LabAssociations: set(),  # Both fields (groups, users) are optional
     NodeCreate: set(),  # All required fields exposed
     InterfaceCreate: set(),  # All required fields exposed
     LinkCreate: set(),  # All required fields exposed

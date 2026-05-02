@@ -12,7 +12,6 @@ from fastmcp import Context
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.annotations import (
-    AnnotationResponse,
     EllipseAnnotation,
     EllipseAnnotationResponse,
     LineAnnotation,
@@ -37,7 +36,7 @@ def register_tools(mcp):
             "readOnlyHint": True,
         },
     )
-    async def get_annotations_for_cml_lab(lid: UUID4Type) -> list[AnnotationResponse]:
+    async def get_annotations_for_cml_lab(lid: UUID4Type) -> list[dict]:
         """
         Get all visual annotations (text labels, shapes, lines) on a lab's canvas by lab UUID.
 

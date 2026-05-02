@@ -34,7 +34,7 @@ import yaml
 from fastmcp import Context
 from fastmcp.exceptions import ToolError
 
-from cml_mcp.cml.simple_webserver.schemas.common import UserName, UUID4Type
+from cml_mcp.cml.simple_webserver.schemas.common import UUID4_REG_EXP, UserName, UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabTitle
 from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
 from cml_mcp.cml_client import CMLClient
@@ -42,6 +42,36 @@ from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
 from cml_mcp.tools.model_helpers import lenient_construct
 
 logger = logging.getLogger("cml-mcp.tools.labs")
+
+_VALID_LAB_PERMISSIONS = {"LAB_ADMIN", "LAB_EDIT", "LAB_EXEC", "LAB_VIEW"}
+
+
+def _validate_lab_associations(items: list[dict] | None, kind: str) -> None:
+    """Validate a groups/users list for set_cml_lab_permissions. Raises ToolError on bad input."""
+    if items is None:
+        return
+    if not isinstance(items, list):
+        raise ToolError(f"Invalid {kind} permission entries: expected a list, got {type(items).__name__}")
+    for idx, entry in enumerate(items):
+        prefix = f"Invalid {kind} permission entry [{idx}]"
+        if not isinstance(entry, dict):
+            raise ToolError(f"{prefix}: expected a dict, got {type(entry).__name__}")
+        extra = set(entry.keys()) - {"id", "permissions"}
+        missing = {"id", "permissions"} - set(entry.keys())
+        if missing or extra:
+            raise ToolError(
+                f"{prefix}: must contain exactly the keys 'id' and 'permissions' "
+                f"(missing={sorted(missing)}, unexpected={sorted(extra)})"
+            )
+        ent_id = entry["id"]
+        if not isinstance(ent_id, str) or not UUID4_REG_EXP.match(ent_id):
+            raise ToolError(f"{prefix}: 'id' must be a UUID4 string, got {ent_id!r}")
+        perms = entry["permissions"]
+        if not isinstance(perms, list) or not perms:
+            raise ToolError(f"{prefix}: 'permissions' must be a non-empty list of strings")
+        for perm in perms:
+            if not isinstance(perm, str) or perm not in _VALID_LAB_PERMISSIONS:
+                raise ToolError(f"{prefix}: invalid permission {perm!r}; must be one of {sorted(_VALID_LAB_PERMISSIONS)}")
 
 
 async def get_all_labs(client: CMLClient) -> list[UUID4Type]:
@@ -244,9 +274,11 @@ def register_tools(mcp):  # noqa: C901
         """
         Configure group and user permissions for a CML lab by lab UUID.
 
+        Valid permissions: LAB_ADMIN (full control), LAB_EDIT (modify topology), LAB_EXEC (start/stop), LAB_VIEW (read-only).
+        Validation: invalid entries raise an error before the request is sent.
+
         Each group dict: {"id": "<group-uuid>", "permissions": ["LAB_ADMIN", "LAB_EDIT", "LAB_EXEC", "LAB_VIEW"]}
         Each user dict: {"id": "<user-uuid>", "permissions": ["LAB_ADMIN", "LAB_EDIT", "LAB_EXEC", "LAB_VIEW"]}
-        Permission values: LAB_ADMIN (full control), LAB_EDIT (modify topology), LAB_EXEC (start/stop), LAB_VIEW (read-only).
 
         Examples:
         - "Give group abc read-only access to lab xyz"
@@ -255,6 +287,8 @@ def register_tools(mcp):  # noqa: C901
         """
         client = get_cml_client_dep()
         try:
+            _validate_lab_associations(groups, "group")
+            _validate_lab_associations(users, "user")
             payload = {"associations": {}}
             if groups is not None:
                 payload["associations"]["groups"] = groups
@@ -262,6 +296,8 @@ def register_tools(mcp):  # noqa: C901
                 payload["associations"]["users"] = users
             await client.patch(f"/labs/{lid}", data=payload)
             return True
+        except ToolError:
+            raise
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:

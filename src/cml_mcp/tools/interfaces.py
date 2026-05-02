@@ -31,7 +31,7 @@ async def add_interface(lid: UUID4Type, payload: dict, client: CMLClient) -> Sim
         InterfaceResponse: The added interface details.
     """
     resp = await client.post(f"/labs/{lid}/interfaces", data=payload)
-    return SimplifiedInterfaceResponse(**resp).model_dump(exclude_unset=True)
+    return SimplifiedInterfaceResponse(**resp)
 
 
 def register_tools(mcp):
@@ -100,7 +100,7 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         try:
             resp = await client.get(f"/labs/{lid}/nodes/{nid}/interfaces", params={"data": True, "operational": False})
-            return [SimplifiedInterfaceResponse(**iface).model_dump(exclude_unset=True) for iface in resp]
+            return [SimplifiedInterfaceResponse(**iface) for iface in resp]
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:

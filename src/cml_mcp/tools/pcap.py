@@ -117,7 +117,7 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         try:
             status = await client.get(f"/labs/{lid}/links/{link_id}/capture/status")
-            return PCAPStatusResponse(**status).model_dump(exclude_unset=True)
+            return PCAPStatusResponse(**status)
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
