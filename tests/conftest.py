@@ -344,13 +344,10 @@ async def created_lab(main_mcp_client: Client[FastMCPTransport]) -> AsyncGenerat
         "description": "This is a test lab created by MCP tests",
         "notes": "Some _markdown_ notes for the lab.",
     }
-    if USE_MOCKS:
-        lab_payload["autostart"] = LabAutostart().model_dump(mode="json", exclude_none=True)
-        lab_payload["node_staging"] = NodeStaging().model_dump(mode="json", exclude_none=True)
 
     result = await main_mcp_client.call_tool(
         name="create_empty_lab",
-        arguments={"lab": lab_payload},
+        arguments=lab_payload,
     )
 
     assert isinstance(result.content, list)

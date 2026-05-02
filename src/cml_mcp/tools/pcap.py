@@ -12,10 +12,9 @@ import httpx
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.pcap import PCAPItem, PCAPStart, PCAPStatusResponse
+from cml_mcp.cml.simple_webserver.schemas.pcap import PCAPItem, PCAPStatusResponse
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import get_cml_client_dep
-from cml_mcp.tools.model_helpers import lenient_construct
 
 logger = logging.getLogger("cml-mcp.tools.pcap")
 
@@ -33,13 +32,25 @@ async def get_capture_key(lid: UUID4Type, link_id: UUID4Type, client: CMLClient)
 def register_tools(mcp):
     """Register all packet capture tools with the FastMCP server."""
 
+    # Source schema: PCAPStart (cml/simple_webserver/schemas/pcap.py)
+    # Exposed: maxpackets, maxtime, bpfilter, encap
+    # Omitted: (none - all fields exposed)
     @mcp.tool(
         annotations={"title": "Start a Packet Capture on a Link", "readOnlyHint": False, "destructiveHint": False},
     )
-    async def start_packet_capture(lid: UUID4Type, link_id: UUID4Type, pcap: PCAPStart | dict | str) -> bool:
+    async def start_packet_capture(
+        lid: UUID4Type,
+        link_id: UUID4Type,
+        maxpackets: int | None = None,
+        maxtime: int | None = None,
+        bpfilter: str | None = None,
+        encap: str | None = None,
+    ) -> bool:
         """
-        Start a packet capture on a link by lab and link UUID. At least one of `maxtime` (seconds)
-        or `maxpackets` is required in the `pcap` argument. Returns true on success.
+        Start a packet capture on a link by lab and link UUID. At least one of maxtime (seconds, 1-86400)
+        or maxpackets (1-1000000) is required. Returns true on success.
+
+        Optional: bpfilter (Berkeley packet filter string, max 128 chars), encap (link encapsulation type, default "ethernet").
 
         Examples:
         - "Start capturing packets on the link between R1 and R2 for 60 seconds"
@@ -49,9 +60,18 @@ def register_tools(mcp):
 
         client = get_cml_client_dep()
         try:
-            if isinstance(pcap, (dict, str)):
-                pcap = lenient_construct(PCAPStart, pcap)
-            await client.put(f"/labs/{lid}/links/{link_id}/capture/start", data=pcap.model_dump(mode="json", exclude_none=True))
+            payload: dict = {}
+            if maxpackets is not None:
+                payload["maxpackets"] = maxpackets
+            if maxtime is not None:
+                payload["maxtime"] = maxtime
+            if bpfilter is not None:
+                payload["bpfilter"] = bpfilter
+            if encap is not None:
+                payload["encap"] = encap
+            if "maxpackets" not in payload and "maxtime" not in payload:
+                raise ValueError("Either 'maxpackets' or 'maxtime' must be specified")
+            await client.put(f"/labs/{lid}/links/{link_id}/capture/start", data=payload)
             return True
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")

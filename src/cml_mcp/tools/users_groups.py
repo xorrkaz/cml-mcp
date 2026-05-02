@@ -14,10 +14,9 @@ from mcp.shared.exceptions import McpError
 from mcp.types import INVALID_REQUEST, METHOD_NOT_FOUND
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.groups import GroupCreate, GroupResponse
-from cml_mcp.cml.simple_webserver.schemas.users import UserCreate, UserResponse
+from cml_mcp.cml.simple_webserver.schemas.groups import GroupResponse
+from cml_mcp.cml.simple_webserver.schemas.users import UserResponse
 from cml_mcp.tools.dependencies import get_cml_client_dep
-from cml_mcp.tools.model_helpers import lenient_construct
 
 logger = logging.getLogger("cml-mcp.tools.users_groups")
 
@@ -52,6 +51,9 @@ def register_tools(mcp):  # noqa: C901
             logger.exception("Error getting CML user information")
             raise ToolError(e)
 
+    # Source schema: UserCreate (cml/simple_webserver/schemas/users.py)
+    # Exposed: username, password, fullname, description, email, admin, groups, associations, resource_pool, opt_in, tour_version, pubkey
+    # Omitted: (none - all user-meaningful fields exposed)
     @mcp.tool(
         annotations={
             "title": "Create CML User",
@@ -59,12 +61,26 @@ def register_tools(mcp):  # noqa: C901
             "destructiveHint": False,
         },
     )
-    async def create_cml_user(user: UserCreate | dict | str) -> UUID4Type:
+    async def create_cml_user(
+        username: str,
+        password: str,
+        fullname: str | None = None,
+        description: str | None = None,
+        email: str | None = None,
+        admin: bool | None = None,
+        groups: list[str] | None = None,
+        associations: list[dict] | None = None,
+        resource_pool: UUID4Type | None = None,
+        opt_in: str | None = None,
+        tour_version: str | None = None,
+        pubkey: str | None = None,
+    ) -> UUID4Type:
         """
         Create a new CML user. Requires admin privileges. Returns the new user's UUID.
 
-        Required: username, password. Optional: fullname, description, email, groups
-        (UUID list), admin (bool), resource_pool (UUID).
+        Required: username, password. Optional: fullname, description, email (max 128 chars),
+        groups (list of group UUIDs), admin (bool), resource_pool (UUID), associations (list of lab dicts),
+        opt_in ("UNSET"/"ACCEPTED"/"DECLINED"), tour_version (max 128 chars), pubkey (SSH public key).
 
         Examples:
         - "Create a user named alice with password ChangeMe123"
@@ -75,9 +91,23 @@ def register_tools(mcp):  # noqa: C901
         try:
             if not await client.is_admin():
                 raise ValueError("Only admin users can create new users.")
-            if isinstance(user, (dict, str)):
-                user = lenient_construct(UserCreate, user)
-            resp = await client.post("/users", data=user.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
+
+            payload: dict = {"username": username, "password": password}
+            for key, value in (
+                ("fullname", fullname),
+                ("description", description),
+                ("email", email),
+                ("admin", admin),
+                ("groups", groups),
+                ("associations", associations),
+                ("resource_pool", str(resource_pool) if resource_pool is not None else None),
+                ("opt_in", opt_in),
+                ("tour_version", tour_version),
+                ("pubkey", pubkey),
+            ):
+                if value is not None:
+                    payload[key] = value
+            resp = await client.post("/users", data=payload)
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -157,6 +187,9 @@ def register_tools(mcp):  # noqa: C901
             logger.exception("Error getting CML group information")
             raise ToolError(e)
 
+    # Source schema: GroupCreate (cml/simple_webserver/schemas/groups.py)
+    # Exposed: name, description, members, associations
+    # Omitted: (none - all user-meaningful fields exposed)
     @mcp.tool(
         annotations={
             "title": "Create CML Group",
@@ -164,12 +197,17 @@ def register_tools(mcp):  # noqa: C901
             "destructiveHint": False,
         },
     )
-    async def create_cml_group(group: GroupCreate | dict | str) -> UUID4Type:
+    async def create_cml_group(
+        name: str,
+        description: str | None = None,
+        members: list[str] | None = None,
+        associations: list[dict] | None = None,
+    ) -> UUID4Type:
         """
         Create a new CML group. Requires admin privileges. Returns the new group's UUID.
 
-        Required: name. Optional: description, members (user UUID list), associations (lab
-        permissions).
+        Required: name (1-64 chars). Optional: description, members (list of user UUIDs),
+        associations (list of lab/group association dicts).
 
         Examples:
         - "Create a group called 'engineers'"
@@ -180,9 +218,13 @@ def register_tools(mcp):  # noqa: C901
         try:
             if not await client.is_admin():
                 raise ValueError("Only admin users can create new groups.")
-            if isinstance(group, (dict, str)):
-                group = lenient_construct(GroupCreate, group)
-            resp = await client.post("/groups", data=group.model_dump(mode="json", exclude_none=True))
+
+            payload: dict = {"name": name, "members": members or []}
+            if description is not None:
+                payload["description"] = description
+            if associations is not None:
+                payload["associations"] = associations
+            resp = await client.post("/groups", data=payload)
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")

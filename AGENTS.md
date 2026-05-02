@@ -35,12 +35,12 @@ Each module exposes a `register_tools(mcp)` function called from `server.py`.
 
 | Module | Tools |
 |---|---|
-| `labs.py` | get_cml_labs, create_empty_lab, create_full_lab_topology, modify_cml_lab, start/stop/wipe/delete_cml_lab, get_cml_lab_by_title, download_lab_topology, clone_cml_lab |
+| `labs.py` | get_cml_labs, create_empty_lab, create_full_lab_topology, modify_cml_lab, set_cml_lab_permissions, start/stop/wipe/delete_cml_lab, get_cml_lab_by_title, download_lab_topology, clone_cml_lab |
 | `nodes.py` | get_nodes_for_cml_lab, add_node_to_cml_lab, configure_cml_node, start/stop/wipe/delete_cml_node |
 | `node_definitions.py` | get_cml_node_definitions, get_node_definition_detail |
 | `interfaces.py` | add_interface_to_node, get_interfaces_for_node |
 | `links.py` | connect_two_nodes, get_all_links_for_lab, apply_link_conditioning, start/stop_cml_link |
-| `annotations.py` | get_annotations_for_cml_lab, add_annotation_to_cml_lab, delete_annotation_from_lab |
+| `annotations.py` | get_annotations_for_cml_lab, add_text_annotation, add_rectangle_annotation, add_ellipse_annotation, add_line_annotation, delete_annotation_from_lab |
 | `pcap.py` | start/stop_packet_capture, check_packet_capture_status, get_captured_packet_overview, get_packet_capture_data |
 | `users_groups.py` | get_cml_users/groups, create/delete_cml_user/group |
 | `system.py` | get_cml_information, get_cml_status, get_cml_statistics, get_cml_licensing_details |
@@ -48,7 +48,7 @@ Each module exposes a `register_tools(mcp)` function called from `server.py`.
 
 ## Key Conventions
 
-- **Object arguments** — Tools that accept a Pydantic model also accept a `dict` or a JSON-encoded string. `model_helpers.lenient_construct` strips unknown fields and parses strings before handing the value to the Pydantic schema, so clients that serialize arguments as strings (e.g. AI Canvas) are handled transparently.
+- **Object arguments** — Most tools use flat primitive parameters (str, int, bool, etc.) for better LLM compatibility, especially with smaller / open-weight models. Only `create_full_lab_topology` still accepts `Model | dict | str` and uses `model_helpers.lenient_construct` to strip unknown fields and parse JSON-encoded strings (helpful for clients like AI Canvas).
 - **Destructive tools** — `wipe_*` and `delete_*` tools call `ctx.elicit()` for interactive confirmation. When `elicit` is unsupported (stateless HTTP or older clients) they proceed without a prompt; docstrings carry a `CRITICAL:` notice so LLMs still ask the user.
 - **Admin-only tools** — `create_cml_user`, `delete_cml_user`, `create_cml_group`, `delete_cml_group` check `client.is_admin()` at runtime and raise if the caller is not an admin.
 - **CLI commands** — `send_cli_command` uses PyATS (via `virl2_client.ClPyats`). `config_command=true` enters configuration mode; omit `configure terminal` / `end`. `label` is the node label, not the UUID. Both `send_cli_command` and `get_console_log` accept an optional `console` integer (default `0`) to select which serial port to use; Docker-based nodes often expose a second console on index `1`.
@@ -120,6 +120,30 @@ When adding a new `@mcp.tool` to a module under `src/cml_mcp/tools/`:
 5. **For destructive tools**, call `await elicit_confirmation(ctx, "...")` (from `tools/dependencies.py`) and put a `CRITICAL:` line in the docstring so LLMs ask the user even when `elicit` is unavailable.
 6. **For admin-only tools**, gate with `if not await client.is_admin(): raise ValueError(...)`.
 7. **Docstring format** (see existing tools for examples) — a one-line action summary, a few terse fact lines (required/optional fields, return shape, constraints), and an `Examples:` block with 2–3 sample user prompts to aid LLM tool selection on smaller models.
+
+### Flat primitive arguments
+
+Tools that wrap a CML schema model (e.g. `LabRequest`, `NodeCreate`, `UserCreate`, `LinkCreate`) MUST expose every user-meaningful, non-server-managed field of that model as a top-level **primitive** parameter (str, int, float, bool, `list[str]`, `list[dict]` for genuinely-nested small lists). Required schema fields → required tool params; optional → keyword params with `None` defaults.
+
+**Rules:**
+
+- Do NOT use `Model | dict | str` parameter unions for flattened tools. Reserve object-typed parameters only for genuinely deep recursive structures (currently only `create_full_lab_topology`'s `topology`).
+- Build the request payload as a plain `dict` inside the tool body, omitting keys whose value is `None`, then `await client.post(..., data=payload)`. Avoid constructing the source Pydantic model when many of its fields default to `None` — strict typing in the auto-generated CML schemas often rejects `None` even when the field has `default=None`. The CML server validates the payload.
+- Above each flattened tool, include a comment block listing field coverage, e.g.:
+  ```python
+  # Source schema: LabRequest (cml/simple_webserver/schemas/labs.py)
+  # Exposed: title, description, notes, owner
+  # Omitted: associations (use set_cml_lab_permissions instead)
+  ```
+- For PATCH operations (`modify_*` tools), only include kwargs that are not `None` in the payload to avoid overwriting server-managed fields.
+
+**Schema-drift audit checklist** — run when `virl2_client` / regenerated CML schemas change:
+
+- `git diff src/cml_mcp/cml/` — for each changed `*Request` / `*Create` model, find the wrapping tool(s).
+- Add new fields as new primitive kwargs (default `None`); deprecate removed fields for one release before removal.
+- Update the field-coverage comment.
+- Run `just check && just test`.
+- `tests/test_schema_drift.py` programmatically checks that each flattened tool's input schema covers the source model's required fields.
 
 Register the tool by adding (or relying on) the module's `register_tools(mcp)` call in `src/cml_mcp/server.py`.
 
