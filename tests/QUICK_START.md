@@ -4,22 +4,29 @@
 
 ```bash
 # Run tests with mocks (default - fast, no CML server needed)
-pytest tests/
+just test
 
-# Run tests against live CML server  
-USE_MOCKS=false CML_URL=https://cml.example.com CML_USERNAME=admin CML_PASSWORD=pass pytest tests/
+# Run tests against live CML server (reads CML_URL/USERNAME/PASSWORD from .env)
+just test-live
 
-# Run only tests that work with mocks
-pytest -m "not live_only" tests/
+# Pass extra pytest args
+just test "-k packet -x"
+just test-live "-k packet"
+```
 
-# Run only tests that require live server
-USE_MOCKS=false pytest -m live_only tests/
+Direct `pytest` invocation also works (skip the `just` wrapper):
+
+```bash
+pytest tests/                                        # mock mode (default)
+USE_MOCKS=false pytest tests/                        # live mode
+pytest -m "not live_only" tests/                     # only mock-compatible
+USE_MOCKS=false pytest -m live_only tests/           # only live-only
 ```
 
 ## Test Results Summary
 
-- **Mock Mode**: 13 passed, 11 skipped (live_only tests)
-- **Live Mode**: All 24 tests run against real server
+- **Mock mode**: 14 passed, 11 skipped (live_only tests)
+- **Live mode**: 25 tests run against a real CML 2.9+ server
 
 ## Environment Variables
 
@@ -29,6 +36,7 @@ USE_MOCKS=false pytest -m live_only tests/
 | `CML_URL` | Required for live | URL of CML server |
 | `CML_USERNAME` | Required for live | CML username |
 | `CML_PASSWORD` | Required for live | CML password |
+| `CML_VERIFY_SSL` | `true` | Set `false` for self-signed certs |
 
 ## Test Markers
 
@@ -38,7 +46,9 @@ USE_MOCKS=false pytest -m live_only tests/
 
 ## Files
 
-- `tests/conftest.py` - Mock framework implementation
-- `tests/mocks/*.json` - Mock API responses  
+- `tests/conftest.py` - Mock framework + fixtures
+- `tests/test_cml_mcp.py` - Main test suite
+- `tests/test_schema_drift.py` - Catches CML schema drift in flattened tools
+- `tests/mocks/*.json` - Mock API responses
 - `tests/README.md` - Detailed documentation
 - `tests/MOCK_FRAMEWORK.md` - Implementation details

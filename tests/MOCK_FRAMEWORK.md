@@ -27,37 +27,36 @@ The mock framework is implemented in `tests/conftest.py` and consists of:
 
 ### Files Created/Modified
 
-1. **`tests/conftest.py`** (new):
+1. **`tests/conftest.py`**:
    - `MockCMLClient` class with full API mocking
    - Environment-based configuration (`USE_MOCKS`)
    - Automatic patching logic
-   - Pytest fixtures and configuration
+   - Pytest fixtures (`main_mcp_client`, `created_lab`) and configuration
 
-2. **`tests/README.md`** (new):
-   - Comprehensive documentation for using the test framework
-   - Usage examples for both modes
-   - Mock data management instructions
-   - Troubleshooting guide
+2. **`tests/test_cml_mcp.py`**:
+   - Module docstring explaining test modes
+   - 11 tests marked `@pytest.mark.live_only` (state-modifying)
+   - Other tests are mock-compatible by default
 
-3. **`tests/test_cml_mcp.py`** (modified):
-   - Added module docstring explaining test modes
-   - Marked 9 tests as `@pytest.mark.live_only`
-   - Tests that modify state now skip in mock mode
+3. **`tests/test_schema_drift.py`**:
+   - Walks the registered FastMCP tool input schemas and asserts each flattened tool covers the required fields of its source CML Pydantic model.
+   - Catches schema drift after a `virl2_client` upgrade. See [AGENTS.md](../AGENTS.md#sample-prompt-for-agents-auditing-a-schema-bump) for the audit prompt.
 
 ## Test Results
 
 ### Mock Mode (USE_MOCKS=true)
 
-- **13/13 mock-compatible tests PASSING**
-- Tests run in ~6 seconds
+- **14 mock-compatible tests pass** (13 in `test_cml_mcp.py` + `test_schema_coverage` in `test_schema_drift.py`)
+- 11 `live_only` tests skipped
+- Tests run in ~3 seconds
 - No network calls, no external dependencies
 - Safe for CI/CD pipelines
 
 ### Test Categories
 
-**Mock-Compatible Tests (13 pass in mock mode)**:
+**Mock-Compatible Tests (14 pass in mock mode)**:
 
-- ✅ test_list_tools
+- ✅ test_list_tools (asserts the registered tool count, currently 51)
 - ✅ test_get_cml_labs
 - ✅ test_get_cml_users
 - ✅ test_get_cml_groups
@@ -66,10 +65,11 @@ The mock framework is implemented in `tests/conftest.py` and consists of:
 - ✅ test_get_cml_statistics
 - ✅ test_get_cml_licensing_details
 - ✅ test_node_defs
-- ✅ test_get_annotations_for_cml_lab (marked `mock_only`)
-- ✅ test_packet_capture_operations (marked `mock_only`)
-- ✅ test_download_lab_topology (marked `mock_only`)
-- ✅ test_clone_cml_lab (marked `mock_only`)
+- ✅ test_get_annotations_for_cml_lab
+- ✅ test_packet_capture_operations
+- ✅ test_download_lab_topology
+- ✅ test_clone_cml_lab
+- ✅ test_schema_coverage (in `test_schema_drift.py`)
 
 **State-Modifying Tests (Require Live Server)**:
 
@@ -90,7 +90,10 @@ The mock framework is implemented in `tests/conftest.py` and consists of:
 ### Running Tests with Mocks (Default)
 
 ```bash
-# Run all tests that work with mocks
+# Preferred: just recipe
+just test
+
+# Or pytest directly
 pytest tests/
 
 # Explicitly set mock mode
@@ -103,13 +106,14 @@ pytest -m "not live_only" tests/
 ### Running Tests Against Live Server
 
 ```bash
-# Set environment variables
+# Preferred: just recipe (reads .env)
+just test-live
+
+# Or set environment variables manually
 export USE_MOCKS=false
 export CML_URL=https://your-cml-server.com
 export CML_USERNAME=admin
 export CML_PASSWORD=yourpassword
-
-# Run all tests
 pytest tests/
 
 # Run only live_only tests

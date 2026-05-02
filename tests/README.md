@@ -6,6 +6,8 @@ This directory contains tests for the CML MCP server. Tests can run in two modes
 
 - **[Quick Start Guide](https://github.com/xorrkaz/cml-mcp/blob/main/tests/QUICK_START.md)** - Fast reference for common testing tasks
 - **[Mock Framework Details](https://github.com/xorrkaz/cml-mcp/blob/main/tests/MOCK_FRAMEWORK.md)** - Implementation details and architecture
+- **[Development Guide](https://github.com/xorrkaz/cml-mcp/blob/main/DEVELOPMENT.md)** - Project-wide contributor workflow, including how to add new tools
+- **[AGENTS.md](https://github.com/xorrkaz/cml-mcp/blob/main/AGENTS.md)** - Tool authoring conventions and schema-drift audit checklist
 
 ## Test Modes
 
@@ -29,7 +31,10 @@ Mock mode uses pre-recorded API responses stored in the `mocks/` directory. This
 **Usage:**
 
 ```bash
-# Run all tests in mock mode (default)
+# Run all tests in mock mode (default - prefer the just recipe)
+just test
+
+# Or with pytest directly
 pytest tests/
 
 # Explicitly set mock mode
@@ -58,10 +63,14 @@ Live mode runs tests against a real CML server. This provides full integration t
 **Usage:**
 
 ```bash
-# Run against live server
-USE_MOCKS=false pytest tests/
+# Prefer the just recipe (sources .env, sets USE_MOCKS=false)
+just test-live
 
-# Run only tests marked as live_only
+# Or pass pytest args
+just test-live "-k packet -x"
+
+# Manual invocation
+USE_MOCKS=false pytest tests/
 USE_MOCKS=false pytest -m live_only tests/
 ```
 
@@ -111,7 +120,7 @@ pytest tests/test_cml_mcp.py::test_get_cml_labs
 
 ## Mock Data
 
-Mock data is stored in `tests/mocks/` as JSON files. Each file corresponds to a specific API endpoint:
+Mock data is stored in `tests/mocks/` as JSON files. Each file corresponds to a specific CML REST endpoint:
 
 - `get_labs.json` - List of labs
 - `get_users.json` - List of users
@@ -129,6 +138,7 @@ Mock data is stored in `tests/mocks/` as JSON files. Each file corresponds to a 
 - `get_cml_lab_by_title.json` - Lab details by title
 - `check_packet_capture_status.json` - Packet capture status
 - `get_captured_packet_overview.json` - Packet capture overview/summary
+- `download_lab_topology.json` - Lab topology YAML download
 
 ### Updating Mock Data
 
@@ -152,9 +162,9 @@ mv .inline-snapshot/external/<hash>.json tests/mocks/get_labs.json
 
 ## Test Coverage
 
-### Mock-Compatible Tests (13 in mock mode)
+### Mock-Compatible Tests (14 in mock mode)
 
-- `test_list_tools` - Verify available MCP tools
+- `test_list_tools` - Verify available MCP tools (currently asserts 51)
 - `test_get_cml_labs` - List all labs
 - `test_get_cml_users` - List all users
 - `test_get_cml_groups` - List all groups
@@ -163,10 +173,11 @@ mv .inline-snapshot/external/<hash>.json tests/mocks/get_labs.json
 - `test_get_cml_statistics` - Get system stats
 - `test_get_cml_licensing_details` - Get licensing info
 - `test_node_defs` - List and get node definitions
-- `test_get_annotations_for_cml_lab` - Get lab annotations (`mock_only`)
-- `test_packet_capture_operations` - Packet capture status and overview (`mock_only`)
-- `test_download_lab_topology` - Download lab topology as YAML (`mock_only`)
-- `test_clone_cml_lab` - Clone a lab (`mock_only`)
+- `test_get_annotations_for_cml_lab` - Get lab annotations
+- `test_packet_capture_operations` - Packet capture status and overview
+- `test_download_lab_topology` - Download lab topology as YAML
+- `test_clone_cml_lab` - Clone a lab
+- `test_schema_coverage` (in `test_schema_drift.py`) - Verify each flattened tool's input schema covers its source CML model's required fields
 
 ### State-Modifying Tests (Require Live Server)
 
@@ -176,7 +187,7 @@ mv .inline-snapshot/external/<hash>.json tests/mocks/get_labs.json
 - `test_modify_cml_lab` - Modify lab properties
 - `test_full_cml_topology` - Create lab from topology file
 - `test_intf_management` - Add interfaces to nodes
-- `test_add_annotation_to_cml_lab` - Add annotations to labs
+- `test_add_annotation_to_cml_lab` - Add text/rectangle/ellipse/line annotations to labs
 - `test_connect_two_nodes` - Create links between nodes
 - `test_get_nodes_for_cml_lab` - Get nodes (creates test lab first)
 - `test_download_lab_topology_live` - Download topology against live server
