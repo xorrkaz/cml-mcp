@@ -32,31 +32,6 @@ When tools are called by certain clients, the LLM may:
 This module provides a ``lenient_construct`` function that strips unknown fields
 before calling the model constructor, so the upstream CML schemas stay strict
 while the MCP tool layer remains forgiving.
-
-Return-type convention (IMPORTANT)
-----------------------------------
-Tools that wrap a CML response model (e.g. ``Lab``, ``Node``, ``LinkResponse``,
-``SimplifiedInterfaceResponse``, ``PCAPStatusResponse``) MUST:
-
-1. Annotate the return type as the underlying Pydantic model (or list thereof)
-   so MCP clients see a rich, typed output schema.
-2. Actually return the result of ``Model(**raw).model_dump(exclude_unset=True)``
-   (a plain dict) rather than the Pydantic instance itself.
-
-Reason: FastMCP double-marshals return values (Pydantic instance -> dict ->
-JSON via FastMCP's own serializer), and the CML server occasionally returns
-fields whose declared type the auto-generated schemas validate but cannot
-faithfully round-trip through that second pass. Constructing the model
-coerces/validates incoming data, then ``model_dump`` emits a stable dict that
-FastMCP serializes verbatim.
-
-Dump-flag guidance:
-- ``exclude_unset=True``  -- always; drops fields the server did not set,
-  keeping the payload tight.
-- ``exclude_none=True``   -- add when the response model declares many
-  ``Optional[...]`` fields whose ``None`` value carries no signal.
-- ``exclude_defaults=True`` -- only when defaults are clearly noise (rare;
-  risk: hides a server value that happens to equal the default).
 """
 
 import json

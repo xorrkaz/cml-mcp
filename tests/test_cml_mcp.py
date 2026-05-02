@@ -264,6 +264,10 @@ async def test_get_annotations_for_cml_lab(main_mcp_client: Client[FastMCPTransp
     found_types = set()
 
     for annotation in ann_result.data:
+        # FastMCP returns union types as a generated dataclass-like Root object;
+        # coerce to dict for type-tag dispatch.
+        if not isinstance(annotation, dict):
+            annotation = vars(annotation) if hasattr(annotation, "__dict__") else dict(annotation)
         if isinstance(annotation, dict):
             ann_type = annotation.get("type")
             found_types.add(ann_type)

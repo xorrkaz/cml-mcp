@@ -41,7 +41,9 @@ def register_tools(mcp):
             "readOnlyHint": True,
         },
     )
-    async def get_annotations_for_cml_lab(lid: UUID4Type) -> list[dict]:
+    async def get_annotations_for_cml_lab(
+        lid: UUID4Type,
+    ) -> list[TextAnnotationResponse | RectangleAnnotationResponse | EllipseAnnotationResponse | LineAnnotationResponse]:
         """
         Get all visual annotations (text labels, shapes, lines) on a lab's canvas by lab UUID.
 
@@ -60,6 +62,7 @@ def register_tools(mcp):
                 model = _ANNOTATION_RESPONSE_TYPES.get(ann_type)
                 if model is None:
                     raise ToolError(f"Unknown annotation type: {ann_type!r}. " f"Expected one of {sorted(_ANNOTATION_RESPONSE_TYPES)}.")
+                # See model_helpers.py / DEVELOPMENT.md: dump after construction to bypass FastMCP double marshalling.
                 ann_list.append(model(**annotation).model_dump(exclude_unset=True))
             return ann_list
         except httpx.HTTPStatusError as e:

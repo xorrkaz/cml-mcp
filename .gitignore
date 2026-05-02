@@ -10,3 +10,4 @@ dist/
 .inline-snapshot
 .pytest_cache
 acl.yamlskills-registry-samples.md
+acl.yaml

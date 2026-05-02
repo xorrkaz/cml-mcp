@@ -162,6 +162,27 @@ This is the most common contribution. The full conventions live in [AGENTS.md](A
 
 `tests/test_schema_drift.py` will catch the case where you forget to expose a required field of the source schema — make sure it stays green too.
 
+### Object-typed return values
+
+If a tool's return annotation is a Pydantic response model (e.g. `Lab`, `Node`, `LinkResponse`, `SimplifiedInterfaceResponse`, `PCAPStatusResponse`) or a list of one, the **runtime** return value must be `Model(**raw).model_dump(exclude_unset=True)` (a plain dict), even though the type annotation stays as the Pydantic model.
+
+```python
+async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node]:
+    ...
+    # Annotation: list[Node]   Runtime: list[dict]
+    return [Node(**n).model_dump(exclude_unset=True) for n in raw_nodes]
+```
+
+**Why the mismatch?** FastMCP double-marshals returned Pydantic instances (Pydantic instance → dict → JSON via FastMCP's own serializer), and some auto-generated CML schemas validate fields they cannot faithfully round-trip through that second pass. Constructing the model coerces/validates incoming data; `model_dump` then emits a stable dict that FastMCP serializes verbatim. Keeping the annotation as the Pydantic model still gives MCP clients a rich, typed output schema for tool discovery.
+
+**Dump-flag guidance:**
+
+- `exclude_unset=True` — always; drops fields the server did not set, keeping the payload tight.
+- `exclude_none=True` — add when the response model declares many `Optional[...]` fields whose `None` value carries no signal.
+- `exclude_defaults=True` — only when defaults are clearly noise (rare; risk: hides a server value that happens to equal the default).
+
+Add a brief one-line comment at the return site pointing back here (`# See DEVELOPMENT.md "Object-typed return values" ...`) so future contributors don't "clean up" the apparent redundancy.
+
 ## Recording Mock Responses
 
 Mock tests live under `tests/mocks/`, one JSON file per tool. To record a new one against a live CML server:
