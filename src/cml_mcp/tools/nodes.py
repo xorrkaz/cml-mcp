@@ -13,10 +13,10 @@ from fastmcp import Context
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.nodes import Node, NodeConfigurationContent, NodeCreate
+from cml_mcp.cml.simple_webserver.schemas.nodes import Node, NodeConfigurationContent
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
-from cml_mcp.tools.model_helpers import lenient_construct
+from cml_mcp.tools.model_helpers import build_payload
 
 logger = logging.getLogger("cml-mcp.tools.nodes")
 
@@ -87,6 +87,10 @@ def register_tools(mcp):  # noqa: C901
             logger.exception("Error getting nodes for CML lab %s", lid)
             raise ToolError(e)
 
+    # Source schema: NodeCreate (cml/simple_webserver/schemas/nodes.py)
+    # Exposed: label, x, y, node_definition, image_definition, ram, cpus, cpu_limit, data_volume, boot_disk_size,
+    #          tags, configuration, parameters, hide_links, priority, pyats
+    # Omitted: (none - all user-meaningful fields exposed)
     @mcp.tool(
         annotations={
             "title": "Add a Node to a CML Lab",
@@ -96,15 +100,31 @@ def register_tools(mcp):  # noqa: C901
     )
     async def add_node_to_cml_lab(
         lid: UUID4Type,
-        node: NodeCreate | dict | str,
+        node_definition: str,
+        label: str | None = None,
+        x: int | None = None,
+        y: int | None = None,
+        image_definition: str | None = None,
+        ram: int | None = None,
+        cpus: int | None = None,
+        cpu_limit: int | None = None,
+        data_volume: int | None = None,
+        boot_disk_size: int | None = None,
+        tags: list[str] | None = None,
+        configuration: str | None = None,
+        parameters: dict[str, str | None] | None = None,
+        hide_links: bool | None = None,
+        priority: int | None = None,
+        pyats: dict | None = None,
     ) -> UUID4Type:
         """
         Add a node to an existing lab. Returns the new node's UUID. Default interfaces are auto-created.
 
-        Required on `node`: x and y (-15000..15000), label (1-128 chars), node_definition
-        (e.g. "alpine", "iosv", "csr1000v" -- discover via get_cml_node_definitions).
-        Optional: image_definition, ram (MB), cpus, cpu_limit (%), data_volume (GB),
-        boot_disk_size (GB), tags, configuration, parameters.
+        Required: node_definition (e.g. "alpine", "iosv", "csr1000v" -- discover via get_cml_node_definitions).
+        Optional: label (1-128 chars), x/y coordinates (-15000..15000), image_definition, ram (MB, 1-1048576),
+        cpus (1-128), cpu_limit (%, 20-100), data_volume (GB, 0-4096), boot_disk_size (GB, 0-4096),
+        tags (list of strings), configuration (string or dict), parameters (dict), hide_links (bool),
+        priority (0-10000), pyats (PyATS credentials dict).
 
         Examples:
         - "Add a CSR1000v router called 'R3' to my lab"
@@ -113,10 +133,28 @@ def register_tools(mcp):  # noqa: C901
         """
         client = get_cml_client_dep()
         try:
-            if isinstance(node, (dict, str)):
-                node = lenient_construct(NodeCreate, node)
+            payload = build_payload(
+                node_definition=node_definition,
+                label=label,
+                x=x,
+                y=y,
+                image_definition=image_definition,
+                ram=ram,
+                cpus=cpus,
+                cpu_limit=cpu_limit,
+                data_volume=data_volume,
+                boot_disk_size=boot_disk_size,
+                tags=tags,
+                configuration=configuration,
+                parameters=parameters,
+                hide_links=hide_links,
+                priority=priority,
+                pyats=pyats,
+            )
             resp = await client.post(
-                f"/labs/{lid}/nodes", params={"populate_interfaces": True}, data=node.model_dump(mode="json", exclude_defaults=True)
+                f"/labs/{lid}/nodes",
+                params={"populate_interfaces": True},
+                data=payload,
             )
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:

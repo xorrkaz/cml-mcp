@@ -34,14 +34,44 @@ import yaml
 from fastmcp import Context
 from fastmcp.exceptions import ToolError
 
-from cml_mcp.cml.simple_webserver.schemas.common import UserName, UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabRequest, LabTitle
+from cml_mcp.cml.simple_webserver.schemas.common import UUID4_REG_EXP, UserName, UUID4Type
+from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabTitle
 from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
-from cml_mcp.tools.model_helpers import lenient_construct
+from cml_mcp.tools.model_helpers import build_payload, lenient_construct
 
 logger = logging.getLogger("cml-mcp.tools.labs")
+
+_VALID_LAB_PERMISSIONS = {"LAB_ADMIN", "LAB_EDIT", "LAB_EXEC", "LAB_VIEW"}
+
+
+def _validate_lab_associations(items: list[dict] | None, kind: str) -> None:
+    """Validate a groups/users list for set_cml_lab_permissions. Raises ToolError on bad input."""
+    if items is None:
+        return
+    if not isinstance(items, list):
+        raise ToolError(f"Invalid {kind} permission entries: expected a list, got {type(items).__name__}")
+    for idx, entry in enumerate(items):
+        prefix = f"Invalid {kind} permission entry [{idx}]"
+        if not isinstance(entry, dict):
+            raise ToolError(f"{prefix}: expected a dict, got {type(entry).__name__}")
+        extra = set(entry.keys()) - {"id", "permissions"}
+        missing = {"id", "permissions"} - set(entry.keys())
+        if missing or extra:
+            raise ToolError(
+                f"{prefix}: must contain exactly the keys 'id' and 'permissions' "
+                f"(missing={sorted(missing)}, unexpected={sorted(extra)})"
+            )
+        ent_id = entry["id"]
+        if not isinstance(ent_id, str) or not UUID4_REG_EXP.match(ent_id):
+            raise ToolError(f"{prefix}: 'id' must be a UUID4 string, got {ent_id!r}")
+        perms = entry["permissions"]
+        if not isinstance(perms, list) or not perms:
+            raise ToolError(f"{prefix}: 'permissions' must be a non-empty list of strings")
+        for perm in perms:
+            if not isinstance(perm, str) or perm not in _VALID_LAB_PERMISSIONS:
+                raise ToolError(f"{prefix}: invalid permission {perm!r}; must be one of {sorted(_VALID_LAB_PERMISSIONS)}")
 
 
 async def get_all_labs(client: CMLClient) -> list[UUID4Type]:
@@ -133,6 +163,9 @@ def register_tools(mcp):  # noqa: C901
             logger.exception("Error getting CML labs")
             raise ToolError(e)
 
+    # Source schema: LabRequest (cml/simple_webserver/schemas/labs.py)
+    # Exposed: title, description, notes, owner
+    # Omitted: groups (deprecated), associations (use set_cml_lab_permissions), autostart, node_staging (server-managed defaults)
     @mcp.tool(
         annotations={
             "title": "Create an Empty Lab",
@@ -140,12 +173,17 @@ def register_tools(mcp):  # noqa: C901
             "destructiveHint": False,
         },
     )
-    async def create_empty_lab(lab: LabRequest | dict | str) -> UUID4Type:
+    async def create_empty_lab(
+        title: str | None = None,
+        description: str | None = None,
+        notes: str | None = None,
+        owner: UUID4Type | None = None,
+    ) -> UUID4Type:
         """
         Create an empty CML lab (no nodes/links). Returns the new lab UUID.
 
-        Optional fields on `lab`: title (1-64 chars), owner (UUID), description (<=4096 chars),
-        notes (<=32768 chars), associations (group/user permissions).
+        Optional: title (1-64 chars), owner (UUID), description (<=4096 chars), notes (<=32768 chars).
+        Use set_cml_lab_permissions to configure group/user access after creation.
 
         Examples:
         - "Create a new empty lab called 'OSPF Practice'"
@@ -154,9 +192,13 @@ def register_tools(mcp):  # noqa: C901
         """
         client = get_cml_client_dep()
         try:
-            if isinstance(lab, (dict, str)):
-                lab = lenient_construct(LabRequest, lab)
-            resp = await client.post("/labs", data=lab.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
+            payload = build_payload(
+                title=title,
+                description=description,
+                notes=notes,
+                owner=str(owner) if owner is not None else None,
+            )
+            resp = await client.post("/labs", data=payload)
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -164,6 +206,9 @@ def register_tools(mcp):  # noqa: C901
             logger.exception("Error creating empty lab topology")
             raise ToolError(e)
 
+    # Source schema: LabRequest (cml/simple_webserver/schemas/labs.py)
+    # Exposed: title, description, notes, owner
+    # Omitted: groups (deprecated), associations (use set_cml_lab_permissions), autostart, node_staging (server-managed)
     @mcp.tool(
         annotations={
             "title": "Modify CML Lab Properties",
@@ -172,9 +217,16 @@ def register_tools(mcp):  # noqa: C901
             "idempotentHint": True,
         },
     )
-    async def modify_cml_lab(lid: UUID4Type, lab: LabRequest | dict | str) -> bool:
+    async def modify_cml_lab(
+        lid: UUID4Type,
+        title: str | None = None,
+        description: str | None = None,
+        notes: str | None = None,
+        owner: UUID4Type | None = None,
+    ) -> bool:
         """
-        Update lab metadata (title, owner, description, notes, associations) by lab UUID.
+        Update lab metadata (title, owner, description, notes) by lab UUID.
+        Only provided fields are modified; omitted fields remain unchanged.
 
         Examples:
         - "Rename lab abc123 to 'Production Test'"
@@ -183,14 +235,63 @@ def register_tools(mcp):  # noqa: C901
         """
         client = get_cml_client_dep()
         try:
-            if isinstance(lab, (dict, str)):
-                lab = lenient_construct(LabRequest, lab)
-            await client.patch(f"/labs/{lid}", data=lab.model_dump(mode="json", exclude_defaults=True, exclude_none=True))
+            # PATCH-friendly: only include non-None values
+            payload = build_payload(
+                title=title,
+                description=description,
+                notes=notes,
+                owner=str(owner) if owner is not None else None,
+            )
+            await client.patch(f"/labs/{lid}", data=payload)
             return True
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
             logger.exception("Error modifying lab %s", lid)
+            raise ToolError(e)
+
+    # Source schema: LabAssociations (cml/simple_webserver/schemas/labs.py)
+    # Exposed: groups (list of {id: UUID, permissions: list[str]}), users (list of {id: UUID, permissions: list[str]})
+    @mcp.tool(
+        annotations={
+            "title": "Set CML Lab Permissions",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": True,
+        },
+    )
+    async def set_cml_lab_permissions(
+        lid: UUID4Type,
+        groups: list[dict] | None = None,
+        users: list[dict] | None = None,
+    ) -> bool:
+        """
+        Configure group and user permissions for a CML lab by lab UUID.
+
+        Valid permissions: LAB_ADMIN (full control), LAB_EDIT (modify topology), LAB_EXEC (start/stop), LAB_VIEW (read-only).
+        Validation: invalid entries raise an error before the request is sent.
+
+        Each group dict: {"id": "<group-uuid>", "permissions": ["LAB_ADMIN", "LAB_EDIT", "LAB_EXEC", "LAB_VIEW"]}
+        Each user dict: {"id": "<user-uuid>", "permissions": ["LAB_ADMIN", "LAB_EDIT", "LAB_EXEC", "LAB_VIEW"]}
+
+        Examples:
+        - "Give group abc read-only access to lab xyz"
+        - "Grant user alice LAB_EDIT and LAB_EXEC permissions on my lab"
+        - "Set permissions for lab 123: group xyz gets LAB_ADMIN, user bob gets LAB_VIEW"
+        """
+        client = get_cml_client_dep()
+        try:
+            _validate_lab_associations(groups, "group")
+            _validate_lab_associations(users, "user")
+            payload = {"associations": build_payload(groups=groups, users=users)}
+            await client.patch(f"/labs/{lid}", data=payload)
+            return True
+        except ToolError:
+            raise
+        except httpx.HTTPStatusError as e:
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+        except Exception as e:
+            logger.exception("Error setting lab permissions for lab %s", lid)
             raise ToolError(e)
 
     @mcp.tool(
@@ -202,7 +303,21 @@ def register_tools(mcp):  # noqa: C901
     )
     async def create_full_lab_topology(topology: Topology | dict | str) -> UUID4Type:
         """
-        Build a complete CML lab from a Topology object in one call. Returns the new lab UUID.
+        Import a complete CML lab from a Topology object (nodes + links + lab metadata).
+
+        IMPORTANT: `topology` MUST be a structured object (or dict / JSON-encoded object string)
+        matching the CML Topology schema with top-level keys `lab`, `nodes`, `links`, and
+        optionally `annotations`. Do NOT pass a raw string such as a lab title, a YAML blob,
+        or a non-Topology JSON string — those will fail. For simpler use cases, prefer
+        `create_empty_lab` followed by `add_node_to_cml_lab` and `connect_two_nodes`.
+
+        Expected shape:
+          {
+            "lab": {"title": "...", "version": "0.3.0"},
+            "nodes": [{"id": "n0", "label": "R1", "node_definition": "iol-xe",
+                       "x": 0, "y": 0, "interfaces": [...]}],
+            "links": [{"id": "l0", "n1": "n0", "n2": "n1", "i1": "...", "i2": "..."}]
+          }
 
         Required: lab (title, version), nodes (id, x, y, label, node_definition, interfaces),
         links (id, i1, i2, n1, n2). Optional: annotations, smart_annotations.

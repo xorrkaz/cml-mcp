@@ -11,9 +11,9 @@ import httpx
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.links import LinkConditionConfiguration, LinkCreate, LinkResponse
+from cml_mcp.cml.simple_webserver.schemas.links import LinkResponse
 from cml_mcp.tools.dependencies import get_cml_client_dep
-from cml_mcp.tools.model_helpers import lenient_construct
+from cml_mcp.tools.model_helpers import build_payload
 
 logger = logging.getLogger("cml-mcp.tools.links")
 
@@ -21,6 +21,9 @@ logger = logging.getLogger("cml-mcp.tools.links")
 def register_tools(mcp):
     """Register all link-related tools with the FastMCP server."""
 
+    # Source schema: LinkCreate (cml/simple_webserver/schemas/links.py)
+    # Exposed: src_int, dst_int
+    # Omitted: (none - all fields exposed)
     @mcp.tool(
         annotations={
             "title": "Connect Two Nodes in a CML Lab",
@@ -30,13 +33,14 @@ def register_tools(mcp):
     )
     async def connect_two_nodes(
         lid: UUID4Type,
-        link_info: LinkCreate | dict | str,
+        src_int: UUID4Type,
+        dst_int: UUID4Type,
     ) -> UUID4Type:
         """
         Create a link between two interfaces in the same lab. Returns the new link's UUID.
 
-        Required on `link_info`: src_int (source interface UUID) and dst_int (destination
-        interface UUID). Get interface UUIDs from get_interfaces_for_node.
+        Required: src_int (source interface UUID) and dst_int (destination interface UUID).
+        Get interface UUIDs from get_interfaces_for_node.
 
         Examples:
         - "Connect router R1 to switch SW1"
@@ -46,14 +50,13 @@ def register_tools(mcp):
 
         client = get_cml_client_dep()
         try:
-            if isinstance(link_info, (dict, str)):
-                link_info = lenient_construct(LinkCreate, link_info)
-            resp = await client.post(f"/labs/{lid}/links", data=link_info.model_dump(mode="json"))
+            payload = build_payload(src_int=str(src_int), dst_int=str(dst_int))
+            resp = await client.post(f"/labs/{lid}/links", data=payload)
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error creating link for %s", link_info)
+            logger.exception("Error creating link between %s and %s", src_int, dst_int)
             raise ToolError(e)
 
     @mcp.tool(
@@ -82,22 +85,39 @@ def register_tools(mcp):
             logger.exception("Error getting links for lab %s", lid)
             raise ToolError(e)
 
+    # Source schema: LinkConditionConfiguration (cml/simple_webserver/schemas/links.py)
+    # Exposed: enabled, bandwidth, latency, delay_corr, limit, loss, loss_corr, gap, duplicate,
+    #          duplicate_corr, jitter, reorder_prob, reorder_corr, corrupt_prob, corrupt_corr
+    # Omitted: (none - all fields exposed)
     @mcp.tool(
         annotations={"title": "Apply Link Conditioning", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True},
     )
     async def apply_link_conditioning(
         lid: UUID4Type,
         link_id: UUID4Type,
-        condition: LinkConditionConfiguration | dict | str,
+        enabled: bool | None = None,
+        bandwidth: int | None = None,
+        latency: int | None = None,
+        delay_corr: float | None = None,
+        limit: int | None = None,
+        loss: float | None = None,
+        loss_corr: float | None = None,
+        gap: int | None = None,
+        duplicate: float | None = None,
+        duplicate_corr: float | None = None,
+        jitter: int | None = None,
+        reorder_prob: float | None = None,
+        reorder_corr: float | None = None,
+        corrupt_prob: float | None = None,
+        corrupt_corr: float | None = None,
     ) -> bool:
         """
         Apply network impairment to a link (bandwidth limit, latency, loss, jitter, etc.) by
         lab and link UUID. Omitted fields keep their existing value.
 
-        Optional fields: bandwidth (kbps, 0-10M), latency (ms, 0-10K), loss (%, 0-100),
+        Optional: enabled (bool), bandwidth (kbps, 0-10M), latency (ms, 0-10K), loss (%, 0-100),
         jitter (ms, 0-10K), duplicate (%), corrupt_prob (%), gap (ms), limit (ms),
-        reorder_prob (%), delay_corr/loss_corr/duplicate_corr/reorder_corr/corrupt_corr (%),
-        enabled (bool).
+        reorder_prob (%), delay_corr/loss_corr/duplicate_corr/reorder_corr/corrupt_corr (%).
 
         Examples:
         - "Add 100ms latency to the link between R1 and R2"
@@ -106,9 +126,24 @@ def register_tools(mcp):
         """
         client = get_cml_client_dep()
         try:
-            if isinstance(condition, (dict, str)):
-                condition = lenient_construct(LinkConditionConfiguration, condition)
-            await client.patch(f"/labs/{lid}/links/{link_id}/condition", data=condition.model_dump(mode="json", exclude_none=True))
+            payload = build_payload(
+                enabled=enabled,
+                bandwidth=bandwidth,
+                latency=latency,
+                delay_corr=delay_corr,
+                limit=limit,
+                loss=loss,
+                loss_corr=loss_corr,
+                gap=gap,
+                duplicate=duplicate,
+                duplicate_corr=duplicate_corr,
+                jitter=jitter,
+                reorder_prob=reorder_prob,
+                reorder_corr=reorder_corr,
+                corrupt_prob=corrupt_prob,
+                corrupt_corr=corrupt_corr,
+            )
+            await client.patch(f"/labs/{lid}/links/{link_id}/condition", data=payload)
             return True
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")

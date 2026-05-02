@@ -127,7 +127,8 @@ def register_tools(mcp):
                 continue
             _, log_time, msg = line.split("|", 2)
             return_lines.append(ConsoleLogOutput(time=int(log_time), message=msg))
-        return return_lines
+        # See DEVELOPMENT.md "Object-typed return values": dump after construction so FastMCP doesn't double-marshal.
+        return [entry.model_dump(exclude_unset=True) for entry in return_lines]
 
     @mcp.tool(
         annotations={"title": "Send CLI Command to CML Node", "readOnlyHint": False, "destructiveHint": True},

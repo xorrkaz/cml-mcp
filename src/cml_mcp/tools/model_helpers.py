@@ -111,3 +111,12 @@ def lenient_construct(model_cls: type[T], data: "dict | str") -> T:
             title=model_cls.__name__,
             line_errors=ve.errors(),
         ) from ve
+
+
+def build_payload(**kwargs: object) -> dict:
+    """Return a dict containing only the kwargs whose value is not None.
+
+    Used by flat-primitive tools to assemble request bodies without
+    repeating the same `if x is not None: payload[x] = x` boilerplate.
+    """
+    return {k: v for k, v in kwargs.items() if v is not None}
