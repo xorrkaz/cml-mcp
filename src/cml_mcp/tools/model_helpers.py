@@ -62,9 +62,10 @@ def parse_json_arg(value: "dict | str | BaseModel") -> dict:
     Ensure a tool argument is a dict.
 
     The ai-gateway may serialize complex tool arguments as JSON **strings**
-    instead of parsed dicts.  This helper normalises both representations
+    instead of parsed dicts.  This helper normalizes both representations
     so downstream code always receives a ``dict``.
     """
+
     if isinstance(value, str):
         try:
             parsed = json.loads(value)
