@@ -14,7 +14,7 @@ from fastmcp import Context
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.common import Coordinate, DefinitionID, TagArray, UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.nodes import CpuLimit, Cpus, DiskSpace, Node, NodeConfigurationContent, NodeCreate, NodeLabel, Ram
+from cml_mcp.cml.simple_webserver.schemas.nodes import CpuLimit, Cpus, DiskSpace, Node, NodeConfigurationContent, NodeCreate, Ram
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
 from cml_mcp.tools.model_helpers import build_payload, field_from
@@ -102,7 +102,7 @@ def register_tools(mcp):  # noqa: C901
     async def add_node_to_cml_lab(
         lid: UUID4Type,
         node_definition: DefinitionID,
-        label: NodeLabel | None = None,
+        label: Annotated[str | None, field_from(NodeCreate, "label")] = None,
         x: Coordinate | None = None,
         y: Coordinate | None = None,
         image_definition: DefinitionID | None = None,

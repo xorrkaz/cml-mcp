@@ -36,7 +36,7 @@ from fastmcp import Context
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4_REG_EXP, UserName, UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabAssociations, LabDescription, LabNotes, LabOwner, LabTitle
+from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabAssociations, LabNotes, LabRequest, LabTitle
 from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
@@ -176,9 +176,9 @@ def register_tools(mcp):  # noqa: C901
     )
     async def create_empty_lab(
         title: LabTitle | None = None,
-        description: LabDescription | None = None,
+        description: Annotated[str | None, field_from(LabRequest, "description")] = None,
         notes: LabNotes | None = None,
-        owner: LabOwner | None = None,
+        owner: Annotated[str | None, field_from(LabRequest, "owner")] = None,
     ) -> UUID4Type:
         """
         Create an empty CML lab (no nodes/links). Returns the new lab UUID.
@@ -221,9 +221,9 @@ def register_tools(mcp):  # noqa: C901
     async def modify_cml_lab(
         lid: UUID4Type,
         title: LabTitle | None = None,
-        description: LabDescription | None = None,
+        description: Annotated[str | None, field_from(LabRequest, "description")] = None,
         notes: LabNotes | None = None,
-        owner: LabOwner | None = None,
+        owner: Annotated[str | None, field_from(LabRequest, "owner")] = None,
     ) -> bool:
         """
         Update lab metadata (title, owner, description, notes) by lab UUID.
