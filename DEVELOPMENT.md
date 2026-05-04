@@ -109,6 +109,11 @@ This is the most common contribution. The full conventions live in [AGENTS.md](A
 3. **Write the tool with flat primitive arguments**, not a nested object. Required schema fields → required tool params; optional → kwargs with `None` defaults. Build the request as a plain `dict` inside the tool body, omitting `None` values:
 
     ```python
+    from typing import Annotated
+
+    from cml_mcp.cml.simple_webserver.schemas.labs import LabRequest
+    from cml_mcp.tools.model_helpers import build_payload, field_from
+
     # Source schema: LabRequest (cml/simple_webserver/schemas/labs.py)
     # Exposed: title, description, notes, owner
     # Omitted: associations (use set_cml_lab_permissions instead)
@@ -120,10 +125,10 @@ This is the most common contribution. The full conventions live in [AGENTS.md](A
         },
     )
     async def create_empty_lab(
-        title: str | None = None,
-        description: str | None = None,
-        notes: str | None = None,
-        owner: UUID4Type | None = None,
+        title:       Annotated[str | None,       field_from(LabRequest, "title")]       = None,
+        description: Annotated[str | None,       field_from(LabRequest, "description")] = None,
+        notes:       Annotated[str | None,       field_from(LabRequest, "notes")]       = None,
+        owner:       Annotated[UUID4Type | None, field_from(LabRequest, "owner")]       = None,
     ) -> UUID4Type:
         """One-line action summary.
 
@@ -136,10 +141,12 @@ This is the most common contribution. The full conventions live in [AGENTS.md](A
         """
         client = get_cml_client_dep()
         try:
-            payload: dict = {}
-            if title is not None:
-                payload["title"] = title
-            # ... etc
+            payload = build_payload(
+                title=title,
+                description=description,
+                notes=notes,
+                owner=str(owner) if owner is not None else None,
+            )
             resp = await client.post("/labs", data=payload)
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
@@ -149,7 +156,9 @@ This is the most common contribution. The full conventions live in [AGENTS.md](A
             raise ToolError(e)
     ```
 
-    > **Why dicts and not Pydantic models?** The auto-generated CML schemas are strict and frequently reject `None` even for fields that nominally default to `None`. Building a dict and letting the CML server validate avoids brittle re-typing in our tool layer. The exception is `create_full_lab_topology`, which accepts `Topology | dict | str` because the structure is genuinely deeply nested.
+    > **Why `Annotated[T, field_from(Source, "name")]` instead of bare `T`?** FastMCP turns each parameter into a JSON Schema property exposed to the MCP client. A bare `int | None` tells a tool-calling LLM nothing about valid ranges; the source `Field(ge=1, le=86400, description="...")` does. Pulling the `FieldInfo` straight from the source schema propagates `description`, numeric/string constraints, and `examples` into the wire schema with zero hand-copying — and `tests/test_schema_drift.py::test_constraint_coverage` enforces that they stay in sync.
+
+    > **Why dicts and not Pydantic models for the request payload?** The auto-generated CML schemas are strict and frequently reject `None` even for fields that nominally default to `None`. Building a dict and letting the CML server validate avoids brittle re-typing in our tool layer. The exception is `create_full_lab_topology`, which accepts `Topology | dict | str` because the structure is genuinely deeply nested.
 
 4. **Annotate destructive/read-only behavior** in the `@mcp.tool(annotations={...})` block. Use `readOnlyHint`, `destructiveHint`, `idempotentHint`, `title`.
 5. **Destructive tools** (`wipe_*`, `delete_*`) must call `await elicit_confirmation(ctx, "...")` and include a `CRITICAL:` line in the docstring.

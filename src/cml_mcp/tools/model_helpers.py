@@ -39,6 +39,7 @@ import logging
 from typing import TypeVar
 
 from pydantic import BaseModel, ValidationError
+from pydantic.fields import FieldInfo
 
 logger = logging.getLogger("cml-mcp.tools.model_helpers")
 
@@ -121,3 +122,21 @@ def build_payload(**kwargs: object) -> dict:
     repeating the same `if x is not None: payload[x] = x` boilerplate.
     """
     return {k: v for k, v in kwargs.items() if v is not None}
+
+
+def field_from(model_cls: type[BaseModel], field_name: str) -> FieldInfo:
+    """Return the ``FieldInfo`` for ``model_cls.<field_name>`` for use in
+    ``Annotated[T, field_from(Model, "field")]`` on flat tool parameters.
+
+    Reusing the source-schema FieldInfo propagates ``description``, numeric
+    bounds (``ge`` / ``le``), string constraints (``min_length`` /
+    ``max_length`` / ``pattern``), enum-ish ``examples``, etc. into the
+    JSON Schema FastMCP exposes to MCP clients -- giving tool-calling LLMs
+    (especially small / open-weight ones) the per-parameter guidance they
+    rely on, without hand-copying constraints that drift from the
+    auto-generated CML schemas.
+
+    Raises ``KeyError`` if the field doesn't exist on the model -- that's
+    a programming error worth surfacing loudly.
+    """
+    return model_cls.model_fields[field_name]
