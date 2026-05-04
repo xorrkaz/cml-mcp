@@ -173,6 +173,8 @@ async def start_packet_capture(
 - Run `just check && just test`.
 - `tests/test_schema_drift.py` programmatically checks that each flattened tool's input schema (a) covers the source model's required fields and (b) carries the source field's `description` and numeric/string constraints. Drift in either trips the test.
 
+> **Pydantic upgrade caveat:** `field_from()` in `src/cml_mcp/tools/model_helpers.py` reads the **private** `FieldInfo._attributes_set` attribute. This is the cleanest available API in Pydantic v2.x for the "explicitly-set kwargs only" use case, but a Pydantic minor-version bump may rename or remove it. When bumping `pydantic`, re-read `field_from()` and confirm `tests/test_schema_drift.py::test_constraint_coverage` still passes; if it fails, the constraints have stopped propagating and the helper needs updating.
+
 #### Sample prompt for agents auditing a schema bump
 
 When `virl2_client` is upgraded (or `src/cml_mcp/cml/` is regenerated), run a fresh agent with the following prompt — it forces a complete diff/update cycle and leaves no flattened tool stale:

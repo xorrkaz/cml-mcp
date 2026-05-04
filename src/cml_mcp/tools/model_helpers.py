@@ -147,9 +147,21 @@ def field_from(model_cls: type[BaseModel], field_name: str) -> FieldInfo:
 
     Raises ``KeyError`` if the field doesn't exist on the model -- that's
     a programming error worth surfacing loudly.
+
+    .. warning::
+       Reads ``FieldInfo._attributes_set``, a Pydantic **private** attribute,
+       to get only the explicitly-set kwargs (so we can drop ``default`` /
+       ``default_factory`` without inheriting Pydantic's "use Undefined as
+       sentinel" coupling). This is the cleanest available API for the job
+       in Pydantic v2.x but is not part of the public contract -- a Pydantic
+       minor-version bump may rename or remove it. ``tests/test_schema_drift.py
+       ::test_constraint_coverage`` will fail loudly if that happens, since
+       the per-field constraints would stop propagating to the JSON Schema.
+       Revisit this helper at every Pydantic upgrade.
     """
     fi = model_cls.model_fields[field_name]
     # Reconstruct from the explicitly-set attributes, minus default/factory/annotation.
+    # NOTE: ``_attributes_set`` is a Pydantic private attribute -- see warning above.
     attrs = {k: v for k, v in fi._attributes_set.items() if k not in _FIELD_FROM_EXCLUDE}
     new_fi = FieldInfo(**attrs)
     # Preserve annotated_types constraints (Ge, Le, MinLen, MaxLen, …) stored in metadata.
