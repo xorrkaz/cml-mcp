@@ -157,7 +157,6 @@ This is the most common contribution. The full conventions live in [AGENTS.md](A
     ```
 
     > **Why `Annotated[T, field_from(Source, "name")]` instead of bare `T`?** FastMCP turns each parameter into a JSON Schema property exposed to the MCP client. A bare `int | None` tells a tool-calling LLM nothing about valid ranges; the source `Field(ge=1, le=86400, description="...")` does. Pulling the `FieldInfo` straight from the source schema propagates `description`, numeric/string constraints, and `examples` into the wire schema with zero hand-copying — and `tests/test_schema_drift.py::test_constraint_coverage` enforces that they stay in sync.
-
     > **Why dicts and not Pydantic models for the request payload?** The auto-generated CML schemas are strict and frequently reject `None` even for fields that nominally default to `None`. Building a dict and letting the CML server validate avoids brittle re-typing in our tool layer. The exception is `create_full_lab_topology`, which accepts `Topology | dict | str` because the structure is genuinely deeply nested.
 
 4. **Annotate destructive/read-only behavior** in the `@mcp.tool(annotations={...})` block. Use `readOnlyHint`, `destructiveHint`, `idempotentHint`, `title`.
