@@ -39,14 +39,15 @@ The mock framework is implemented in `tests/conftest.py` and consists of:
    - Other tests are mock-compatible by default
 
 3. **`tests/test_schema_drift.py`**:
-   - Walks the registered FastMCP tool input schemas and asserts each flattened tool covers the required fields of its source CML Pydantic model.
-   - Catches schema drift after a `virl2_client` upgrade. See [AGENTS.md](../AGENTS.md#sample-prompt-for-agents-auditing-a-schema-bump) for the audit prompt.
+   - `test_schema_coverage` walks the registered FastMCP tool input schemas and asserts each flattened tool covers the required fields of its source CML Pydantic model.
+   - `test_constraint_coverage` asserts each tool param that maps to a source-schema field carries the source field's numeric/string constraints (`minimum`, `maximum`, `minLength`, `maxLength`, `pattern`) in the JSON Schema FastMCP exposes.
+   - Together they catch schema drift after a `virl2_client` upgrade. See [AGENTS.md](../AGENTS.md#sample-prompt-for-agents-auditing-a-schema-bump) for the audit prompt.
 
 ## Test Results
 
 ### Mock Mode (USE_MOCKS=true)
 
-- **14 mock-compatible tests pass** (13 in `test_cml_mcp.py` + `test_schema_coverage` in `test_schema_drift.py`)
+- **15 mock-compatible tests pass** (13 in `test_cml_mcp.py` + `test_schema_coverage` and `test_constraint_coverage` in `test_schema_drift.py`)
 - 11 `live_only` tests skipped
 - Tests run in ~3 seconds
 - No network calls, no external dependencies
@@ -70,6 +71,7 @@ The mock framework is implemented in `tests/conftest.py` and consists of:
 - ✅ test_download_lab_topology
 - ✅ test_clone_cml_lab
 - ✅ test_schema_coverage (in `test_schema_drift.py`)
+- ✅ test_constraint_coverage (in `test_schema_drift.py`)
 
 **State-Modifying Tests (Require Live Server)**:
 
