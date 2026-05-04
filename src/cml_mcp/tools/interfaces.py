@@ -10,7 +10,8 @@ import logging
 import httpx
 from fastmcp.exceptions import ToolError
 
-from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
+from cml_mcp.cml.simple_webserver.schemas.common import MACAddress, UUID4Type
+from cml_mcp.cml.simple_webserver.schemas.interfaces import InterfaceSlot
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import get_cml_client_dep
 from cml_mcp.tools.model_helpers import build_payload
@@ -52,8 +53,8 @@ def register_tools(mcp):
     async def add_interface_to_node(
         lid: UUID4Type,
         node: UUID4Type,
-        slot: int | None = None,
-        mac_address: str | None = None,
+        slot: InterfaceSlot | None = None,
+        mac_address: MACAddress = None,
     ) -> SimplifiedInterfaceResponse:
         """
         Add a new interface to a node. Returns interface details (id, node, slot, type, MAC).

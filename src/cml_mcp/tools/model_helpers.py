@@ -124,19 +124,34 @@ def build_payload(**kwargs: object) -> dict:
     return {k: v for k, v in kwargs.items() if v is not None}
 
 
-def field_from(model_cls: type[BaseModel], field_name: str) -> FieldInfo:
-    """Return the ``FieldInfo`` for ``model_cls.<field_name>`` for use in
-    ``Annotated[T, field_from(Model, "field")]`` on flat tool parameters.
+_FIELD_FROM_EXCLUDE = frozenset({"default", "default_factory", "annotation"})
 
-    Reusing the source-schema FieldInfo propagates ``description``, numeric
-    bounds (``ge`` / ``le``), string constraints (``min_length`` /
-    ``max_length`` / ``pattern``), enum-ish ``examples``, etc. into the
-    JSON Schema FastMCP exposes to MCP clients -- giving tool-calling LLMs
-    (especially small / open-weight ones) the per-parameter guidance they
-    rely on, without hand-copying constraints that drift from the
-    auto-generated CML schemas.
+
+def field_from(model_cls: type[BaseModel], field_name: str) -> FieldInfo:
+    """Return a metadata-only ``FieldInfo`` for ``model_cls.<field_name>`` for
+    use in ``Annotated[T, field_from(Model, "field")]`` on flat tool parameters.
+
+    The returned FieldInfo propagates ``description``, numeric bounds
+    (``ge`` / ``le``), string constraints (``min_length`` / ``max_length`` /
+    ``pattern``), enum-ish ``examples``, etc. into the JSON Schema FastMCP
+    exposes to MCP clients -- giving tool-calling LLMs (especially small /
+    open-weight ones) the per-parameter guidance they rely on, without
+    hand-copying constraints that drift from the auto-generated CML schemas.
+
+    ``default`` and ``default_factory`` are stripped from the returned
+    FieldInfo so that tool parameters can supply their own function-signature
+    default (e.g. ``= None``) without triggering Pydantic's
+    "cannot specify both default and default_factory" TypeError when the
+    source field used a factory (e.g. ``NodeCreate.parameters``,
+    ``NodeCreate.pyats``).
 
     Raises ``KeyError`` if the field doesn't exist on the model -- that's
     a programming error worth surfacing loudly.
     """
-    return model_cls.model_fields[field_name]
+    fi = model_cls.model_fields[field_name]
+    # Reconstruct from the explicitly-set attributes, minus default/factory/annotation.
+    attrs = {k: v for k, v in fi._attributes_set.items() if k not in _FIELD_FROM_EXCLUDE}
+    new_fi = FieldInfo(**attrs)
+    # Preserve annotated_types constraints (Ge, Le, MinLen, MaxLen, …) stored in metadata.
+    new_fi.metadata = fi.metadata[:]
+    return new_fi

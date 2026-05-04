@@ -7,16 +7,17 @@ Node management tools for CML MCP server.
 
 import asyncio
 import logging
+from typing import Annotated
 
 import httpx
 from fastmcp import Context
 from fastmcp.exceptions import ToolError
 
-from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.nodes import Node, NodeConfigurationContent
+from cml_mcp.cml.simple_webserver.schemas.common import Coordinate, DefinitionID, TagArray, UUID4Type
+from cml_mcp.cml.simple_webserver.schemas.nodes import CpuLimit, Cpus, DiskSpace, Node, NodeConfigurationContent, NodeCreate, NodeLabel, Ram
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
-from cml_mcp.tools.model_helpers import build_payload
+from cml_mcp.tools.model_helpers import build_payload, field_from
 
 logger = logging.getLogger("cml-mcp.tools.nodes")
 
@@ -100,22 +101,22 @@ def register_tools(mcp):  # noqa: C901
     )
     async def add_node_to_cml_lab(
         lid: UUID4Type,
-        node_definition: str,
-        label: str | None = None,
-        x: int | None = None,
-        y: int | None = None,
-        image_definition: str | None = None,
-        ram: int | None = None,
-        cpus: int | None = None,
-        cpu_limit: int | None = None,
-        data_volume: int | None = None,
-        boot_disk_size: int | None = None,
-        tags: list[str] | None = None,
-        configuration: str | None = None,
-        parameters: dict[str, str | None] | None = None,
-        hide_links: bool | None = None,
-        priority: int | None = None,
-        pyats: dict | None = None,
+        node_definition: DefinitionID,
+        label: NodeLabel | None = None,
+        x: Coordinate | None = None,
+        y: Coordinate | None = None,
+        image_definition: DefinitionID | None = None,
+        ram: Ram = None,
+        cpus: Cpus = None,
+        cpu_limit: CpuLimit = None,
+        data_volume: DiskSpace = None,
+        boot_disk_size: DiskSpace = None,
+        tags: TagArray | None = None,
+        configuration: Annotated[str | None, field_from(NodeCreate, "configuration")] = None,
+        parameters: Annotated[dict[str, str | None] | None, field_from(NodeCreate, "parameters")] = None,
+        hide_links: Annotated[bool | None, field_from(NodeCreate, "hide_links")] = None,
+        priority: Annotated[int | None, field_from(NodeCreate, "priority")] = None,
+        pyats: Annotated[dict | None, field_from(NodeCreate, "pyats")] = None,
     ) -> UUID4Type:
         """
         Add a node to an existing lab. Returns the new node's UUID. Default interfaces are auto-created.

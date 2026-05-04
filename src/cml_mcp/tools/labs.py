@@ -28,6 +28,7 @@ Lab management tools for CML MCP server.
 
 import asyncio
 import logging
+from typing import Annotated
 
 import httpx
 import yaml
@@ -35,11 +36,11 @@ from fastmcp import Context
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4_REG_EXP, UserName, UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabTitle
+from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabAssociations, LabDescription, LabNotes, LabOwner, LabTitle
 from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
-from cml_mcp.tools.model_helpers import build_payload, lenient_construct
+from cml_mcp.tools.model_helpers import build_payload, field_from, lenient_construct
 
 logger = logging.getLogger("cml-mcp.tools.labs")
 
@@ -174,10 +175,10 @@ def register_tools(mcp):  # noqa: C901
         },
     )
     async def create_empty_lab(
-        title: str | None = None,
-        description: str | None = None,
-        notes: str | None = None,
-        owner: UUID4Type | None = None,
+        title: LabTitle | None = None,
+        description: LabDescription | None = None,
+        notes: LabNotes | None = None,
+        owner: LabOwner | None = None,
     ) -> UUID4Type:
         """
         Create an empty CML lab (no nodes/links). Returns the new lab UUID.
@@ -219,10 +220,10 @@ def register_tools(mcp):  # noqa: C901
     )
     async def modify_cml_lab(
         lid: UUID4Type,
-        title: str | None = None,
-        description: str | None = None,
-        notes: str | None = None,
-        owner: UUID4Type | None = None,
+        title: LabTitle | None = None,
+        description: LabDescription | None = None,
+        notes: LabNotes | None = None,
+        owner: LabOwner | None = None,
     ) -> bool:
         """
         Update lab metadata (title, owner, description, notes) by lab UUID.
@@ -262,8 +263,8 @@ def register_tools(mcp):  # noqa: C901
     )
     async def set_cml_lab_permissions(
         lid: UUID4Type,
-        groups: list[dict] | None = None,
-        users: list[dict] | None = None,
+        groups: Annotated[list[dict] | None, field_from(LabAssociations, "groups")] = None,
+        users: Annotated[list[dict] | None, field_from(LabAssociations, "users")] = None,
     ) -> bool:
         """
         Configure group and user permissions for a CML lab by lab UUID.

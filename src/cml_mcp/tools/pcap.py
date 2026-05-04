@@ -7,15 +7,16 @@ Packet capture (PCAP) tools for CML MCP server.
 
 import base64
 import logging
+from typing import Annotated, Literal
 
 import httpx
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.pcap import PCAPItem, PCAPStatusResponse
+from cml_mcp.cml.simple_webserver.schemas.pcap import PCAPItem, PCAPStart, PCAPStatusResponse
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import get_cml_client_dep
-from cml_mcp.tools.model_helpers import build_payload
+from cml_mcp.tools.model_helpers import build_payload, field_from
 
 logger = logging.getLogger("cml-mcp.tools.pcap")
 
@@ -42,10 +43,13 @@ def register_tools(mcp):
     async def start_packet_capture(
         lid: UUID4Type,
         link_id: UUID4Type,
-        maxpackets: int | None = None,
-        maxtime: int | None = None,
-        bpfilter: str | None = None,
-        encap: str | None = None,
+        maxpackets: Annotated[int | None, field_from(PCAPStart, "maxpackets")] = None,
+        maxtime: Annotated[int | None, field_from(PCAPStart, "maxtime")] = None,
+        bpfilter: Annotated[str | None, field_from(PCAPStart, "bpfilter")] = None,
+        encap: Annotated[
+            Literal["ethernet", "frelay", "ppp", "ppp_hdlc", "pppoe", "c_hdlc", "slip", "ax25", "ieee802_11", "radiotap"] | None,
+            field_from(PCAPStart, "encap"),
+        ] = None,
     ) -> bool:
         """
         Start a packet capture on a link by lab and link UUID. At least one of maxtime (seconds, 1-86400)

@@ -6,6 +6,7 @@ Annotation management tools for CML MCP server.
 """
 
 import logging
+from typing import Annotated, Literal
 
 import httpx
 from fastmcp import Context
@@ -13,14 +14,19 @@ from fastmcp.exceptions import ToolError
 from pydantic import BaseModel
 
 from cml_mcp.cml.simple_webserver.schemas.annotations import (
+    CoordinateFloat,
+    EllipseAnnotation,
     EllipseAnnotationResponse,
+    LineAnnotation,
     LineAnnotationResponse,
+    RectangleAnnotation,
     RectangleAnnotationResponse,
+    TextAnnotation,
     TextAnnotationResponse,
 )
-from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
+from cml_mcp.cml.simple_webserver.schemas.common import AnnotationColor, UUID4Type
 from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
-from cml_mcp.tools.model_helpers import build_payload
+from cml_mcp.tools.model_helpers import build_payload, field_from
 
 logger = logging.getLogger("cml-mcp.tools.annotations")
 
@@ -84,20 +90,20 @@ def register_tools(mcp):
     )
     async def add_text_annotation(
         lid: UUID4Type,
-        x1: float,
-        y1: float,
-        text_content: str,
-        text_font: str,
-        text_size: int,
-        text_unit: str,
-        text_bold: bool,
-        text_italic: bool,
-        border_color: str,
-        border_style: str,
-        color: str,
-        thickness: int,
-        z_index: int,
-        rotation: int,
+        x1: CoordinateFloat,
+        y1: CoordinateFloat,
+        text_content: Annotated[str, field_from(TextAnnotation, "text_content")],
+        text_font: Annotated[str, field_from(TextAnnotation, "text_font")],
+        text_size: Annotated[int, field_from(TextAnnotation, "text_size")],
+        text_unit: Annotated[Literal["pt", "px", "em"], field_from(TextAnnotation, "text_unit")],
+        text_bold: Annotated[bool, field_from(TextAnnotation, "text_bold")],
+        text_italic: Annotated[bool, field_from(TextAnnotation, "text_italic")],
+        border_color: AnnotationColor,
+        border_style: Annotated[Literal["", "2,2", "4,2"], field_from(TextAnnotation, "border_style")],
+        color: AnnotationColor,
+        thickness: Annotated[int, field_from(TextAnnotation, "thickness")],
+        z_index: Annotated[int, field_from(TextAnnotation, "z_index")],
+        rotation: Annotated[int, field_from(TextAnnotation, "rotation")],
     ) -> UUID4Type:
         """
         Add a text label annotation to a lab canvas. Returns the annotation UUID.
@@ -153,17 +159,17 @@ def register_tools(mcp):
     )
     async def add_rectangle_annotation(
         lid: UUID4Type,
-        x1: float,
-        y1: float,
-        x2: float,
-        y2: float,
-        border_color: str,
-        border_style: str,
-        color: str,
-        thickness: int,
-        z_index: int,
-        rotation: int,
-        border_radius: int,
+        x1: CoordinateFloat,
+        y1: CoordinateFloat,
+        x2: CoordinateFloat,
+        y2: CoordinateFloat,
+        border_color: AnnotationColor,
+        border_style: Annotated[Literal["", "2,2", "4,2"], field_from(RectangleAnnotation, "border_style")],
+        color: AnnotationColor,
+        thickness: Annotated[int, field_from(RectangleAnnotation, "thickness")],
+        z_index: Annotated[int, field_from(RectangleAnnotation, "z_index")],
+        rotation: Annotated[int, field_from(RectangleAnnotation, "rotation")],
+        border_radius: Annotated[int, field_from(RectangleAnnotation, "border_radius")],
     ) -> UUID4Type:
         """
         Add a rectangle shape annotation to a lab canvas. Returns the annotation UUID.
@@ -216,16 +222,16 @@ def register_tools(mcp):
     )
     async def add_ellipse_annotation(
         lid: UUID4Type,
-        x1: float,
-        y1: float,
-        x2: float,
-        y2: float,
-        border_color: str,
-        border_style: str,
-        color: str,
-        thickness: int,
-        z_index: int,
-        rotation: int,
+        x1: CoordinateFloat,
+        y1: CoordinateFloat,
+        x2: CoordinateFloat,
+        y2: CoordinateFloat,
+        border_color: AnnotationColor,
+        border_style: Annotated[Literal["", "2,2", "4,2"], field_from(EllipseAnnotation, "border_style")],
+        color: AnnotationColor,
+        thickness: Annotated[int, field_from(EllipseAnnotation, "thickness")],
+        z_index: Annotated[int, field_from(EllipseAnnotation, "z_index")],
+        rotation: Annotated[int, field_from(EllipseAnnotation, "rotation")],
     ) -> UUID4Type:
         """
         Add an ellipse shape annotation to a lab canvas. Returns the annotation UUID.
@@ -277,17 +283,17 @@ def register_tools(mcp):
     )
     async def add_line_annotation(
         lid: UUID4Type,
-        x1: float,
-        y1: float,
-        x2: float,
-        y2: float,
-        border_color: str,
-        border_style: str,
-        color: str,
-        thickness: int,
-        z_index: int,
-        line_start: str | None,
-        line_end: str | None,
+        x1: CoordinateFloat,
+        y1: CoordinateFloat,
+        x2: CoordinateFloat,
+        y2: CoordinateFloat,
+        border_color: AnnotationColor,
+        border_style: Annotated[Literal["", "2,2", "4,2"], field_from(LineAnnotation, "border_style")],
+        color: AnnotationColor,
+        thickness: Annotated[int, field_from(LineAnnotation, "thickness")],
+        z_index: Annotated[int, field_from(LineAnnotation, "z_index")],
+        line_start: Annotated[Literal["arrow", "square", "circle"] | None, field_from(LineAnnotation, "line_start")],
+        line_end: Annotated[Literal["arrow", "square", "circle"] | None, field_from(LineAnnotation, "line_end")],
     ) -> UUID4Type:
         """
         Add a line annotation to a lab canvas. Returns the annotation UUID.

@@ -6,14 +6,15 @@ Link management tools for CML MCP server.
 """
 
 import logging
+from typing import Annotated
 
 import httpx
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.links import LinkResponse
+from cml_mcp.cml.simple_webserver.schemas.links import LinkConditionConfiguration, LinkCreate, LinkResponse
 from cml_mcp.tools.dependencies import get_cml_client_dep
-from cml_mcp.tools.model_helpers import build_payload
+from cml_mcp.tools.model_helpers import build_payload, field_from
 
 logger = logging.getLogger("cml-mcp.tools.links")
 
@@ -33,8 +34,8 @@ def register_tools(mcp):
     )
     async def connect_two_nodes(
         lid: UUID4Type,
-        src_int: UUID4Type,
-        dst_int: UUID4Type,
+        src_int: Annotated[UUID4Type, field_from(LinkCreate, "src_int")],
+        dst_int: Annotated[UUID4Type, field_from(LinkCreate, "dst_int")],
     ) -> UUID4Type:
         """
         Create a link between two interfaces in the same lab. Returns the new link's UUID.
@@ -95,21 +96,21 @@ def register_tools(mcp):
     async def apply_link_conditioning(
         lid: UUID4Type,
         link_id: UUID4Type,
-        enabled: bool | None = None,
-        bandwidth: int | None = None,
-        latency: int | None = None,
-        delay_corr: float | None = None,
-        limit: int | None = None,
-        loss: float | None = None,
-        loss_corr: float | None = None,
-        gap: int | None = None,
-        duplicate: float | None = None,
-        duplicate_corr: float | None = None,
-        jitter: int | None = None,
-        reorder_prob: float | None = None,
-        reorder_corr: float | None = None,
-        corrupt_prob: float | None = None,
-        corrupt_corr: float | None = None,
+        enabled: Annotated[bool | None, field_from(LinkConditionConfiguration, "enabled")] = None,
+        bandwidth: Annotated[int | None, field_from(LinkConditionConfiguration, "bandwidth")] = None,
+        latency: Annotated[int | None, field_from(LinkConditionConfiguration, "latency")] = None,
+        delay_corr: Annotated[float | None, field_from(LinkConditionConfiguration, "delay_corr")] = None,
+        limit: Annotated[int | None, field_from(LinkConditionConfiguration, "limit")] = None,
+        loss: Annotated[float | None, field_from(LinkConditionConfiguration, "loss")] = None,
+        loss_corr: Annotated[float | None, field_from(LinkConditionConfiguration, "loss_corr")] = None,
+        gap: Annotated[int | None, field_from(LinkConditionConfiguration, "gap")] = None,
+        duplicate: Annotated[float | None, field_from(LinkConditionConfiguration, "duplicate")] = None,
+        duplicate_corr: Annotated[float | None, field_from(LinkConditionConfiguration, "duplicate_corr")] = None,
+        jitter: Annotated[int | None, field_from(LinkConditionConfiguration, "jitter")] = None,
+        reorder_prob: Annotated[float | None, field_from(LinkConditionConfiguration, "reorder_prob")] = None,
+        reorder_corr: Annotated[float | None, field_from(LinkConditionConfiguration, "reorder_corr")] = None,
+        corrupt_prob: Annotated[float | None, field_from(LinkConditionConfiguration, "corrupt_prob")] = None,
+        corrupt_corr: Annotated[float | None, field_from(LinkConditionConfiguration, "corrupt_corr")] = None,
     ) -> bool:
         """
         Apply network impairment to a link (bandwidth limit, latency, loss, jitter, etc.) by
