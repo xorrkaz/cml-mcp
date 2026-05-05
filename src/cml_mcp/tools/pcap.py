@@ -21,11 +21,11 @@ from cml_mcp.tools.model_helpers import build_payload, field_from
 logger = logging.getLogger("cml-mcp.tools.pcap")
 
 
-async def get_capture_key(lid: UUID4Type, link_id: UUID4Type, client: CMLClient) -> str:
+async def get_capture_key(lab_id: UUID4Type, link_id: UUID4Type, client: CMLClient) -> str:
     """
     Get the capture key for the link.
     """
-    key = await client.get(f"/labs/{lid}/links/{link_id}/capture/key")
+    key = await client.get(f"/labs/{lab_id}/links/{link_id}/capture/key")
     if not key:
         raise ToolError("No packet capture found for the specified link.")
     return key
@@ -41,7 +41,7 @@ def register_tools(mcp):
         annotations={"title": "Start a Packet Capture on a Link", "readOnlyHint": False, "destructiveHint": False},
     )
     async def start_packet_capture(
-        lid: UUID4Type,
+        lab_id: UUID4Type,
         link_id: UUID4Type,
         maxpackets: Annotated[int | None, field_from(PCAPStart, "maxpackets")] = None,
         maxtime: Annotated[int | None, field_from(PCAPStart, "maxtime")] = None,
@@ -73,18 +73,18 @@ def register_tools(mcp):
             )
             if "maxpackets" not in payload and "maxtime" not in payload:
                 raise ValueError("Either 'maxpackets' or 'maxtime' must be specified")
-            await client.put(f"/labs/{lid}/links/{link_id}/capture/start", data=payload)
+            await client.put(f"/labs/{lab_id}/links/{link_id}/capture/start", data=payload)
             return True
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error starting packet capture on link %s in lab %s", link_id, lid)
+            logger.exception("Error starting packet capture on link %s in lab %s", link_id, lab_id)
             raise ToolError(e)
 
     @mcp.tool(
         annotations={"title": "Stop a Packet Capture on a Link", "readOnlyHint": False, "destructiveHint": False},
     )
-    async def stop_packet_capture(lid: UUID4Type, link_id: UUID4Type) -> bool:
+    async def stop_packet_capture(lab_id: UUID4Type, link_id: UUID4Type) -> bool:
         """
         Stop an active packet capture on a link by lab and link UUID.
 
@@ -95,18 +95,18 @@ def register_tools(mcp):
         """
         client = get_cml_client_dep()
         try:
-            await client.put(f"/labs/{lid}/links/{link_id}/capture/stop")
+            await client.put(f"/labs/{lab_id}/links/{link_id}/capture/stop")
             return True
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error stopping packet capture on link %s in lab %s", link_id, lid)
+            logger.exception("Error stopping packet capture on link %s in lab %s", link_id, lab_id)
             raise ToolError(e)
 
     @mcp.tool(
         annotations={"title": "Check Packet Capture Status on a Link", "readOnlyHint": True},
     )
-    async def check_packet_capture_status(lid: UUID4Type, link_id: UUID4Type) -> PCAPStatusResponse:
+    async def check_packet_capture_status(lab_id: UUID4Type, link_id: UUID4Type) -> PCAPStatusResponse:
         """
         Check whether a packet capture is active on a link, plus its config and packet count
         so far. Returns a PCAPStatusResponse.
@@ -118,19 +118,19 @@ def register_tools(mcp):
         """
         client = get_cml_client_dep()
         try:
-            status = await client.get(f"/labs/{lid}/links/{link_id}/capture/status")
+            status = await client.get(f"/labs/{lab_id}/links/{link_id}/capture/status")
             # See DEVELOPMENT.md "Object-typed return values": dump after construction so FastMCP doesn't double-marshal.
             return PCAPStatusResponse(**status).model_dump(exclude_unset=True)
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error checking packet capture status on link %s in lab %s", link_id, lid)
+            logger.exception("Error checking packet capture status on link %s in lab %s", link_id, lab_id)
             raise ToolError(e)
 
     @mcp.tool(
         annotations={"title": "Get packet capture overview", "readOnlyHint": True},
     )
-    async def get_captured_packet_overview(lid: UUID4Type, link_id: UUID4Type) -> list[PCAPItem]:
+    async def get_captured_packet_overview(lab_id: UUID4Type, link_id: UUID4Type) -> list[PCAPItem]:
         """
         Get a brief one-line summary of each packet captured on a link (timestamps, src/dst,
         protocol). Lightweight alternative to downloading the full PCAP.
@@ -142,19 +142,19 @@ def register_tools(mcp):
         """
         client = get_cml_client_dep()
         try:
-            key = await get_capture_key(lid, link_id, client)
+            key = await get_capture_key(lab_id, link_id, client)
             packets = await client.get(f"/pcap/{key}/packets")
             return [PCAPItem(**packet).model_dump(exclude_unset=True) for packet in packets]
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error getting packet capture overview on link %s in lab %s", link_id, lid)
+            logger.exception("Error getting packet capture overview on link %s in lab %s", link_id, lab_id)
             raise ToolError(e)
 
     @mcp.tool(
         annotations={"title": "Get Full Packets from a Packet Capture", "readOnlyHint": True},
     )
-    async def get_packet_capture_data(lid: UUID4Type, link_id: UUID4Type) -> str:
+    async def get_packet_capture_data(lab_id: UUID4Type, link_id: UUID4Type) -> str:
         """
         Download the complete PCAP file for a link by lab and link UUID. Returns base64-encoded
         binary PCAP data -- decode and save as a .pcap file for Wireshark, tcpdump, or other
@@ -168,7 +168,7 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         try:
             # Get the capture key for the link
-            key = await get_capture_key(lid, link_id, client)
+            key = await get_capture_key(lab_id, link_id, client)
             # Download the PCAP data using the capture key
             pcap_data = await client.get(f"/pcap/{key}", is_binary=True)
             # Encode the binary PCAP data to a base64 string
@@ -177,5 +177,5 @@ def register_tools(mcp):
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error getting packet capture data from link %s in lab %s", link_id, lid)
+            logger.exception("Error getting packet capture data from link %s in lab %s", link_id, lab_id)
             raise ToolError(e)

@@ -26,7 +26,7 @@ logger = logging.getLogger("cml-mcp.tools.cli")
 
 def _send_cli_command_sync(
     client: CMLClient,
-    lid: UUID4Type,
+    lab_id: UUID4Type,
     label: NodeLabel,  # pyright: ignore[reportInvalidTypeForm]
     commands: str,
     config_command: bool,
@@ -39,7 +39,7 @@ def _send_cli_command_sync(
     cwd = os.getcwd()  # Save the current working directory
     try:
         os.chdir(tempfile.gettempdir())  # Change to a writable directory (required by pyATS/ClPyats)
-        lab = client.vclient.join_existing_lab(str(lid))  # Join the existing lab using the provided lab ID
+        lab = client.vclient.join_existing_lab(str(lab_id))  # Join the existing lab using the provided lab ID
         try:
             pylab = ClPyats(lab)  # Create a ClPyats object for interacting with the lab
             pylab.sync_testbed(client.vclient.username, client.vclient.password)  # Sync the testbed with CML credentials
@@ -90,8 +90,8 @@ def register_tools(mcp):
         annotations={"title": "Get Console Logs for a CML Node", "readOnlyHint": True},
     )
     async def get_console_log(
-        lid: UUID4Type,
-        nid: UUID4Type,
+        lab_id: UUID4Type,
+        node_id: UUID4Type,
         console: int = 0,
     ) -> list[ConsoleLogOutput]:
         """
@@ -110,13 +110,13 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         return_lines = []
         try:
-            resp = await client.get(f"/labs/{lid}/nodes/{nid}/consoles/{console}/log")
+            resp = await client.get(f"/labs/{lab_id}/nodes/{node_id}/consoles/{console}/log")
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 400:
-                raise ToolError(f"Console index {console} does not exist for node {nid}")
+                raise ToolError(f"Console index {console} does not exist for node {node_id}")
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error getting console log for node %s in lab %s", nid, lid)
+            logger.exception("Error getting console log for node %s in lab %s", node_id, lab_id)
             raise ToolError(e)
         lines = re.split(r"\r?\n", resp)
         for line in lines:
@@ -134,7 +134,7 @@ def register_tools(mcp):
         annotations={"title": "Send CLI Command to CML Node", "readOnlyHint": False, "destructiveHint": True},
     )
     async def send_cli_command(
-        lid: UUID4Type,
+        lab_id: UUID4Type,
         label: NodeLabel,  # pyright: ignore[reportInvalidTypeForm]
         commands: str,
         config_command: bool = False,
@@ -168,8 +168,8 @@ def register_tools(mcp):
         # Use asyncio.to_thread to prevent blocking the event loop with synchronous operations
         # and to avoid os.chdir() race conditions between concurrent requests
         try:
-            output = await asyncio.to_thread(_send_cli_command_sync, client, lid, label, commands, config_command, console)
+            output = await asyncio.to_thread(_send_cli_command_sync, client, lab_id, label, commands, config_command, console)
             return output
         except Exception as e:
-            logger.exception("Error sending CLI command to node %s in lab %s", label, lid)
+            logger.exception("Error sending CLI command to node %s in lab %s", label, lab_id)
             raise ToolError(e)

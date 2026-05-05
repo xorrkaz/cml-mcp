@@ -352,6 +352,6 @@ async def created_lab(main_mcp_client: Client[FastMCPTransport]) -> AsyncGenerat
     # --- Teardown: delete lab ---
     del_result = await main_mcp_client.call_tool(
         name="delete_cml_lab",
-        arguments={"lid": lab_id},
+        arguments={"lab_id": lab_id},
     )
     assert del_result.data is True

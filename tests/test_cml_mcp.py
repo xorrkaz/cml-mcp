@@ -222,7 +222,9 @@ async def test_node_defs(main_mcp_client: Client[FastMCPTransport]):
         elif not isinstance(node_def, SuperSimplifiedNodeDefinitionResponse):
             node_def = SuperSimplifiedNodeDefinitionResponse.model_validate(node_def, from_attributes=True)
         assert isinstance(node_def, SuperSimplifiedNodeDefinitionResponse)
-        nd_result = await main_mcp_client.call_tool(name="get_node_definition_detail", arguments={"did": DefinitionID(node_def.id)})
+        nd_result = await main_mcp_client.call_tool(
+            name="get_node_definition_detail", arguments={"definition_id": DefinitionID(node_def.id)}
+        )
         if i == 0:
             pass
             # outsource(nd_result.structured_content, ".json")
@@ -252,7 +254,7 @@ async def test_get_annotations_for_cml_lab(main_mcp_client: Client[FastMCPTransp
     # Retrieve all annotations for the lab
     ann_result = await main_mcp_client.call_tool(
         name="get_annotations_for_cml_lab",
-        arguments={"lid": lab_id},
+        arguments={"lab_id": lab_id},
     )
     assert isinstance(ann_result.data, list)
     # In mock mode, we expect 4 annotations from the mock file
@@ -322,7 +324,7 @@ async def test_packet_capture_operations(main_mcp_client: Client[FastMCPTranspor
     # Get links for the lab
     links_result = await main_mcp_client.call_tool(
         name="get_all_links_for_lab",
-        arguments={"lid": lab_id},
+        arguments={"lab_id": lab_id},
     )
     assert isinstance(links_result.data, list)
     assert len(links_result.data) > 0
@@ -335,7 +337,7 @@ async def test_packet_capture_operations(main_mcp_client: Client[FastMCPTranspor
     capture_result = await main_mcp_client.call_tool(
         name="start_packet_capture",
         arguments={
-            "lid": lab_id,
+            "lab_id": lab_id,
             "link_id": link_id,
             "maxpackets": 100,
             "bpfilter": "icmp",
@@ -347,7 +349,7 @@ async def test_packet_capture_operations(main_mcp_client: Client[FastMCPTranspor
     pcap_status = await main_mcp_client.call_tool(
         name="check_packet_capture_status",
         arguments={
-            "lid": lab_id,
+            "lab_id": lab_id,
             "link_id": link_id,
         },
     )
@@ -362,7 +364,7 @@ async def test_packet_capture_operations(main_mcp_client: Client[FastMCPTranspor
     stop_result = await main_mcp_client.call_tool(
         name="stop_packet_capture",
         arguments={
-            "lid": lab_id,
+            "lab_id": lab_id,
             "link_id": link_id,
         },
     )
@@ -372,7 +374,7 @@ async def test_packet_capture_operations(main_mcp_client: Client[FastMCPTranspor
     packet_overview = await main_mcp_client.call_tool(
         name="get_captured_packet_overview",
         arguments={
-            "lid": lab_id,
+            "lab_id": lab_id,
             "link_id": link_id,
         },
     )
@@ -394,7 +396,7 @@ async def test_packet_capture_operations(main_mcp_client: Client[FastMCPTranspor
 
 @pytest.mark.live_only
 async def test_empty_lab_mgmt(main_mcp_client: Client[FastMCPTransport], created_lab: UUID4Type):
-    lid = created_lab
+    lab_id = created_lab
     # Fetch the lab details
     lab_result = await main_mcp_client.call_tool(name="get_cml_lab_by_title", arguments={"title": str(COMMON_TEST_LAB_TITLE)})
 
@@ -402,14 +404,14 @@ async def test_empty_lab_mgmt(main_mcp_client: Client[FastMCPTransport], created
     if isinstance(lab_result.structured_content, dict):
         lab_result.structured_content = Lab(**lab_result.structured_content)
     assert isinstance(lab_result.structured_content, Lab)
-    assert lab_result.structured_content.id == lid
+    assert lab_result.structured_content.id == lab_id
 
 
 @pytest.mark.live_only
 async def test_modify_cml_lab(main_mcp_client: Client[FastMCPTransport], created_lab: UUID4Type):
     lab_id = created_lab
     new_title = LabTitle("MCP Modified Lab Title")
-    mod_result = await main_mcp_client.call_tool(name="modify_cml_lab", arguments={"lid": lab_id, "title": str(new_title)})
+    mod_result = await main_mcp_client.call_tool(name="modify_cml_lab", arguments={"lab_id": lab_id, "title": str(new_title)})
 
     assert mod_result.data is True
 
@@ -427,7 +429,7 @@ async def test_full_cml_topology(main_mcp_client: Client[FastMCPTransport]):
     lab_id = UUID4Type(result.content[0].text)
 
     # Clean up - delete the lab
-    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": lab_id})
+    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lab_id": lab_id})
     assert del_result.data is True
 
 
@@ -438,7 +440,7 @@ async def test_intf_management(main_mcp_client: Client[FastMCPTransport], create
     node_result = await main_mcp_client.call_tool(
         name="add_node_to_cml_lab",
         arguments={
-            "lid": lab_id,
+            "lab_id": lab_id,
             "node_definition": "iol-xe",
             "label": "MCP Test Node",
             "x": 100,
@@ -453,7 +455,7 @@ async def test_intf_management(main_mcp_client: Client[FastMCPTransport], create
 
     iface_result = await main_mcp_client.call_tool(
         name="add_interface_to_node",
-        arguments={"lid": lab_id, "node": node_id},
+        arguments={"lab_id": lab_id, "node": node_id},
     )
     assert isinstance(iface_result.content, list)
     assert len(iface_result.content) > 0
@@ -462,7 +464,7 @@ async def test_intf_management(main_mcp_client: Client[FastMCPTransport], create
 
     intf_result = await main_mcp_client.call_tool(
         name="get_interfaces_for_node",
-        arguments={"lid": lab_id, "nid": node_id},
+        arguments={"lab_id": lab_id, "node_id": node_id},
     )
     assert isinstance(intf_result.data, list)
     assert len(intf_result.data) == snapshot(6)
@@ -479,7 +481,7 @@ async def test_add_annotation_to_cml_lab(main_mcp_client: Client[FastMCPTranspor
     ellipse_result = await main_mcp_client.call_tool(
         name="add_ellipse_annotation",
         arguments={
-            "lid": lab_id,
+            "lab_id": lab_id,
             "x1": 150,
             "y1": 150,
             "x2": 200,
@@ -500,7 +502,7 @@ async def test_add_annotation_to_cml_lab(main_mcp_client: Client[FastMCPTranspor
     line_result = await main_mcp_client.call_tool(
         name="add_line_annotation",
         arguments={
-            "lid": lab_id,
+            "lab_id": lab_id,
             "x1": 100,
             "y1": 100,
             "x2": 200,
@@ -522,7 +524,7 @@ async def test_add_annotation_to_cml_lab(main_mcp_client: Client[FastMCPTranspor
     rectangle_result = await main_mcp_client.call_tool(
         name="add_rectangle_annotation",
         arguments={
-            "lid": lab_id,
+            "lab_id": lab_id,
             "x1": 200,
             "y1": 200,
             "x2": 350,
@@ -544,7 +546,7 @@ async def test_add_annotation_to_cml_lab(main_mcp_client: Client[FastMCPTranspor
     text_result = await main_mcp_client.call_tool(
         name="add_text_annotation",
         arguments={
-            "lid": lab_id,
+            "lab_id": lab_id,
             "x1": 250,
             "y1": 250,
             "text_content": "This is a test annotation",
@@ -573,7 +575,7 @@ async def test_add_annotation_to_cml_lab(main_mcp_client: Client[FastMCPTranspor
     # Retrieve all annotations for the lab
     ann_result = await main_mcp_client.call_tool(
         name="get_annotations_for_cml_lab",
-        arguments={"lid": lab_id},
+        arguments={"lab_id": lab_id},
     )
     assert isinstance(ann_result.data, list)
     assert len(ann_result.data) == snapshot(4)
@@ -599,7 +601,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
     node1_result = await main_mcp_client.call_tool(
         name="add_node_to_cml_lab",
         arguments={
-            "lid": lab_id,
+            "lab_id": lab_id,
             "node_definition": "iol-xe",
             "label": "MCP Test Node 1",
             "x": 100,
@@ -615,7 +617,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
     node2_result = await main_mcp_client.call_tool(
         name="add_node_to_cml_lab",
         arguments={
-            "lid": lab_id,
+            "lab_id": lab_id,
             "node_definition": "iol-xe",
             "label": "MCP Test Node 2",
             "x": 300,
@@ -628,8 +630,8 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
     assert isinstance(node2_result.content[0], TextContent)
     node2_id = UUID4Type(node2_result.content[0].text)
 
-    intf1_result = await main_mcp_client.call_tool(name="get_interfaces_for_node", arguments={"lid": lab_id, "nid": node1_id})
-    intf2_result = await main_mcp_client.call_tool(name="get_interfaces_for_node", arguments={"lid": lab_id, "nid": node2_id})
+    intf1_result = await main_mcp_client.call_tool(name="get_interfaces_for_node", arguments={"lab_id": lab_id, "node_id": node1_id})
+    intf2_result = await main_mcp_client.call_tool(name="get_interfaces_for_node", arguments={"lab_id": lab_id, "node_id": node2_id})
     assert isinstance(intf1_result.data, list)
     assert isinstance(intf2_result.data, list)
     assert len(intf1_result.data) > 1  # Interface index 0 is a loopback and cannot be connected.
@@ -639,7 +641,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
     link_result = await main_mcp_client.call_tool(
         name="connect_two_nodes",
         arguments={
-            "lid": lab_id,
+            "lab_id": lab_id,
             "src_int": _to_model(intf1_result.data[1], SimplifiedInterfaceResponse).id,
             "dst_int": _to_model(intf2_result.data[1], SimplifiedInterfaceResponse).id,
         },
@@ -651,7 +653,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
 
     link_result = await main_mcp_client.call_tool(
         name="get_all_links_for_lab",
-        arguments={"lid": lab_id},
+        arguments={"lab_id": lab_id},
     )
     assert isinstance(link_result.data, list)
     assert len(link_result.data) == snapshot(1)
@@ -662,13 +664,13 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
 
     _ = await main_mcp_client.call_tool(
         name="start_cml_lab",
-        arguments={"lid": lab_id, "wait_for_convergence": True},
+        arguments={"lab_id": lab_id, "wait_for_convergence": True},
     )
 
     capture_result = await main_mcp_client.call_tool(
         name="start_packet_capture",
         arguments={
-            "lid": lab_id,
+            "lab_id": lab_id,
             "link_id": _to_model(link_result.data[0], LinkResponse).id,
             "maxpackets": 100,  # we don't need 100, but we don't want it to stop too early either
             "bpfilter": "icmp",
@@ -678,13 +680,13 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
 
     _ = await main_mcp_client.call_tool(
         name="send_cli_command",
-        arguments={"lid": lab_id, "label": "MCP Test Node 1", "commands": "ping 192.0.2.2"},
+        arguments={"lab_id": lab_id, "label": "MCP Test Node 1", "commands": "ping 192.0.2.2"},
     )
 
     pcap_status = await main_mcp_client.call_tool(
         name="check_packet_capture_status",
         arguments={
-            "lid": lab_id,
+            "lab_id": lab_id,
             "link_id": _to_model(link_result.data[0], LinkResponse).id,
         },
     )
@@ -697,7 +699,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
     stop_result = await main_mcp_client.call_tool(
         name="stop_packet_capture",
         arguments={
-            "lid": lab_id,
+            "lab_id": lab_id,
             "link_id": _to_model(link_result.data[0], LinkResponse).id,
         },
     )
@@ -706,7 +708,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
     packet_overview = await main_mcp_client.call_tool(
         name="get_captured_packet_overview",
         arguments={
-            "lid": lab_id,
+            "lab_id": lab_id,
             "link_id": _to_model(link_result.data[0], LinkResponse).id,
         },
     )
@@ -724,7 +726,7 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
     cond_result = await main_mcp_client.call_tool(
         name="apply_link_conditioning",
         arguments={
-            "lid": lab_id,
+            "lab_id": lab_id,
             "link_id": _to_model(link_result.data[0], LinkResponse).id,
             "enabled": True,
             "bandwidth": 1000,
@@ -743,7 +745,7 @@ async def test_get_nodes_for_cml_lab(main_mcp_client: Client[FastMCPTransport], 
         node_result = await main_mcp_client.call_tool(
             name="add_node_to_cml_lab",
             arguments={
-                "lid": lab_id,
+                "lab_id": lab_id,
                 "node_definition": "iol-xe",
                 "label": f"MCP Test Node {i + 1}",
                 "x": 100,
@@ -773,7 +775,7 @@ async def test_download_lab_topology(main_mcp_client: Client[FastMCPTransport], 
     lab_id = created_lab
 
     # Download the lab topology
-    download_result = await main_mcp_client.call_tool(name="download_lab_topology", arguments={"lid": lab_id})
+    download_result = await main_mcp_client.call_tool(name="download_lab_topology", arguments={"lab_id": lab_id})
     assert isinstance(download_result.content, list)
     assert len(download_result.content) > 0
     assert isinstance(download_result.content[0], TextContent)
@@ -793,7 +795,7 @@ async def test_clone_cml_lab(main_mcp_client: Client[FastMCPTransport], created_
     node_result = await main_mcp_client.call_tool(
         name="add_node_to_cml_lab",
         arguments={
-            "lid": source_lab_id,
+            "lab_id": source_lab_id,
             "node_definition": "iol-xe",
             "label": "Test Router",
             "x": 100,
@@ -804,7 +806,7 @@ async def test_clone_cml_lab(main_mcp_client: Client[FastMCPTransport], created_
     assert len(node_result.content) > 0
 
     # Clone the lab with a new title
-    clone_result = await main_mcp_client.call_tool(name="clone_cml_lab", arguments={"lid": source_lab_id, "new_title": "Cloned Lab"})
+    clone_result = await main_mcp_client.call_tool(name="clone_cml_lab", arguments={"lab_id": source_lab_id, "new_title": "Cloned Lab"})
     assert isinstance(clone_result.content, list)
     assert len(clone_result.content) > 0
     assert isinstance(clone_result.content[0], TextContent)
@@ -812,7 +814,7 @@ async def test_clone_cml_lab(main_mcp_client: Client[FastMCPTransport], created_
     assert cloned_lab_id != source_lab_id
 
     # Clean up - delete clone lab
-    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": cloned_lab_id})
+    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lab_id": cloned_lab_id})
     assert del_result.data is True
 
 
@@ -846,7 +848,7 @@ async def test_clone_cml_lab_live(main_mcp_client: Client[FastMCPTransport], cre
     node_result = await main_mcp_client.call_tool(
         name="add_node_to_cml_lab",
         arguments={
-            "lid": source_lab_id,
+            "lab_id": source_lab_id,
             "node_definition": "iol-xe",
             "label": "Test Router",
             "x": 100,
