@@ -39,6 +39,7 @@ import logging
 from typing import TypeVar
 
 from pydantic import BaseModel, ValidationError
+from pydantic.fields import FieldInfo
 
 logger = logging.getLogger("cml-mcp.tools.model_helpers")
 
@@ -121,3 +122,48 @@ def build_payload(**kwargs: object) -> dict:
     repeating the same `if x is not None: payload[x] = x` boilerplate.
     """
     return {k: v for k, v in kwargs.items() if v is not None}
+
+
+_FIELD_FROM_EXCLUDE = frozenset({"default", "default_factory", "annotation"})
+
+
+def field_from(model_cls: type[BaseModel], field_name: str) -> FieldInfo:
+    """Return a metadata-only ``FieldInfo`` for ``model_cls.<field_name>`` for
+    use in ``Annotated[T, field_from(Model, "field")]`` on flat tool parameters.
+
+    The returned FieldInfo propagates ``description``, numeric bounds
+    (``ge`` / ``le``), string constraints (``min_length`` / ``max_length`` /
+    ``pattern``), enum-ish ``examples``, etc. into the JSON Schema FastMCP
+    exposes to MCP clients -- giving tool-calling LLMs (especially small /
+    open-weight ones) the per-parameter guidance they rely on, without
+    hand-copying constraints that drift from the auto-generated CML schemas.
+
+    ``default`` and ``default_factory`` are stripped from the returned
+    FieldInfo so that tool parameters can supply their own function-signature
+    default (e.g. ``= None``) without triggering Pydantic's
+    "cannot specify both default and default_factory" TypeError when the
+    source field used a factory (e.g. ``NodeCreate.parameters``,
+    ``NodeCreate.pyats``).
+
+    Raises ``KeyError`` if the field doesn't exist on the model -- that's
+    a programming error worth surfacing loudly.
+
+    .. warning::
+       Reads ``FieldInfo._attributes_set``, a Pydantic **private** attribute,
+       to get only the explicitly-set kwargs (so we can drop ``default`` /
+       ``default_factory`` without inheriting Pydantic's "use Undefined as
+       sentinel" coupling). This is the cleanest available API for the job
+       in Pydantic v2.x but is not part of the public contract -- a Pydantic
+       minor-version bump may rename or remove it. ``tests/test_schema_drift.py
+       ::test_constraint_coverage`` will fail loudly if that happens, since
+       the per-field constraints would stop propagating to the JSON Schema.
+       Revisit this helper at every Pydantic upgrade.
+    """
+    fi = model_cls.model_fields[field_name]
+    # Reconstruct from the explicitly-set attributes, minus default/factory/annotation.
+    # NOTE: ``_attributes_set`` is a Pydantic private attribute -- see warning above.
+    attrs = {k: v for k, v in fi._attributes_set.items() if k not in _FIELD_FROM_EXCLUDE}
+    new_fi = FieldInfo(**attrs)
+    # Preserve annotated_types constraints (Ge, Le, MinLen, MaxLen, …) stored in metadata.
+    new_fi.metadata = fi.metadata[:]
+    return new_fi

@@ -19,7 +19,7 @@ from cml_mcp.types import SuperSimplifiedNodeDefinitionResponse
 logger = logging.getLogger("cml-mcp.tools.node_definitions")
 
 
-async def get_node_def_details(did: DefinitionID, client: CMLClient) -> NodeDefinition:
+async def get_node_def_details(definition_id: DefinitionID, client: CMLClient) -> NodeDefinition:
     """
     Get detailed information about a specific node definition by its ID.
 
@@ -29,7 +29,7 @@ async def get_node_def_details(did: DefinitionID, client: CMLClient) -> NodeDefi
     Returns:
         NodeDefinition: The node definition details.
     """
-    node_definition = await client.get(f"/node_definitions/{did}", params={"json": True})
+    node_definition = await client.get(f"/node_definitions/{definition_id}", params={"json": True})
     return NodeDefinition(**node_definition).model_dump(exclude_unset=True)
 
 
@@ -71,7 +71,7 @@ def register_tools(mcp):
             "readOnlyHint": True,
         },
     )
-    async def get_node_definition_detail(did: DefinitionID) -> NodeDefinition:
+    async def get_node_definition_detail(definition_id: DefinitionID) -> NodeDefinition:
         """
         Get full details for one node definition by id: interfaces, default device config,
         boot options, and resource requirements.
@@ -83,9 +83,9 @@ def register_tools(mcp):
         """
         client = get_cml_client_dep()
         try:
-            return await get_node_def_details(did, client)
+            return await get_node_def_details(definition_id, client)
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error getting node definition detail for %s", did)
+            logger.exception("Error getting node definition detail for %s", definition_id)
             raise ToolError(e)

@@ -178,6 +178,7 @@ mv .inline-snapshot/external/<hash>.json tests/mocks/get_labs.json
 - `test_download_lab_topology` - Download lab topology as YAML
 - `test_clone_cml_lab` - Clone a lab
 - `test_schema_coverage` (in `test_schema_drift.py`) - Verify each flattened tool's input schema covers its source CML model's required fields
+- `test_constraint_coverage` (in `test_schema_drift.py`) - Verify each flattened tool's per-parameter JSON Schema carries the source field's numeric/string constraints (`minimum`, `maximum`, `minLength`, `maxLength`, `pattern`)
 
 ### State-Modifying Tests (Require Live Server)
 

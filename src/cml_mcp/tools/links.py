@@ -6,14 +6,15 @@ Link management tools for CML MCP server.
 """
 
 import logging
+from typing import Annotated
 
 import httpx
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.links import LinkResponse
+from cml_mcp.cml.simple_webserver.schemas.links import LinkConditionConfiguration, LinkCreate, LinkResponse
 from cml_mcp.tools.dependencies import get_cml_client_dep
-from cml_mcp.tools.model_helpers import build_payload
+from cml_mcp.tools.model_helpers import build_payload, field_from
 
 logger = logging.getLogger("cml-mcp.tools.links")
 
@@ -32,9 +33,9 @@ def register_tools(mcp):
         },
     )
     async def connect_two_nodes(
-        lid: UUID4Type,
-        src_int: UUID4Type,
-        dst_int: UUID4Type,
+        lab_id: UUID4Type,
+        src_int: Annotated[UUID4Type, field_from(LinkCreate, "src_int")],
+        dst_int: Annotated[UUID4Type, field_from(LinkCreate, "dst_int")],
     ) -> UUID4Type:
         """
         Create a link between two interfaces in the same lab. Returns the new link's UUID.
@@ -51,7 +52,7 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         try:
             payload = build_payload(src_int=str(src_int), dst_int=str(dst_int))
-            resp = await client.post(f"/labs/{lid}/links", data=payload)
+            resp = await client.post(f"/labs/{lab_id}/links", data=payload)
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -65,7 +66,7 @@ def register_tools(mcp):
             "readOnlyHint": True,
         },
     )
-    async def get_all_links_for_lab(lid: UUID4Type) -> list[LinkResponse]:
+    async def get_all_links_for_lab(lab_id: UUID4Type) -> list[LinkResponse]:
         """
         List all links in a lab by lab UUID. Returns id, label, interface_a, interface_b,
         node_a, node_b, state, and capture_key (for packet capture).
@@ -77,12 +78,12 @@ def register_tools(mcp):
         """
         client = get_cml_client_dep()
         try:
-            resp = await client.get(f"/labs/{lid}/links", params={"data": True})
+            resp = await client.get(f"/labs/{lab_id}/links", params={"data": True})
             return [LinkResponse(**link).model_dump(exclude_unset=True) for link in resp]
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error getting links for lab %s", lid)
+            logger.exception("Error getting links for lab %s", lab_id)
             raise ToolError(e)
 
     # Source schema: LinkConditionConfiguration (cml/simple_webserver/schemas/links.py)
@@ -93,23 +94,23 @@ def register_tools(mcp):
         annotations={"title": "Apply Link Conditioning", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True},
     )
     async def apply_link_conditioning(
-        lid: UUID4Type,
+        lab_id: UUID4Type,
         link_id: UUID4Type,
-        enabled: bool | None = None,
-        bandwidth: int | None = None,
-        latency: int | None = None,
-        delay_corr: float | None = None,
-        limit: int | None = None,
-        loss: float | None = None,
-        loss_corr: float | None = None,
-        gap: int | None = None,
-        duplicate: float | None = None,
-        duplicate_corr: float | None = None,
-        jitter: int | None = None,
-        reorder_prob: float | None = None,
-        reorder_corr: float | None = None,
-        corrupt_prob: float | None = None,
-        corrupt_corr: float | None = None,
+        enabled: Annotated[bool | None, field_from(LinkConditionConfiguration, "enabled")] = None,
+        bandwidth: Annotated[int | None, field_from(LinkConditionConfiguration, "bandwidth")] = None,
+        latency: Annotated[int | None, field_from(LinkConditionConfiguration, "latency")] = None,
+        delay_corr: Annotated[float | None, field_from(LinkConditionConfiguration, "delay_corr")] = None,
+        limit: Annotated[int | None, field_from(LinkConditionConfiguration, "limit")] = None,
+        loss: Annotated[float | None, field_from(LinkConditionConfiguration, "loss")] = None,
+        loss_corr: Annotated[float | None, field_from(LinkConditionConfiguration, "loss_corr")] = None,
+        gap: Annotated[int | None, field_from(LinkConditionConfiguration, "gap")] = None,
+        duplicate: Annotated[float | None, field_from(LinkConditionConfiguration, "duplicate")] = None,
+        duplicate_corr: Annotated[float | None, field_from(LinkConditionConfiguration, "duplicate_corr")] = None,
+        jitter: Annotated[int | None, field_from(LinkConditionConfiguration, "jitter")] = None,
+        reorder_prob: Annotated[float | None, field_from(LinkConditionConfiguration, "reorder_prob")] = None,
+        reorder_corr: Annotated[float | None, field_from(LinkConditionConfiguration, "reorder_corr")] = None,
+        corrupt_prob: Annotated[float | None, field_from(LinkConditionConfiguration, "corrupt_prob")] = None,
+        corrupt_corr: Annotated[float | None, field_from(LinkConditionConfiguration, "corrupt_corr")] = None,
     ) -> bool:
         """
         Apply network impairment to a link (bandwidth limit, latency, loss, jitter, etc.) by
@@ -143,12 +144,12 @@ def register_tools(mcp):
                 corrupt_prob=corrupt_prob,
                 corrupt_corr=corrupt_corr,
             )
-            await client.patch(f"/labs/{lid}/links/{link_id}/condition", data=payload)
+            await client.patch(f"/labs/{lab_id}/links/{link_id}/condition", data=payload)
             return True
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error conditioning link %s in lab %s", link_id, lid)
+            logger.exception("Error conditioning link %s in lab %s", link_id, lab_id)
             raise ToolError(e)
 
     @mcp.tool(
@@ -159,7 +160,7 @@ def register_tools(mcp):
             "idempotentHint": True,
         },
     )
-    async def start_cml_link(lid: UUID4Type, link_id: UUID4Type) -> bool:
+    async def start_cml_link(lab_id: UUID4Type, link_id: UUID4Type) -> bool:
         """
         Start a link (enable connectivity) by lab and link UUID.
 
@@ -170,12 +171,12 @@ def register_tools(mcp):
         """
         client = get_cml_client_dep()
         try:
-            await client.put(f"/labs/{lid}/links/{link_id}/state/start")
+            await client.put(f"/labs/{lab_id}/links/{link_id}/state/start")
             return True
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error starting CML link %s in lab %s", link_id, lid)
+            logger.exception("Error starting CML link %s in lab %s", link_id, lab_id)
             raise ToolError(e)
 
     @mcp.tool(
@@ -186,7 +187,7 @@ def register_tools(mcp):
             "idempotentHint": True,
         },
     )
-    async def stop_cml_link(lid: UUID4Type, link_id: UUID4Type) -> bool:
+    async def stop_cml_link(lab_id: UUID4Type, link_id: UUID4Type) -> bool:
         """
         Stop a link (disable connectivity, simulate cable pull) by lab and link UUID.
 
@@ -197,10 +198,10 @@ def register_tools(mcp):
         """
         client = get_cml_client_dep()
         try:
-            await client.put(f"/labs/{lid}/links/{link_id}/state/stop")
+            await client.put(f"/labs/{lab_id}/links/{link_id}/state/stop")
             return True
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error stopping CML link %s in lab %s", link_id, lid)
+            logger.exception("Error stopping CML link %s in lab %s", link_id, lab_id)
             raise ToolError(e)

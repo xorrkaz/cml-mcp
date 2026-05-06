@@ -7,42 +7,43 @@ Node management tools for CML MCP server.
 
 import asyncio
 import logging
+from typing import Annotated
 
 import httpx
 from fastmcp import Context
 from fastmcp.exceptions import ToolError
 
-from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.nodes import Node, NodeConfigurationContent
+from cml_mcp.cml.simple_webserver.schemas.common import Coordinate, DefinitionID, TagArray, UUID4Type
+from cml_mcp.cml.simple_webserver.schemas.nodes import CpuLimit, Cpus, DiskSpace, Node, NodeConfigurationContent, NodeCreate, Ram
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
-from cml_mcp.tools.model_helpers import build_payload
+from cml_mcp.tools.model_helpers import build_payload, field_from
 
 logger = logging.getLogger("cml-mcp.tools.nodes")
 
 
-async def stop_node(lid: UUID4Type, nid: UUID4Type, client: CMLClient) -> None:
+async def stop_node(lab_id: UUID4Type, node_id: UUID4Type, client: CMLClient) -> None:
     """
     Stop a CML node by its lab ID and node ID.
 
     Args:
-        lid (UUID4Type): The lab ID.
-        nid (UUID4Type): The node ID.
+        lab_id (UUID4Type): The lab ID.
+        node_id (UUID4Type): The node ID.
         client (CMLClient): The CML client instance.
     """
-    await client.put(f"/labs/{lid}/nodes/{nid}/state/stop")
+    await client.put(f"/labs/{lab_id}/nodes/{node_id}/state/stop")
 
 
-async def wipe_node(lid: UUID4Type, nid: UUID4Type, client: CMLClient) -> None:
+async def wipe_node(lab_id: UUID4Type, node_id: UUID4Type, client: CMLClient) -> None:
     """
     Wipe a CML node by its lab ID and node ID.
 
     Args:
-        lid (UUID4Type): The lab ID.
-        nid (UUID4Type): The node ID.
+        lab_id (UUID4Type): The lab ID.
+        node_id (UUID4Type): The node ID.
         client (CMLClient): The CML client instance.
     """
-    await client.put(f"/labs/{lid}/nodes/{nid}/wipe_disks")
+    await client.put(f"/labs/{lab_id}/nodes/{node_id}/wipe_disks")
 
 
 def register_tools(mcp):  # noqa: C901
@@ -54,7 +55,7 @@ def register_tools(mcp):  # noqa: C901
             "readOnlyHint": True,
         },
     )
-    async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node]:
+    async def get_nodes_for_cml_lab(lab_id: UUID4Type) -> list[Node]:
         """
         List all nodes in a lab by lab UUID. Returns id, label, node_definition, x/y, state,
         interfaces, and operational data (CPU, RAM, serial consoles).
@@ -67,7 +68,7 @@ def register_tools(mcp):  # noqa: C901
 
         client = get_cml_client_dep()
         try:
-            resp = await client.get(f"/labs/{lid}/nodes", params={"data": True, "operational": True, "exclude_configurations": True})
+            resp = await client.get(f"/labs/{lab_id}/nodes", params={"data": True, "operational": True, "exclude_configurations": True})
             rnodes = []
             for node in list(resp):
                 # XXX: Fixup known issues with bad data coming from
@@ -84,7 +85,7 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error getting nodes for CML lab %s", lid)
+            logger.exception("Error getting nodes for CML lab %s", lab_id)
             raise ToolError(e)
 
     # Source schema: NodeCreate (cml/simple_webserver/schemas/nodes.py)
@@ -99,28 +100,28 @@ def register_tools(mcp):  # noqa: C901
         },
     )
     async def add_node_to_cml_lab(
-        lid: UUID4Type,
-        node_definition: str,
-        label: str | None = None,
-        x: int | None = None,
-        y: int | None = None,
-        image_definition: str | None = None,
-        ram: int | None = None,
-        cpus: int | None = None,
-        cpu_limit: int | None = None,
-        data_volume: int | None = None,
-        boot_disk_size: int | None = None,
-        tags: list[str] | None = None,
-        configuration: str | None = None,
-        parameters: dict[str, str | None] | None = None,
-        hide_links: bool | None = None,
-        priority: int | None = None,
-        pyats: dict | None = None,
+        lab_id: UUID4Type,
+        node_definition: DefinitionID,
+        label: Annotated[str | None, field_from(NodeCreate, "label")] = None,
+        x: Coordinate | None = None,
+        y: Coordinate | None = None,
+        image_definition: DefinitionID | None = None,
+        ram: Ram = None,
+        cpus: Cpus = None,
+        cpu_limit: CpuLimit = None,
+        data_volume: DiskSpace = None,
+        boot_disk_size: DiskSpace = None,
+        tags: TagArray | None = None,
+        configuration: Annotated[str | None, field_from(NodeCreate, "configuration")] = None,
+        parameters: Annotated[dict[str, str | None] | None, field_from(NodeCreate, "parameters")] = None,
+        hide_links: Annotated[bool | None, field_from(NodeCreate, "hide_links")] = None,
+        priority: Annotated[int | None, field_from(NodeCreate, "priority")] = None,
+        pyats: Annotated[dict | None, field_from(NodeCreate, "pyats")] = None,
     ) -> UUID4Type:
         """
         Add a node to an existing lab. Returns the new node's UUID. Default interfaces are auto-created.
 
-        Required: node_definition (e.g. "alpine", "iosv", "csr1000v" -- discover via get_cml_node_definitions).
+        Required: lab_id (lab UUID), node_definition (e.g. "alpine", "iosv", "csr1000v" -- discover via get_cml_node_definitions).
         Optional: label (1-128 chars), x/y coordinates (-15000..15000), image_definition, ram (MB, 1-1048576),
         cpus (1-128), cpu_limit (%, 20-100), data_volume (GB, 0-4096), boot_disk_size (GB, 0-4096),
         tags (list of strings), configuration (string or dict), parameters (dict), hide_links (bool),
@@ -152,7 +153,7 @@ def register_tools(mcp):  # noqa: C901
                 pyats=pyats,
             )
             resp = await client.post(
-                f"/labs/{lid}/nodes",
+                f"/labs/{lab_id}/nodes",
                 params={"populate_interfaces": True},
                 data=payload,
             )
@@ -160,15 +161,15 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error adding CML node to lab %s", lid)
+            logger.exception("Error adding CML node to lab %s", lab_id)
             raise ToolError(e)
 
     @mcp.tool(
         annotations={"title": "Configure a CML Node", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True},
     )
     async def configure_cml_node(
-        lid: UUID4Type,
-        nid: UUID4Type,
+        lab_id: UUID4Type,
+        node_id: UUID4Type,
         config: NodeConfigurationContent,
     ) -> bool:
         """
@@ -186,18 +187,18 @@ def register_tools(mcp):  # noqa: C901
         client = get_cml_client_dep()
         payload = {"configuration": str(config)}
         try:
-            await client.patch(f"/labs/{lid}/nodes/{nid}", data=payload)
+            await client.patch(f"/labs/{lab_id}/nodes/{node_id}", data=payload)
             return True
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error configuring CML node %s in lab %s", nid, lid)
+            logger.exception("Error configuring CML node %s in lab %s", node_id, lab_id)
             raise ToolError(e)
 
     @mcp.tool(
         annotations={"title": "Stop a CML Node", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True},
     )
-    async def stop_cml_node(lid: UUID4Type, nid: UUID4Type) -> bool:
+    async def stop_cml_node(lab_id: UUID4Type, node_id: UUID4Type) -> bool:
         """
         Stop (power down) a single node by lab and node UUID.
 
@@ -208,12 +209,12 @@ def register_tools(mcp):  # noqa: C901
         """
         client = get_cml_client_dep()
         try:
-            await stop_node(lid, nid, client)
+            await stop_node(lab_id, node_id, client)
             return True
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error stopping CML node %s in lab %s", nid, lid)
+            logger.exception("Error stopping CML node %s in lab %s", node_id, lab_id)
             raise ToolError(e)
 
     @mcp.tool(
@@ -225,8 +226,8 @@ def register_tools(mcp):  # noqa: C901
         },
     )
     async def start_cml_node(
-        lid: UUID4Type,
-        nid: UUID4Type,
+        lab_id: UUID4Type,
+        node_id: UUID4Type,
         wait_for_convergence: bool = False,
     ) -> bool:
         """
@@ -240,10 +241,10 @@ def register_tools(mcp):  # noqa: C901
         """
         client = get_cml_client_dep()
         try:
-            await client.put(f"/labs/{lid}/nodes/{nid}/state/start")
+            await client.put(f"/labs/{lab_id}/nodes/{node_id}/state/start")
             if wait_for_convergence:
                 while True:
-                    converged = await client.get(f"/labs/{lid}/nodes/{nid}/check_if_converged")
+                    converged = await client.get(f"/labs/{lab_id}/nodes/{node_id}/check_if_converged")
                     if converged:
                         break
                     await asyncio.sleep(3)
@@ -251,13 +252,13 @@ def register_tools(mcp):  # noqa: C901
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error starting CML node %s in lab %s", nid, lid)
+            logger.exception("Error starting CML node %s in lab %s", node_id, lab_id)
             raise ToolError(e)
 
     @mcp.tool(
         annotations={"title": "Wipe a CML Node", "readOnlyHint": False, "destructiveHint": True, "idempotentHint": True},
     )
-    async def wipe_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
+    async def wipe_cml_node(lab_id: UUID4Type, node_id: UUID4Type, ctx: Context) -> bool:
         """
         Wipe a single node's disks by lab and node UUID. Erases all node data. Node must be stopped first.
 
@@ -273,18 +274,18 @@ def register_tools(mcp):  # noqa: C901
         try:
             if not await elicit_confirmation(ctx, "Are you sure you want to wipe the node?"):
                 raise Exception("Wipe operation cancelled by user.")
-            await wipe_node(lid, nid, client)
+            await wipe_node(lab_id, node_id, client)
             return True
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error wiping CML node %s in lab %s", nid, lid)
+            logger.exception("Error wiping CML node %s in lab %s", node_id, lab_id)
             raise ToolError(e)
 
     @mcp.tool(
         annotations={"title": "Delete a node from a CML lab.", "readOnlyHint": False, "destructiveHint": True},
     )
-    async def delete_cml_node(lid: UUID4Type, nid: UUID4Type, ctx: Context) -> bool:
+    async def delete_cml_node(lab_id: UUID4Type, node_id: UUID4Type, ctx: Context) -> bool:
         """
         Delete a node from a lab by lab and node UUID. Auto-stops and wipes the node first.
 
@@ -300,12 +301,12 @@ def register_tools(mcp):  # noqa: C901
         try:
             if not await elicit_confirmation(ctx, "Are you sure you want to delete the node?"):
                 raise Exception("Delete operation cancelled by user.")
-            await stop_node(lid, nid, client)  # Ensure the node is stopped before deletion
-            await wipe_node(lid, nid, client)
-            await client.delete(f"/labs/{lid}/nodes/{nid}")
+            await stop_node(lab_id, node_id, client)  # Ensure the node is stopped before deletion
+            await wipe_node(lab_id, node_id, client)
+            await client.delete(f"/labs/{lab_id}/nodes/{node_id}")
             return True
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
         except Exception as e:
-            logger.exception("Error deleting CML node %s in lab %s", nid, lid)
+            logger.exception("Error deleting CML node %s in lab %s", node_id, lab_id)
             raise ToolError(e)

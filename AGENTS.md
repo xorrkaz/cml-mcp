@@ -4,6 +4,10 @@
 
 `cml-mcp` is a [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that exposes Cisco Modeling Labs (CML) operations as AI-callable tools. It is written in Python (≥ 3.12) using [FastMCP](https://github.com/jlowin/fastmcp) and the `virl2_client` library. The package is published to PyPI as `cml-mcp` and to Docker Hub as `xorrkaz/cml-mcp`.
 
+## Compatibility Goal
+
+**This server must work across the widest possible range of MCP clients and tool-calling LLMs** — flagship hosted models (Claude, GPT-4-class, Gemini), AI Canvas, Cursor, Claude Desktop, LM Studio, and local / open-weight models (Gemma, Llama, Qwen, etc.). Optimize the public surface for the lowest-common-denominator client. In particular, **assume the LLM may rely on the per-parameter `inputSchema` more than on the docstring** — small models often parse structured schema cheaply and skim prose. Every design decision (flat primitive args, rich per-parameter constraints, `Literal[...]` over free strings, typed return shapes) traces back to this goal.
+
 ## Repository Layout
 
 ```
@@ -133,6 +137,7 @@ Tools that wrap a CML schema model (e.g. `LabRequest`, `NodeCreate`, `UserCreate
 **Rules:**
 
 - Do NOT use `Model | dict | str` parameter unions for flattened tools. Reserve object-typed parameters only for genuinely deep recursive structures (currently only `create_full_lab_topology`'s `topology`).
+- **Carry per-parameter constraints from the source schema into the tool signature** via `Annotated[T, field_from(SourceModel, "field_name")]` (`field_from` lives in `tools/model_helpers.py`). This propagates the source model's `description`, numeric bounds (`ge` / `le`), string constraints (`min_length` / `max_length` / `pattern`), and `examples` into the JSON Schema FastMCP exposes to MCP clients. Tool-calling LLMs — especially small / open-weight models — rely on the per-parameter `inputSchema`, not just the docstring; a bare `int | None` tells them nothing. Where the source schema already defines a reusable type alias (e.g. `NodeLabel`, `Coordinate`, `Ram`, `LabTitle`, `UUID4Type`), prefer importing and using the alias directly — same effect with less boilerplate. For enumerable string fields, prefer `Literal[...]` over a free `str` even if the source schema uses a free string.
 - Build the request payload as a plain `dict` inside the tool body, omitting keys whose value is `None`, then `await client.post(..., data=payload)`. Avoid constructing the source Pydantic model when many of its fields default to `None` — strict typing in the auto-generated CML schemas often rejects `None` even when the field has `default=None`. The CML server validates the payload.
 - Above each flattened tool, include a comment block listing field coverage, e.g.:
   ```python
@@ -142,13 +147,33 @@ Tools that wrap a CML schema model (e.g. `LabRequest`, `NodeCreate`, `UserCreate
   ```
 - For PATCH operations (`modify_*` tools), only include kwargs that are not `None` in the payload to avoid overwriting server-managed fields.
 
+**Example** (note the `Annotated[..., field_from(...)]` reuse):
+
+```python
+from typing import Annotated
+from cml_mcp.cml.simple_webserver.schemas.pcap import PCAPStart
+from cml_mcp.tools.model_helpers import build_payload, field_from
+
+async def start_packet_capture(
+    lid: UUID4Type,
+    link_id: UUID4Type,
+    maxpackets: Annotated[int | None, field_from(PCAPStart, "maxpackets")] = None,
+    maxtime:    Annotated[int | None, field_from(PCAPStart, "maxtime")]    = None,
+    bpfilter:   Annotated[str | None, field_from(PCAPStart, "bpfilter")]   = None,
+    encap:      Annotated[str | None, field_from(PCAPStart, "encap")]      = None,
+) -> bool:
+    ...
+```
+
 **Schema-drift audit checklist** — run when `virl2_client` / regenerated CML schemas change:
 
 - `git diff src/cml_mcp/cml/` — for each changed `*Request` / `*Create` model, find the wrapping tool(s).
 - Add new fields as new primitive kwargs (default `None`); deprecate removed fields for one release before removal.
 - Update the field-coverage comment.
 - Run `just check && just test`.
-- `tests/test_schema_drift.py` programmatically checks that each flattened tool's input schema covers the source model's required fields.
+- `tests/test_schema_drift.py` programmatically checks that each flattened tool's input schema (a) covers the source model's required fields and (b) carries the source field's `description` and numeric/string constraints. Drift in either trips the test.
+
+> **Pydantic upgrade caveat:** `field_from()` in `src/cml_mcp/tools/model_helpers.py` reads the **private** `FieldInfo._attributes_set` attribute. This is the cleanest available API in Pydantic v2.x for the "explicitly-set kwargs only" use case, but a Pydantic minor-version bump may rename or remove it. When bumping `pydantic`, re-read `field_from()` and confirm `tests/test_schema_drift.py::test_constraint_coverage` still passes; if it fails, the constraints have stopped propagating and the helper needs updating.
 
 #### Sample prompt for agents auditing a schema bump
 
@@ -162,8 +187,8 @@ When `virl2_client` is upgraded (or `src/cml_mcp/cml/` is regenerated), run a fr
 >    - Compare the model's current fields to the tool's parameter list and the `# Exposed:` / `# Omitted:` comment block.
 >    - **Added field** → add a primitive kwarg (default `None` if optional, required otherwise), append it to the dict-payload builder, and update the `# Exposed:` line.
 >    - **Removed field** → mark the kwarg deprecated with a `DeprecationWarning` for one release before deletion; remove from the comment block.
->    - **Type or constraint change** (e.g. min/max, enum values) → update the docstring's "Required/Optional" lines.
-> 4. Run `just check && just test`. Both must pass; `tests/test_schema_drift.py::test_schema_coverage` must remain green.
+>    - **Type or constraint change** (e.g. min/max, enum values) → update the docstring's "Required/Optional" lines and re-run `just test` -- `tests/test_schema_drift.py::test_constraint_coverage` will fail loudly if the propagated `Annotated[..., field_from(...)]` constraints no longer match the source.
+> 4. Run `just check && just test`. Both must pass; `tests/test_schema_drift.py` (both `test_schema_coverage` and `test_constraint_coverage`) must remain green.
 > 5. Update the tool count in `tests/test_cml_mcp.py::test_list_tools`, `README.md` ("provides N MCP tools"), and the `AGENTS.md` tool table if any tool was added or removed.
 > 6. Summarize: list each affected tool, the fields added/removed/changed, and any docstring updates.
 

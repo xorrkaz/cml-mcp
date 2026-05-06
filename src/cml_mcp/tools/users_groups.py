@@ -6,6 +6,7 @@ User and group management tools for CML MCP server.
 """
 
 import logging
+from typing import Annotated
 
 import httpx
 from fastmcp import Context
@@ -13,11 +14,11 @@ from fastmcp.exceptions import ToolError
 from mcp.shared.exceptions import McpError
 from mcp.types import INVALID_REQUEST, METHOD_NOT_FOUND
 
-from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
-from cml_mcp.cml.simple_webserver.schemas.groups import GroupResponse
-from cml_mcp.cml.simple_webserver.schemas.users import UserResponse
+from cml_mcp.cml.simple_webserver.schemas.common import GroupName, UserFullName, UserName, UUID4Type
+from cml_mcp.cml.simple_webserver.schemas.groups import GroupCreate, GroupResponse
+from cml_mcp.cml.simple_webserver.schemas.users import UserCreate, UserResponse
 from cml_mcp.tools.dependencies import get_cml_client_dep
-from cml_mcp.tools.model_helpers import build_payload
+from cml_mcp.tools.model_helpers import build_payload, field_from
 
 logger = logging.getLogger("cml-mcp.tools.users_groups")
 
@@ -63,18 +64,18 @@ def register_tools(mcp):  # noqa: C901
         },
     )
     async def create_cml_user(
-        username: str,
-        password: str,
-        fullname: str | None = None,
-        description: str | None = None,
-        email: str | None = None,
-        admin: bool | None = None,
-        groups: list[str] | None = None,
-        associations: list[dict] | None = None,
-        resource_pool: UUID4Type | None = None,
-        opt_in: str | None = None,
-        tour_version: str | None = None,
-        pubkey: str | None = None,
+        username: UserName,
+        password: Annotated[str, field_from(UserCreate, "password")],
+        fullname: UserFullName | None = None,
+        description: Annotated[str | None, field_from(UserCreate, "description")] = None,
+        email: Annotated[str | None, field_from(UserCreate, "email")] = None,
+        admin: Annotated[bool | None, field_from(UserCreate, "admin")] = None,
+        groups: Annotated[list[str] | None, field_from(UserCreate, "groups")] = None,
+        associations: Annotated[list[dict] | None, field_from(UserCreate, "associations")] = None,
+        resource_pool: Annotated[UUID4Type | None, field_from(UserCreate, "resource_pool")] = None,
+        opt_in: Annotated[str | None, field_from(UserCreate, "opt_in")] = None,
+        tour_version: Annotated[str | None, field_from(UserCreate, "tour_version")] = None,
+        pubkey: Annotated[str | None, field_from(UserCreate, "pubkey")] = None,
     ) -> UUID4Type:
         """
         Create a new CML user. Requires admin privileges. Returns the new user's UUID.
@@ -198,10 +199,10 @@ def register_tools(mcp):  # noqa: C901
         },
     )
     async def create_cml_group(
-        name: str,
-        description: str | None = None,
-        members: list[str] | None = None,
-        associations: list[dict] | None = None,
+        name: GroupName,
+        description: Annotated[str | None, field_from(GroupCreate, "description")] = None,
+        members: Annotated[list[str] | None, field_from(GroupCreate, "members")] = None,
+        associations: Annotated[list[dict] | None, field_from(GroupCreate, "associations")] = None,
     ) -> UUID4Type:
         """
         Create a new CML group. Requires admin privileges. Returns the new group's UUID.
