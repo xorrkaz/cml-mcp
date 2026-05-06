@@ -758,7 +758,7 @@ async def test_get_nodes_for_cml_lab(main_mcp_client: Client[FastMCPTransport], 
         assert isinstance(node_result.content[0], TextContent)
         _ = UUID4Type(node_result.content[0].text)
 
-    nodes_result = await main_mcp_client.call_tool(name="get_nodes_for_cml_lab", arguments={"lid": lab_id})
+    nodes_result = await main_mcp_client.call_tool(name="get_nodes_for_cml_lab", arguments={"lab_id": lab_id})
     # outsource(nodes_result.data, ".json")
 
     assert isinstance(nodes_result.data, list)
@@ -825,7 +825,7 @@ async def test_download_lab_topology_live(main_mcp_client: Client[FastMCPTranspo
     lab_id = created_lab
 
     # Download the lab topology
-    download_result = await main_mcp_client.call_tool(name="download_lab_topology", arguments={"lid": lab_id})
+    download_result = await main_mcp_client.call_tool(name="download_lab_topology", arguments={"lab_id": lab_id})
     assert isinstance(download_result.content, list)
     assert len(download_result.content) > 0
     assert isinstance(download_result.content[0], TextContent)
@@ -859,7 +859,9 @@ async def test_clone_cml_lab_live(main_mcp_client: Client[FastMCPTransport], cre
     assert len(node_result.content) > 0
 
     # Clone the lab with a new title
-    clone_result = await main_mcp_client.call_tool(name="clone_cml_lab", arguments={"lid": source_lab_id, "new_title": "Live Cloned Lab"})
+    clone_result = await main_mcp_client.call_tool(
+        name="clone_cml_lab", arguments={"lab_id": source_lab_id, "new_title": "Live Cloned Lab"}
+    )
     assert isinstance(clone_result.content, list)
     assert len(clone_result.content) > 0
     assert isinstance(clone_result.content[0], TextContent)
@@ -867,10 +869,10 @@ async def test_clone_cml_lab_live(main_mcp_client: Client[FastMCPTransport], cre
     assert cloned_lab_id != source_lab_id
 
     # Verify the cloned lab has the router node
-    cloned_nodes = await main_mcp_client.call_tool(name="get_nodes_for_cml_lab", arguments={"lid": cloned_lab_id})
+    cloned_nodes = await main_mcp_client.call_tool(name="get_nodes_for_cml_lab", arguments={"lab_id": cloned_lab_id})
     assert isinstance(cloned_nodes.content, list)
     assert len(cloned_nodes.content) > 0
 
     # Clean up - delete both labs (source is deleted in fixture)
-    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lid": cloned_lab_id})
+    del_result = await main_mcp_client.call_tool(name="delete_cml_lab", arguments={"lab_id": cloned_lab_id})
     assert del_result.data is True
