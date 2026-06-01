@@ -20,7 +20,7 @@ from cml_mcp.types import SimplifiedInterfaceResponse
 logger = logging.getLogger("cml-mcp.tools.interfaces")
 
 
-async def add_interface(lab_id: UUID4Type, payload: dict, client: CMLClient) -> SimplifiedInterfaceResponse:
+async def add_interface(lab_id: UUID4Type, payload: dict, client: CMLClient) -> list[SimplifiedInterfaceResponse]:
     """
     Add an interface to a CML lab by its lab ID.
 
@@ -30,11 +30,14 @@ async def add_interface(lab_id: UUID4Type, payload: dict, client: CMLClient) -> 
         client (CMLClient): The CML client instance.
 
     Returns:
-        InterfaceResponse: The added interface details.
+        list[SimplifiedInterfaceResponse]: The added interfaces details.
     """
     resp = await client.post(f"/labs/{lab_id}/interfaces", data=payload)
     # See DEVELOPMENT.md "Object-typed return values": dump after construction so FastMCP doesn't double-marshal.
-    return SimplifiedInterfaceResponse(**resp).model_dump(exclude_unset=True)
+    if isinstance(resp, dict):
+        return [SimplifiedInterfaceResponse(**resp).model_dump(exclude_unset=True)]
+
+    return [SimplifiedInterfaceResponse(**item).model_dump(exclude_unset=True) for item in resp]
 
 
 def register_tools(mcp):
@@ -55,9 +58,10 @@ def register_tools(mcp):
         node: UUID4Type,
         slot: InterfaceSlot | None = None,
         mac_address: MACAddress = None,
-    ) -> SimplifiedInterfaceResponse:
+    ) -> list[SimplifiedInterfaceResponse]:
         """
-        Add a new interface to a node. Returns interface details (id, node, slot, type, MAC).
+        Add a new interface to a node. Returns interface details (id, node, slot, type, MAC).  Note: depending on
+        the slot requested, multiple interfaces may be added, so a list of added interfaces is returned.
 
         Required: lab_id (lab UUID), node (node UUID). Optional: slot (0-128), mac_address (e.g. "00:11:22:33:44:55").
 
