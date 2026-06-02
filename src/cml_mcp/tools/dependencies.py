@@ -90,6 +90,10 @@ async def elicit_confirmation(ctx: Context, message: str) -> bool:
     not advertise elicitation support, returns True (proceed without confirmation).
     Returns False if the user explicitly declined or cancelled.
     """
+    # BUG: Elicitation is not working well with certain clients like Co-Pilot.  For now, rely on
+    # tool description instructions to ask for confirmation, and skip elicitation entirely.
+    # This is a temporary workaround until we can improve elicitation support.
+    return True
     try:
         session = ctx.session
         client_params = session._client_params
