@@ -28,7 +28,7 @@ Dependency injection module for CML client management.
 
 import contextvars
 import logging
-from typing import Optional
+from typing import Optional, Any
 
 from fastmcp import Context
 from mcp.shared.exceptions import McpError
@@ -82,7 +82,7 @@ async def cleanup_global_client() -> None:
         logger.debug("No global CML client to clean up (HTTP mode or client is None)")
 
 
-async def elicit_confirmation(ctx: Context, message: str) -> bool:
+async def elicit_confirmation(ctx: Context, message: str, response_type: Optional[Any] = ["yes", "no"]) -> bool:
     """
     Request confirmation via elicitation if the client supports it.
 
@@ -109,7 +109,7 @@ async def elicit_confirmation(ctx: Context, message: str) -> bool:
         pass
 
     try:
-        result = await ctx.elicit(message, response_type=["yes", "no"])
+        result = await ctx.elicit(message, response_type=response_type)
         return result.action == "accept"
     except McpError as me:
         if me.error.code in (METHOD_NOT_FOUND, INVALID_REQUEST):
