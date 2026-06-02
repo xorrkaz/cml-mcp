@@ -93,6 +93,10 @@ async def elicit_confirmation(ctx: Context, message: str) -> bool:
     # BUG: Elicitation is not working well with certain clients like Co-Pilot.  For now, rely on
     # tool description instructions to ask for confirmation, and skip elicitation entirely.
     # This is a temporary workaround until we can improve elicitation support.
+    #
+    # Okay!  So, the None response_type handling is buggy with some clients.  If we have a
+    # selectable "yes", "no" response, Co-Pilot works.  But now, we're duplicating confirmation.
+    # So, keep elicitation disabled for now.
     return True
     try:
         session = ctx.session
@@ -105,7 +109,7 @@ async def elicit_confirmation(ctx: Context, message: str) -> bool:
         pass
 
     try:
-        result = await ctx.elicit(message, response_type=None)
+        result = await ctx.elicit(message, response_type=["yes", "no"])
         return result.action == "accept"
     except McpError as me:
         if me.error.code in (METHOD_NOT_FOUND, INVALID_REQUEST):
