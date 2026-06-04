@@ -28,7 +28,7 @@ Dependency injection module for CML client management.
 
 import contextvars
 import logging
-from typing import Optional, Any
+from typing import Any, Optional
 
 from fastmcp import Context
 from mcp.shared.exceptions import McpError

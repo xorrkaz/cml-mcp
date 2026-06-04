@@ -31,12 +31,13 @@ import hashlib
 import logging
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Sequence
 
 import yaml
 from fastmcp.exceptions import ToolError
 from fastmcp.server.dependencies import get_http_headers
 from fastmcp.server.middleware import Middleware, MiddlewareContext
+from fastmcp.tools.base import Tool
 from mcp.shared.exceptions import McpError
 from mcp.types import ErrorData
 from pydantic import AnyHttpUrl
@@ -323,7 +324,7 @@ class CustomHttpRequestMiddleware(Middleware):
             # on the same task.  Do NOT close the client here — it lives in the cache.
             _request_client.set(None)
 
-    async def on_list_tools(self, context: MiddlewareContext, call_next) -> list:
+    async def on_list_tools(self, context: MiddlewareContext, call_next) -> Sequence[Tool]:
         # Import here to avoid circular dependency
         from cml_mcp.tools.dependencies import get_cml_client_dep
 

@@ -94,7 +94,6 @@ class SimplifiedInterfaceResponse(SimplifiedInterfaceBase, extra="ignore"):
     """The response body is a JSON interface object."""
 
     id: UUID4Type = Field(..., description="ID of the interface.")
-    label: str = Field(...)
     device_name: LinuxInterfaceName | None = Field(default=None, max_length=64, description="Device name (operational).")
 
 

@@ -53,8 +53,8 @@ class CMLClient(object):
     def __init__(
         self,
         host: str,
-        username: str,
-        password: str,
+        username: str | None,
+        password: str | None,
         transport: str = "stdio",
         verify_ssl: bool = False,
     ) -> None:
