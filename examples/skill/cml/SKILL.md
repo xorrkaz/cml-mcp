@@ -1,9 +1,9 @@
 ---
-name: cml-topology-builder
+name: cml
 description: Build, edit, and operate Cisco Modeling Labs (CML) virtual network topologies through the CML MCP server. Use whenever the user wants to create or modify a CML lab, add or connect network devices (routers, switches, firewalls, hosts), apply device configurations, start or stop nodes, run CLI commands against simulated devices, or arrange a topology on the canvas — even when phrased loosely as "build me a lab," "spin up a network," "set up an OSPF practice topology," or referencing an existing CML/VIRL lab. Prefer this skill over recalling CML API models from memory; the tool argument conventions are easy to get wrong.
 ---
 
-# CML Topology Builder
+# CML
 
 Build and operate CML labs through the CML MCP tools. The guidance below covers the conventions and pitfalls an agent will not infer correctly on its own. General networking knowledge (e.g., what OSPF is, how a switch works) is assumed and not repeated here.
 
