@@ -26,7 +26,7 @@ This guide will help you set up the CML MCP server so you can control Cisco Mode
 
 **On Your Computer:**
 
-- **Python 3.12 or 3.13** - The programming language runtime ([download here](https://www.python.org/downloads/) if needed)
+- **Python 3.12, 3.13 or 3.14** - The programming language runtime ([download here](https://www.python.org/downloads/) if needed)
 - **[uv](https://docs.astral.sh/uv/)** - A modern Python package manager that makes installation easy ([install instructions](https://docs.astral.sh/uv/getting-started/installation/))
 
 **Your CML Server:**
