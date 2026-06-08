@@ -11,6 +11,7 @@ from fastapi import Body
 from pydantic import BaseModel, Field
 
 from simple_common.schemas import OptInStatus, TelemetryEventCategory
+from simple_webserver.schemas.common import MultiLineStr, OneLineStr
 
 
 class FeedbackScope(StrEnum):
@@ -21,10 +22,13 @@ class FeedbackScope(StrEnum):
 class FeedbackSchema(BaseModel, extra="forbid"):
     """A freeform JSON object for feedback submission."""
 
-    email: str = Field(..., description="The user's email address.")
-    feedback: str = Field(..., description="The feedback content.")
-    path: str = Field(..., description="The path where feedback was submitted.")
-    place: str = Field(..., description="The place where feedback was submitted.")
+    # TODO: we should implement email regex
+    email: OneLineStr = Field(..., description="The user's email address.")
+    feedback: MultiLineStr = Field(..., description="The feedback content.")
+    path: OneLineStr = Field(..., description="The path where feedback was submitted.")
+    place: OneLineStr = Field(
+        ..., description="The place where feedback was submitted."
+    )
     scope: FeedbackScope = Field(..., description="The feedback scope.")
     score: int = Field(..., description="The feedback score.", ge=1, le=10)
 
@@ -70,4 +74,4 @@ class TelemetryEventResponse(BaseModel, extra="forbid"):
         ..., description="Telemetry event category."
     )
     timestamp: datetime = Field(..., description="The timestamp of the event.")
-    data: dict[str, Any] = Field(..., description="The data of the event.")
+    data: dict[OneLineStr, Any] = Field(..., description="The data of the event.")

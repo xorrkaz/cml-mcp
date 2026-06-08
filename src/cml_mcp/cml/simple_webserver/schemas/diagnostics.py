@@ -5,18 +5,25 @@
 #
 
 from datetime import datetime
+from enum import StrEnum
+from functools import cache
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, TypeAdapter
 
+from simple_common.models import DiagnosticsCategory
 from simple_common.schemas import BootEventType
 from simple_core.models.type_hints import LabId, UserId
 from simple_webserver.schemas.common import (
+    DateTimeString,
     DefinitionID,
     Hostname,
     InterfaceStateModel,
     IPAddress,
     LinkStateModel,
+    MultiLineStr,
     NodeStateModel,
+    OneLineStr,
     StringDict,
     UUID4Type,
 )
@@ -62,9 +69,9 @@ class ConsistencyResponse(BaseModel, extra="forbid"):
 
 class FabricResponse(BaseModel, extra="forbid"):
     id: UUID4Type = Field(...)
-    name: str = Field(...)
-    left_driver: str = Field(...)
-    right_driver: str = Field(...)
+    name: OneLineStr = Field(...)
+    left_driver: OneLineStr = Field(...)
+    right_driver: OneLineStr = Field(...)
     running: bool = Field(...)
 
 
@@ -82,10 +89,10 @@ class FabricDiagnostics(BaseModel, extra="forbid"):
     goroutines: int = Field(default=0)
     fd_cur: int = Field(default=0)
     fd_max: int = Field(default=0)
-    proc_status: str = Field(default="")
+    proc_status: MultiLineStr = Field(default="")
     status_fd_max: int = Field(default=0)
     uptime: int = Field(default=0)
-    started_at: str = Field(default="")
+    started_at: OneLineStr = Field(default="")
     links: int = Field(default=0)
     in_use: int = Field(default=0)
     port_states: int = Field(default=0)
@@ -102,10 +109,10 @@ class LowLevelDiagnostics(BaseModel, extra="forbid"):
 class ComputeDiagnostics(BaseModel, extra="forbid"):
     """ComputeDiagnostics info"""
 
-    identifier: str = Field(...)
+    identifier: OneLineStr = Field(...)
     host_address: IPAddress = Field(...)
     hostname: Hostname = Field(...)
-    link_driver: str = Field(...)
+    link_driver: OneLineStr = Field(...)
     kvm_vmx_enabled: bool = Field(...)
     is_controller: bool = Field(...)
     is_connector: bool = Field(...)
@@ -202,12 +209,12 @@ class NodeDefinitionDiagnostics(BaseModel, extra="forbid"):
 NodeDefinitionDiagnosticsResponse = list[NodeDefinitionDiagnostics]
 
 
-class ResorceRequirements(BaseModel, extra="forbid"):
-    cpus: int = Field(...)
-    cpu_limit: int = Field(...)
+class ResourceRequirements(BaseModel, extra="forbid"):
+    cpus: int | None = Field(...)
+    cpu_limit: int | None = Field(...)
     cpu_points: int | None = Field(...)
-    ram: int = Field(...)
-    disk: int = Field(...)
+    ram: int | None = Field(...)
+    disk: int | None = Field(...)
 
 
 class NodeLaunchQueueDiagnostics(BaseModel, extra="forbid"):
@@ -219,7 +226,7 @@ class NodeLaunchQueueDiagnostics(BaseModel, extra="forbid"):
     queued_time: int = Field(...)
     priority: int | None = Field(...)
     dependencies: list[NodeId] = Field(default_factory=list)
-    resource_requirements: ResorceRequirements = Field(default_factory=dict)
+    resource_requirements: ResourceRequirements = Field(...)
 
 
 NodeLaunchQueueDiagnosticsResponse = list[NodeLaunchQueueDiagnostics]
@@ -228,6 +235,24 @@ NodeLaunchQueueDiagnosticsResponse = list[NodeLaunchQueueDiagnostics]
 class ServiceDiagnosticsResponse(BaseModel, extra="forbid"):
     dispatcher: bool = Field(...)
     termws: bool = Field(...)
+
+
+class ConnectionType(StrEnum):
+    CONSOLE = "Console"
+    VNC = "VNC"
+    PCAP = "PCAP"
+
+
+class DispatcherClientDiagnostics(BaseModel, extra="forbid"):
+    """Diagnostics of an individual dispatcher connection"""
+
+    key: UUID4Type = Field(...)
+    connection: ConnectionType = Field(...)
+    clients: int = Field(...)
+    last_used: DateTimeString = Field(...)
+
+
+DispatcherDiagnosticsResponse = list[DispatcherClientDiagnostics]
 
 
 class StartupSchedulerDiagnosticsResponse(BaseModel, extra="forbid"):
@@ -244,6 +269,7 @@ UserDiagnosticsResponse = list[UserResponse]
 
 class InternalDiagnosticsResponse(BaseModel, extra="forbid"):
     computes: ComputeDiagnosticsResponse = Field(...)
+    dispatcher: DispatcherDiagnosticsResponse = Field(...)
     labs: LabDiagnosticsResponse = Field(...)
     lab_events: LabEventDiagnosticsResponse = Field(...)
     node_launch_queue: NodeLaunchQueueDiagnosticsResponse = Field(...)
@@ -257,6 +283,7 @@ class InternalDiagnosticsResponse(BaseModel, extra="forbid"):
 
 DiagnosticsResponse = (
     ComputeDiagnosticsResponse
+    | DispatcherDiagnosticsResponse
     | EventDiagnosticsResponse
     | LabDiagnosticsResponse
     | LabEventDiagnosticsResponse
@@ -268,3 +295,22 @@ DiagnosticsResponse = (
     | UserDiagnosticsResponse
     | InternalDiagnosticsResponse
 )
+
+
+@cache
+def _category_response_adapter(category: DiagnosticsCategory) -> TypeAdapter[Any]:
+    """Return the TypeAdapter for one diagnostics category.
+
+    ``DiagnosticsCategory`` string values match ``InternalDiagnosticsResponse``
+    field names; ``central_admin_manager.get_diagnostics`` uses the same
+    ``category.value`` convention.
+    """
+
+    field_info = InternalDiagnosticsResponse.model_fields[category.value]
+    return TypeAdapter(field_info.annotation)
+
+
+def validate_diagnostics_category_response(
+    category: DiagnosticsCategory, payload: Any
+) -> Any:
+    return _category_response_adapter(category).validate_python(payload)

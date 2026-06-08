@@ -14,6 +14,8 @@ from simple_webserver.schemas.common import (
     COLOR_EXAMPLES_STR,
     AnnotationColor,
     BorderStyle,
+    MultiLineStr,
+    OneLineStr,
     UUID4Type,
 )
 
@@ -74,10 +76,10 @@ class RotationMixin(BaseModel):
 class TextAnnotation(AnnotationBase, RotationMixin, extra="forbid"):
     type: Literal[AnnotationType.TEXT]
     text_bold: bool = Field(..., description="Text style bold.")
-    text_content: str = Field(
+    text_content: MultiLineStr = Field(
         ..., min_length=0, max_length=8192, description="Text element content."
     )
-    text_font: str = Field(
+    text_font: OneLineStr = Field(
         ..., min_length=0, max_length=128, description="Text element font name."
     )
     text_italic: bool = Field(..., description="Text style italic.")
@@ -148,6 +150,8 @@ AnnotationUpdateBody = Annotated[
 AnnotationUuidDescription = "Annotation Unique identifier."
 
 
+# explicitly set extra='forbid' to raise ResponseValidationError
+# when data not present in schema is about to be exposed to user
 class TextAnnotationResponse(TextAnnotation, extra="forbid"):
     id: UUID4Type = Field(..., description=AnnotationUuidDescription)
 

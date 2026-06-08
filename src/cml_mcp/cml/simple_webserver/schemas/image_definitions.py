@@ -3,13 +3,18 @@
 # Copyright (c) 2019-2026, Cisco Systems, Inc.
 # All rights reserved.
 #
-import re
 from typing import Annotated
 
 from fastapi import Body
 from pydantic import BaseModel, Field, model_validator
 
-from simple_webserver.schemas.common import DefinitionID, FilePath, PyAtsCredentials
+from simple_webserver.schemas.common import (
+    DefinitionID,
+    FilePath,
+    MultiLineStr,
+    OneLineStr,
+    PyAtsCredentials,
+)
 from simple_webserver.schemas.nodes import NodeConfigurationContent
 
 
@@ -20,7 +25,7 @@ class ImageDefinition(BaseModel, extra="forbid"):
     node_definition_id: DefinitionID = Field(
         ..., description="Node definition ID for the image definition."
     )
-    label: str = Field(
+    label: OneLineStr = Field(
         ...,
         description="A required label for the image definition.",
         min_length=1,
@@ -33,25 +38,25 @@ class ImageDefinition(BaseModel, extra="forbid"):
         default=False,
         description="Whether to use EFI for booting.",
     )
-    docker_tag: str | None = Field(
+    docker_tag: OneLineStr | None = Field(
         default=None, description="Docker image tag (e.g. 'alpine:3.19')"
     )
-    sha256: str | None = Field(
+    sha256: OneLineStr | None = Field(
         default=None,
         description="SHA256 of the disk_image (optional)",
         examples=["58ce6f1271ae1c8a2006ff7d3e54e9874d839f573d8009c20154ad0f2fb0a225"],
         min_length=64,
         max_length=64,
-        pattern=re.compile(r"^[a-fA-F\d]{64}$"),
+        pattern=r"^[a-fA-F\d]{64}$",
     )
-    schema_version: str = Field(
+    schema_version: OneLineStr = Field(
         default="0.0.1",
         description="The image definition schema version.",
         examples=["0.0.1"],
         min_length=1,
         max_length=32,
     )
-    description: str = Field(
+    description: MultiLineStr = Field(
         default="",
         min_length=0,
         max_length=4096,
@@ -70,6 +75,8 @@ class ImageDefinition(BaseModel, extra="forbid"):
         default=False,
         description="Whether the image definition can be updated or deleted.",
     )
+    # the 20 MB limit in nginx is not set for node definitions
+    # (the default 100 kB limit is set instead)
     configuration: NodeConfigurationContent = None
     pyats: PyAtsCredentials | None = Field(
         default=None, description="pyATS specific credentials for the image definition."

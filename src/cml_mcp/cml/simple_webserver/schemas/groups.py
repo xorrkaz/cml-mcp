@@ -10,12 +10,14 @@ from pydantic import BaseModel, Field
 
 from simple_webserver.schemas.common import (
     BaseDBModel,
+    DirectoryDn,
     GenericDescription,
     GroupName,
+    OneLineStr,
     UUID4ArrayType,
     UUID4Type,
 )
-from simple_webserver.schemas.labs import GroupLab, LabGroupAssociation
+from simple_webserver.schemas.labs import LabGroupAssociation
 
 GroupIdPathParameter = Annotated[
     UUID4Type, Path(description="The unique ID of a group on this controller.")
@@ -23,7 +25,7 @@ GroupIdPathParameter = Annotated[
 
 
 GroupNamePathParameter = Annotated[
-    str,
+    OneLineStr,
     Path(
         description="The group name of a group on this controller.",
         examples=["CCNA Study Group Class of 21"],
@@ -42,8 +44,7 @@ class GroupBase(BaseModel):
         examples=["CCNA study group"],
     )
     members: UUID4ArrayType = Field(
-        default=[],
-        description="Members of the group as a list of user IDs.",
+        default=[], description="Members of the group as a list of user IDs."
     )
 
 
@@ -65,18 +66,7 @@ class GroupAssocNew(BaseModel):
     )
 
 
-class GroupAssocOld(BaseModel):
-    labs: list[GroupLab] = Field(
-        default=None,
-        description="Labs of the group as a object of lab IDs and permission.",
-    )
-
-
 class GroupCreate(GroupCreateBase, GroupAssocNew, extra="forbid"):
-    pass
-
-
-class GroupCreateOld(GroupCreateBase, GroupAssocOld, extra="forbid"):
     pass
 
 
@@ -84,29 +74,20 @@ class GroupUpdate(GroupUpdateBase, GroupAssocNew, extra="forbid"):
     pass
 
 
-class GroupUpdateOld(GroupUpdateBase, GroupAssocOld, extra="forbid"):
-    pass
+GroupCreateBodyParameter = Annotated[GroupCreate, Body(...)]
+
+GroupUpdateBodyParameter = Annotated[GroupUpdate, Body(...)]
 
 
-GroupCreateBodyParameter = Annotated[GroupCreate | GroupCreateOld, Body(...)]
-
-GroupUpdateBodyParameter = Annotated[GroupUpdate | GroupUpdateOld, Body(...)]
-
-
-class GroupResponse(
-    BaseDBModel, GroupCreateBase, GroupAssocNew, GroupAssocOld, extra="forbid"
-):
+class GroupResponse(BaseDBModel, GroupCreateBase, GroupAssocNew, extra="forbid"):
     """Information about a group."""
 
-    directory_dn: str | None = Field(
-        default=None,
-        description="Group distinguished name from LDAP",
-        max_length=255,
-        examples=["CN=Lab 1 Members,CN=groups,DC=corp,DC=com"],
-    )
+    directory_dn: DirectoryDn = Field(...)
     directory_exists: bool | None = Field(
         default=None, description="Whether the group exists on LDAP"
     )
+    # Added for CML 2.9
+    labs: list | None = Field(default=None, description="*DEPRECATED* List of labs associated with the group.")
 
 
 class GroupBriefResponse(BaseModel, extra="forbid"):

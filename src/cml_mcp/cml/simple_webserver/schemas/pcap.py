@@ -10,12 +10,13 @@ from typing import Annotated, Literal
 from fastapi import Body, Path
 from pydantic import BaseModel, Field, model_validator
 
-from simple_webserver.schemas.common import IPAddress, MACAddress, UUID4Type
+from simple_webserver.schemas.common import IPAddress, MACAddress, OneLineStr, UUID4Type
 
 LINK_ENCAP_DESCRIPTION = "Link encapsulation"
 PCAP_MAX_PACKETS = 1_000_000
 PCAP_MAX_TIME = 86_400
 
+# maximum: 1000000 # this is random
 PacketIdPathParameter = Annotated[
     int,
     Path(
@@ -27,6 +28,8 @@ PacketIdPathParameter = Annotated[
 ]
 
 
+# The enum values presented here need to be in sync with the UI in
+# LinkPacketCapture.vue and the fabric in link type.
 class LinkEncap(StrEnum):
     ETHERNET = auto()
     FRELAY = auto()
@@ -57,7 +60,7 @@ class PCAPStartBase(BaseModel, extra="forbid"):
         le=PCAP_MAX_TIME,
         examples=[60],
     )
-    bpfilter: str = Field(
+    bpfilter: OneLineStr = Field(
         default="",
         description="Berkeley packet filter.",
         max_length=128,
@@ -83,7 +86,7 @@ class PCAPStatusBase(BaseModel, extra="forbid"):
         ge=0,
         le=PCAP_MAX_TIME,
     )
-    bpfilter: str | None = Field(
+    bpfilter: OneLineStr | None = Field(
         default=None,
         description="Berkeley packet filter.",
         max_length=128,
@@ -111,6 +114,7 @@ PCAPStartBody = Annotated[
 
 
 class PCAPConfigStatus(PCAPStatusBase, extra="forbid"):
+    # TODO: Remove in CML 2.10 + 2 releases
     link_capture_key: UUID4Type | None = Field(
         default=None,
         description="Deprecated. ID for the packet capture, now same as link ID.",
@@ -136,14 +140,14 @@ type PCAPPeer = MACAddress | IPAddress | Literal["N/A"]
 
 
 class PCAPItem(BaseModel, extra="forbid"):
-    no: str = Field(
+    no: OneLineStr = Field(
         ...,
         description="Packet number",
         min_length=1,
         max_length=16,
         examples=["1", "2", "3"],
     )
-    time: str = Field(
+    time: OneLineStr = Field(
         ...,
         description="Time since PCAP was started",
         min_length=1,
@@ -154,20 +158,20 @@ class PCAPItem(BaseModel, extra="forbid"):
     destination: PCAPPeer = Field(
         ..., description="The MAC/IP address of the destination."
     )
-    length: str = Field(
+    length: OneLineStr = Field(
         ...,
         description="The length of the packet.",
         min_length=1,
         max_length=16,
         examples=["64"],
     )
-    protocol: str = Field(
+    protocol: OneLineStr = Field(
         ...,
         description="Protocol of the packet.",
         min_length=1,
         max_length=16,
     )
-    info: str = Field(
+    info: OneLineStr = Field(
         ...,
         description="Information about the packet.",
         min_length=1,
@@ -176,10 +180,12 @@ class PCAPItem(BaseModel, extra="forbid"):
 
 
 class PCAPFieldItem(BaseModel, extra="forbid"):
-    name: str = Field(default="", description="Protocol field name")
-    formatted_name: str = Field(default="", description="Formatted field details")
+    name: OneLineStr = Field(default="", description="Protocol field name")
+    formatted_name: OneLineStr = Field(
+        default="", description="Formatted field details"
+    )
     pos: int | None = Field(default=None, description="Field offset in octets")
-    show: str = Field(default="", description="Field summary value")
+    show: OneLineStr = Field(default="", description="Field summary value")
     size: int | None = Field(default=None, description="Field size in octets")
     field: list["PCAPFieldItem"] | None = Field(
         default=None, description="Nested subfield items"
@@ -187,8 +193,10 @@ class PCAPFieldItem(BaseModel, extra="forbid"):
 
 
 class PCAPProtoItem(BaseModel, extra="forbid"):
-    name: str = Field(default="", description="Protocol layer name")
-    formatted_name: str = Field(default="", description="Formatted protocol name")
+    name: OneLineStr = Field(default="", description="Protocol layer name")
+    formatted_name: OneLineStr = Field(
+        default="", description="Formatted protocol name"
+    )
     field: list[PCAPFieldItem] | None = Field(default=None, description="Field items")
 
 

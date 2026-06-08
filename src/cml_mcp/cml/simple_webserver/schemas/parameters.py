@@ -3,13 +3,20 @@
 # Copyright (c) 2019-2026, Cisco Systems, Inc.
 # All rights reserved.
 #
-import re
 from enum import StrEnum
 from typing import Annotated
 
 from fastapi import Path, Query
 
-from simple_webserver.schemas.common import DOMAIN_REG, PORT_REG, Permission, UUID4Type
+from simple_webserver.schemas.common import (
+    DOMAIN_REG,
+    PORT_REG,
+    OneLineStr,
+    Permission,
+    UUID4Type,
+)
+
+HOSTNAME_QUERY_REG = rf"^({DOMAIN_REG})(:{PORT_REG})?$"
 
 LabIdPathParameter = Annotated[
     UUID4Type,
@@ -74,15 +81,16 @@ ComputeIdPathParameter = Annotated[
 
 
 SearchQueryPathParameter = Annotated[
-    str, Path(description="The search query parameter.", examples=["iosv-1"])
+    OneLineStr, Path(description="The search query parameter.", examples=["iosv-1"])
 ]
 
 
 TagPathParameter = Annotated[
-    str, Path(description="The unique tag path parameter.", examples=["Core"])
+    OneLineStr, Path(description="The unique tag path parameter.", examples=["Core"])
 ]
 
 
+# maximum: 64 # from number of serial ports on node_definition
 ConsoleIdPathParameter = Annotated[
     int,
     Path(
@@ -94,13 +102,14 @@ ConsoleIdPathParameter = Annotated[
 ]
 
 
+# keep in sync with DefinitionId from common.py
 DefinitionIDPathParameter = Annotated[
-    str,
+    OneLineStr,
     Path(
         description="ID of the requested definition.",
         min_length=1,
         max_length=250,
-        pattern=re.compile(r"^[^.!@#%^&*();$\n\r\t/\\][^!@#%^&*();$\n\r\t/\\]{0,249}$"),
+        pattern=r"^[^.!@#%^&*();$\n\r\t/\\][^!@#%^&*();$\n\r\t/\\]{0,249}$",
         examples=["server"],
     ),
 ]
@@ -163,7 +172,7 @@ UserIdPathParameter = Annotated[
 
 
 UsernamePathParameter = Annotated[
-    str,
+    OneLineStr,
     Path(
         examples=["admin"],
         min_length=1,
@@ -173,11 +182,11 @@ UsernamePathParameter = Annotated[
 ]
 
 HostNameQueryParameter = Annotated[
-    str,
+    OneLineStr,
     Query(
         min_length=1,
         max_length=128,
-        pattern=re.compile(rf"^({DOMAIN_REG})(:{PORT_REG})?$"),
+        pattern=HOSTNAME_QUERY_REG,
         description="A hostname or IP address with optional L4 port number.",
         examples=[
             {
@@ -209,7 +218,7 @@ HostNameQueryParameter = Annotated[
 ]
 
 AuthGroupFilterQueryParameter = Annotated[
-    str | None,
+    OneLineStr | None,
     Query(
         description="An optional filter that will be applied to the groups.",
         examples=[

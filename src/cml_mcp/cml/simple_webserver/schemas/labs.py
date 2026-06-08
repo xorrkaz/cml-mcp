@@ -10,8 +10,8 @@ from fastapi import Body
 from pydantic import BaseModel, Field
 
 from simple_common.schemas import LabEventElementType, LabEventType
-from simple_webserver.schemas.api_versioning import CMLVersion
 from simple_webserver.schemas.annotations import AnnotationResponse
+from simple_webserver.schemas.api_versioning import CMLVersion
 from simple_webserver.schemas.common import (
     BaseDBModel,
     EffectivePermissions,
@@ -19,8 +19,9 @@ from simple_webserver.schemas.common import (
     InterfaceStateModel,
     LabStateModel,
     LinkStateModel,
+    MultiLineStr,
     NodeStateModel,
-    OldPermission,
+    OneLineStr,
     Permissions,
     UserFullName,
     UserName,
@@ -37,7 +38,7 @@ from simple_webserver.schemas.nodes import (
 from simple_webserver.schemas.smart_annotations import SmartAnnotationBase
 
 LabTitle = Annotated[
-    str,
+    OneLineStr,
     Field(
         min_length=1,
         max_length=64,
@@ -47,7 +48,7 @@ LabTitle = Annotated[
 ]
 
 LabNotes = Annotated[
-    str,
+    MultiLineStr,
     Field(
         max_length=32768,
         description="Additional, textual free-form Lab notes.",
@@ -62,17 +63,6 @@ LabDescription = Annotated[
         examples=["CCNA study lab"],
     ),
 ]
-
-
-class GroupLab(BaseModel, extra="forbid"):
-    id: UUID4Type = Field(..., description="ID of the lab group.")
-    permission: OldPermission = Field(
-        ..., description="Permission level for the lab group."
-    )
-
-
-class LabGroup(GroupLab, extra="forbid"):
-    name: str = Field(default=None, description="Name of the lab group.")
 
 
 class LabGroupAssociation(BaseModel, extra="forbid"):
@@ -122,7 +112,7 @@ class LabAutostart(BaseModel, extra="forbid"):
 
 
 LabAutostartMixin = Annotated[
-    LabAutostart | None, # None added for CML 2.9
+    LabAutostart | None,  # None added for CML 2.9
     Field(
         default_factory=LabAutostart,
         description="The lab's autostart configuration.",
@@ -136,8 +126,7 @@ class NodeStaging(BaseModel, extra="forbid"):
         default=False, description="Whether the node staging is enabled."
     )
     start_remaining: bool = Field(
-        default=True,
-        description="Whether nodes with unset priority should be started.",
+        default=True, description="Whether nodes with unset priority should be started."
     )
     abort_on_failure: bool = Field(
         default=False,
@@ -148,7 +137,7 @@ class NodeStaging(BaseModel, extra="forbid"):
 
 
 NodeStagingMixin = Annotated[
-    NodeStaging | None, # None added for CML 2.9
+    NodeStaging | None,  # None added for CML 2.9
     Field(
         default_factory=NodeStaging,
         description="The lab's node staging configuration.",
@@ -164,18 +153,14 @@ class LabRequest(BaseModel, extra="forbid"):
     owner: LabOwner = Field(default=None)
     description: LabDescription = Field(default=None)
     notes: LabNotes = Field(default=None)
-    groups: list[LabGroup] = Field(
-        default=None,
-        description="Array of LabGroup objects - mapping from group ID to permissions.",
-    )
     associations: LabAssociations = Field(
-        default=None,
-        description="Object of lab/group and lab/user associations.",
+        default=None, description="Object of lab/group and lab/user associations."
     )
     autostart: LabAutostartMixin = Field(...)
     node_staging: NodeStagingMixin = Field(...)
 
 
+# TODO: merge into LabResponse (requires changes to the MCP repo)
 class Lab(BaseDBModel, extra="forbid"):
     """Metadata about the state of the lab itself."""
 
@@ -196,10 +181,8 @@ class Lab(BaseDBModel, extra="forbid"):
         description="Number of connections between nodes in the lab.",
         ge=0,
     )
-    groups: list[LabGroup] = Field(
-        default=None,
-        description="Array of LabGroup objects - mapping from group ID to permissions.",
-    )
+    # Needed for CML 2.9
+    groups: list | None = Field(default=None, description="*DEPRECATED* List of groups associated with the lab.")
     effective_permissions: EffectivePermissions = Field(...)
     autostart: LabAutostartMixin = Field(...)
     node_staging: NodeStagingMixin = Field(...)
@@ -210,13 +193,6 @@ class LabResponse(Lab, extra="forbid"):
 
     pass
 
-
-LabGroupsBody = Annotated[
-    list[LabGroup],
-    Body(
-        description="This request body is a JSON object that describes the group permissions for a lab."
-    ),
-]
 
 LabBody = Annotated[LabRequest, Body(description="The lab's data.")]
 
@@ -245,6 +221,7 @@ class NodeTimes(BaseModel, extra="forbid"):
         default_factory=dict,
         description="Timestamps for states QUEUED, STARTED, BOOTED.",
     )
+    is_running: bool = Field(default=False, description="Whether the node is running.")
 
 
 class NodeStats(NodeTimes, extra="forbid"):
@@ -256,7 +233,6 @@ class NodeStats(NodeTimes, extra="forbid"):
     cpu_limit: CpuLimit = Field(default=None)
     cpus: AllocatedCpus = Field(default=None)
     ram: Ram = Field(default=None)
-    is_running: bool = Field(default=False, description="Whether the node is running.")
 
 
 class LabSimulationStatsResponse(BaseModel, extra="forbid"):

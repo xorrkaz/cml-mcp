@@ -16,6 +16,8 @@ from simple_webserver.schemas.common import (
     DeviceNature,
     DriverType,
     FilePath,
+    MultiLineStr,
+    OneLineStr,
     PyAtsCredentials,
     PyAtsOs,
     PyAtsToken,
@@ -83,7 +85,7 @@ class LinuxNative(BaseModel, extra="forbid"):
         "is made writable; if set to constant 'stateless', "
         "the code file is marked stateless.",
     )
-    machine_type: str = Field(
+    machine_type: OneLineStr = Field(
         default=None,
         description="QEMU machine type, defaults to pc; q35 is more modern.",
         min_length=1,
@@ -92,11 +94,11 @@ class LinuxNative(BaseModel, extra="forbid"):
     ram: int = Field(default=None, description="Memory in MiB.", ge=1, le=1048576)
     cpus: int = Field(default=None, description="CPUs.", ge=1, le=128)
     cpu_limit: int = Field(default=None, description="CPU Limit.", ge=20, le=100)
-    cpu_model: str = Field(
+    cpu_model: OneLineStr = Field(
         default=None,
         min_length=1,
         max_length=64,
-        pattern=re.compile(r"^[a-zA-Z\d-]{1,32}(,[+!?^-][a-z\d._]{1,16})*$"),
+        pattern=r"^[a-zA-Z\d-]{1,32}(,[+!?^-][a-z\d._]{1,16})*$",
     )
     nic_driver: NicDriver = Field(
         default=None,
@@ -123,6 +125,7 @@ class LinuxNative(BaseModel, extra="forbid"):
     @model_validator(mode="after")
     def validate(self):
         required: list[str] = []
+        # strictly speaking, we should enforce these are only set on matching domain
         if self.libvirt_domain_driver is DomainDriver.KVM:
             required = ["cpus", "ram", "nic_driver", "disk_driver"]
         elif self.libvirt_domain_driver.is_simulated:
@@ -136,11 +139,11 @@ class LinuxNative(BaseModel, extra="forbid"):
         return self
 
 
-PhysicalField = Annotated[str, Field(min_length=1, max_length=32)]
+PhysicalField = Annotated[OneLineStr, Field(min_length=1, max_length=32)]
 
-LoopBackField = Annotated[str, Field(min_length=1, max_length=32)]
+LoopBackField = Annotated[OneLineStr, Field(min_length=1, max_length=32)]
 
-ManagementField = Annotated[str, Field(min_length=1, max_length=32)]
+ManagementField = Annotated[OneLineStr, Field(min_length=1, max_length=32)]
 
 
 class Interfaces(BaseModel, extra="forbid"):
@@ -208,10 +211,11 @@ class VMProperties(BaseModel, extra="forbid"):
     cpu_limit: bool = Field(default=None, description="CPU Limit.")
 
 
-CompletedNode = Annotated[str, Field(max_length=128)]
+CompletedNode = Annotated[OneLineStr, Field(max_length=128)]
 
 
 class Boot(BaseModel, extra="forbid"):
+    # just a random upper bound
     timeout: int = Field(..., description="Timeout (seconds).", examples=[60], le=86400)
     completed: conlist(CompletedNode, min_length=1) = Field(
         default=None,
@@ -277,7 +281,7 @@ class General(BaseModel, extra="forbid"):
     nature: DeviceNature = Field(
         ..., description='The "nature" / kind of the node type defined here.'
     )
-    description: str = Field(
+    description: MultiLineStr = Field(
         default=None, description="A description of the node type.", max_length=4096
     )
     read_only: bool = Field(
@@ -299,6 +303,7 @@ class ConfigurationDriver(StrEnum):
     IOSVL2 = auto()
     IOSXRV = auto()
     IOSXRV9000 = auto()
+    ISE = auto()
     LXC = auto()
     NXOSV = auto()
     NXOSV9000 = auto()
@@ -310,6 +315,9 @@ class ConfigurationDriver(StrEnum):
     TREX = auto()
     UBUNTU = auto()
     WAN_EMULATOR = auto()
+    WIRELESS_AP = auto()
+    WIRELESS_CLIENT = auto()
+    XRD = auto()
 
 
 class ConfigurationGenerator(BaseModel, extra="forbid"):
@@ -326,7 +334,7 @@ class ConfigurationFile(BaseModel, extra="forbid"):
     """
 
     editable: bool = Field(..., description="Is the configuration file editable?")
-    name: str = Field(
+    name: OneLineStr = Field(
         ...,
         description="The name of the configuration file.",
         min_length=1,
@@ -346,7 +354,7 @@ class ConfigurationProvisioning(BaseModel, extra="forbid"):
     media_type: ConfigurationMediaType = Field(
         ..., description="The type of the configuration media."
     )
-    volume_name: str = Field(
+    volume_name: OneLineStr = Field(
         ...,
         description="The volume name of the configuration media.",
         min_length=1,
@@ -398,7 +406,7 @@ def validate_icon_uri(uri: str) -> str:
     return uri
 
 
-IconDataUri = Annotated[str, AfterValidator(validate_icon_uri)]
+IconDataUri = Annotated[OneLineStr, AfterValidator(validate_icon_uri)]
 
 
 class Ui(BaseModel, extra="forbid"):
@@ -406,7 +414,7 @@ class Ui(BaseModel, extra="forbid"):
     UI-related settings for the node type.
     """
 
-    label_prefix: str = Field(
+    label_prefix: OneLineStr = Field(
         ...,
         description="The textual prefix for node labels.",
         min_length=1,
@@ -421,7 +429,7 @@ class Ui(BaseModel, extra="forbid"):
         "image size should not exceed 100kB before encoding.",
     )
 
-    label: str = Field(
+    label: OneLineStr = Field(
         ..., description="The node type label.", min_length=1, max_length=32
     )
     visible: bool = Field(
@@ -430,7 +438,7 @@ class Ui(BaseModel, extra="forbid"):
     group: Literal["Cisco", "Others"] = Field(
         default=None, description="Intended to group similar node types (unused)."
     )
-    description: str = Field(
+    description: MultiLineStr = Field(
         default=None,
         description="The description of the node type (can be Markdown).",
         max_length=4096,
@@ -462,7 +470,7 @@ class PyAts(PyAtsCredentials, extra="forbid"):
     use_in_testbed: bool = Field(
         default=True, description="Use this device in an exported testbed?"
     )
-    config_extract_command: str | None = Field(
+    config_extract_command: MultiLineStr | None = Field(
         default=None,
         description="This is the CLI command to use when configurations "
         "should be extracted from a device of this node type.",
@@ -471,7 +479,7 @@ class PyAts(PyAtsCredentials, extra="forbid"):
 
 
 Schema = Annotated[
-    str,
+    OneLineStr,
     Field(
         description="The schema version used for this node type.",
         min_length=1,
@@ -511,6 +519,8 @@ class NodeDefinition(BaseModel, extra="forbid"):
         serial_ports = self.device.interfaces.serial_ports
         domain_driver = self.sim.linux_native.libvirt_domain_driver
 
+        # no default value as domain_driver is validated already
+        # and its value set to one from the enum
         max_limit = domain_driver.serial_port_limit
 
         if serial_ports > max_limit:

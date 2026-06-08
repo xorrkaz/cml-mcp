@@ -10,7 +10,12 @@ from fastapi import Body
 from pydantic import BaseModel, Field
 
 from simple_webserver.schemas.annotations import AnnotationResponse, AnnotationUpdate
-from simple_webserver.schemas.common import MACAddress, UUID4Type
+from simple_webserver.schemas.common import (
+    MACAddress,
+    MultiLineStr,
+    OneLineStr,
+    UUID4Type,
+)
 from simple_webserver.schemas.interfaces import (
     InterfaceLabel,
     InterfaceSlot,
@@ -34,22 +39,23 @@ from simple_webserver.schemas.smart_annotations import (
 )
 
 TopologyID = Annotated[
-    str, Field(min_length=1, max_length=64, description="Element ID.", examples=["l1"])
+    OneLineStr,
+    Field(min_length=1, max_length=64, description="Element ID.", examples=["l1"]),
 ]
 
 
 class TopologySchemaVersion(StrEnum):
     v0_0_1 = "0.0.1"
     v0_0_2 = "0.0.2"
-    v0_0_3 = "0.0.3"
-    v0_0_4 = "0.0.4"
-    v0_0_5 = "0.0.5"
-    v0_1_0 = "0.1.0"
-    v0_2_0 = "0.2.0"
-    v0_2_1 = "0.2.1"
-    v0_2_2 = "0.2.2"
-    v0_3_0 = "0.3.0"
-    v0_3_1 = "0.3.1"
+    v0_0_3 = "0.0.3"  # CML 2.0
+    v0_0_4 = "0.0.4"  # CML 2.1
+    v0_0_5 = "0.0.5"  # CML 2.3
+    v0_1_0 = "0.1.0"  # CML 2.4
+    v0_2_0 = "0.2.0"  # CML 2.5
+    v0_2_1 = "0.2.1"  # CML 2.6
+    v0_2_2 = "0.2.2"  # CML 2.7
+    v0_3_0 = "0.3.0"  # CML 2.8
+    v0_3_1 = "0.3.1"  # CML 2.10
 
 
 class LabTopology(BaseModel, extra="forbid"):
@@ -120,7 +126,7 @@ class ImportTopologyResponse(BaseModel, extra="forbid"):
     """
 
     id: UUID4Type = Field(..., description="The lab ID of the imported lab.")
-    warnings: list[str] | None = Field(
+    warnings: list[MultiLineStr] | None = Field(
         ..., description="Warnings, if any, as Markdown."
     )
 

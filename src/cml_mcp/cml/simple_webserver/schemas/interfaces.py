@@ -51,6 +51,7 @@ InterfaceUpdateBody = Annotated[
 ]
 
 
+# responses
 class InterfaceOperationalDataResponse(BaseModel, extra="forbid"):
     device_name: LinuxInterfaceName | None = Field(
         default=None, max_length=64, description="Device name."

@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from simple_webserver.schemas.common import (
     DeviceNature,
     IPAddress,
+    OneLineStr,
     PyAtsCredentials,
     PyAtsOs,
     PyAtsToken,
@@ -21,10 +22,10 @@ from simple_webserver.schemas.nodes import NodeLabel
 
 
 class PyAtsConnectionDetails(BaseModel, extra="forbid"):
-    command: str | None = Field(default=None, examples=["open ..."])
-    protocol: str = Field(..., examples=["ssh"])
-    proxy: str | None = Field(default=None)
-    ip: IPAddress | str | None = Field(
+    command: OneLineStr | None = Field(default=None, examples=["open ..."])
+    protocol: OneLineStr = Field(..., examples=["ssh"])
+    proxy: OneLineStr | None = Field(default=None)
+    ip: IPAddress | OneLineStr | None = Field(
         default=None, description="IP address or hostname of the device"
     )
     port: int | None = Field(default=None, ge=0, le=65535)
@@ -61,19 +62,47 @@ class PyAtsDeviceTopology(BaseModel, extra="forbid"):
     interfaces: dict[InterfaceLabel, PyAtsInterfaceSummary]
 
 
-class PyAtsTestbedName(BaseModel, extra="forbid"):
-    name: str = Field(
+class PyAtsServerCustom(BaseModel, extra="forbid"):
+    port: int = Field(..., ge=0, le=65535)
+
+
+class PyAtsServer(BaseModel, extra="forbid"):
+    type: Literal["server"] = Field(..., examples=["server"])
+    address: IPAddress | OneLineStr = Field(
+        ..., description="IP address or hostname of the server"
+    )
+    custom: PyAtsServerCustom
+    credentials: PyAtsDeviceCredentials
+
+
+class PyAtsTestbedServers(BaseModel, extra="forbid"):
+    terminal_server: PyAtsServer = Field(
+        ...,
+        description=(
+            "Console-server alias referenced by connections[*].proxy; "
+            "required by genie's pyATS 25.1+ proxy lookup."
+        ),
+    )
+
+
+class PyAtsTestbedHeader(BaseModel, extra="forbid"):
+    name: OneLineStr = Field(
         ...,
         min_length=1,
         max_length=64,
         description="The name of the testbed.",
         examples=["Lab at Thu 07:09 AM"],
     )
+    servers: PyAtsTestbedServers = Field(
+        ..., description="Server aliases referenced by connections[*].proxy."
+    )
 
 
 class PyAtsTestbed(BaseModel, extra="forbid"):
     devices: dict[NodeLabel, PyAtsDevice] = Field(..., description="Device list")
-    testbed: PyAtsTestbedName = Field(..., description="Testbed details (name)")
+    testbed: PyAtsTestbedHeader = Field(
+        ..., description="Testbed metadata (name and server aliases)"
+    )
     topology: dict[NodeLabel, PyAtsDeviceTopology] = Field(
         ..., description="Topology connections list"
     )

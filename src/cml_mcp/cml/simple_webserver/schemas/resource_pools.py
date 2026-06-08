@@ -57,6 +57,7 @@ class ResourcePoolBase(ResourcePoolBaseData):
     description: NullableGenericDescription = Field(
         default=None, description="Free-form textual description of the resource pool."
     )
+    # not part of parent class as field descriptions are different in childes
     cpus: int | None = Field(
         default=None,
         ge=0,
@@ -132,6 +133,7 @@ class ResourcePoolTemplateAdmin(ResourcePoolTemplate, extra="forbid"):
 class ResourcePoolUsageData(ResourcePoolBaseData, extra="forbid"):
     """Resource pool usage statistics data."""
 
+    # not part of parent class as field descriptions are different in childes
     cpus: int | None = Field(
         None,
         description="Usage in one-hundred-part shares of whole cpus.",

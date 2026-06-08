@@ -6,13 +6,14 @@
 
 from enum import StrEnum, auto
 
+# disk image formats supported for VMs
 QCOW2 = "qcow2"
 QCOW = "qcow"
 TAR = "tar"
 TARGZ = "tar.gz"
 SUPPORTED_IMAGE_FORMATS = [QCOW2, QCOW, TAR, TARGZ]
-DEFAULT_LOGIN_TIMEOUT = 10
 
+# valid parameters for LinkCondition API schema
 LINK_CONDITION_PARAMETERS = (
     "bandwidth",
     "latency",
@@ -39,6 +40,18 @@ class AuthMethod(StrEnum):
     LOCAL = auto()
     LDAP = auto()
     RADIUS = auto()
+    OIDC = auto()
+    OAUTH2 = auto()
+    SAML = auto()
+
+
+class AuthSource(StrEnum):
+    LOCAL = auto()
+    LDAP = auto()
+    RADIUS = auto()
+    OIDC = auto()
+    SAML = auto()
+    OAUTH2 = auto()
 
 
 class BootEventType(StrEnum):
@@ -73,20 +86,18 @@ class ConfigurationMediaType(StrEnum):
 
 
 class DefaultPermissions:
-    READ_ONLY = "read_only"
-    READ_WRITE = "read_write"
     LAB_VIEW = "lab_view"
     LAB_EXEC = "lab_exec"
     LAB_EDIT = "lab_edit"
     LAB_ADMIN = "lab_admin"
-    FULL_PERMISSIONS = [LAB_ADMIN, LAB_EXEC, LAB_EDIT, LAB_VIEW]
-    VIEW_PERMISSIONS = [LAB_VIEW]
-    FULL_PERMISSION_SET = set(FULL_PERMISSIONS)
+    FULL_PERMISSIONS = (LAB_ADMIN, LAB_EXEC, LAB_EDIT, LAB_VIEW)
+    VIEW_PERMISSIONS = (LAB_VIEW,)
+    FULL_PERMISSION_SET = frozenset(FULL_PERMISSIONS)
 
 
 class DomainDriver(StrEnum):
     KVM = auto()
-    NONE = auto()
+    NONE = auto()  # use for external connector
     IOL = auto()
     DOCKER = auto()
     UMS = auto()
@@ -155,6 +166,18 @@ class LabEventType(StrEnum):
     STATE_CHANGED = "state"
 
 
+class UserEventType(StrEnum):
+    ADD = "CREATED"
+    CHANGE = "MODIFIED"
+    REMOVE = "DELETED"
+
+
+class GroupEventType(StrEnum):
+    ADD = "CREATED"
+    CHANGE = "MODIFIED"
+    REMOVE = "DELETED"
+
+
 class LabEventElementType(StrEnum):
     LAB = "Lab"
     NODE = "Node"
@@ -188,6 +211,7 @@ class TelemetryEventCategory(StrEnum):
     USER_ACTIVITY = auto()
     USER_GROUP = auto()
     SYSTEM_STATS = auto()
+    # System telemetry events
     BLKINFO = auto()
     VMWARE = auto()
     DMIINFO = auto()
@@ -228,6 +252,7 @@ _NODE_TELEMETRY_MAP: dict[str, TelemetryEventCategory] = {
 class NodeState(FSMState):
     DEFINED_ON_CORE = "DEFINED_ON_CORE"
     STOPPED = "STOPPED"
+    STARTING = "STARTING"
     STARTED = "STARTED"
     QUEUED = "QUEUED"
     BOOTED = "BOOTED"
@@ -246,5 +271,6 @@ class NodeState(FSMState):
         return (
             self is NodeState.BOOTED
             or self is NodeState.QUEUED
+            or self is NodeState.STARTING
             or self is NodeState.STARTED
         )

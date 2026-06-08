@@ -7,14 +7,14 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field
 
-from simple_webserver.schemas.common import UUID4Type
+from simple_webserver.schemas.common import MultiLineStr, UUID4Type
 
 
 class ErrorResponse(BaseModel, extra="forbid"):
     code: int = Field(
         ..., description="The HTTP status that was associated with this error."
     )
-    description: str = Field(
+    description: MultiLineStr = Field(
         ..., description="A human-readable message that describes the error."
     )
 

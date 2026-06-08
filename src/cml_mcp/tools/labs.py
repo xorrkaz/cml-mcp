@@ -35,7 +35,7 @@ import yaml
 from fastmcp import Context
 from fastmcp.exceptions import ToolError
 
-from cml_mcp.cml.simple_webserver.schemas.common import UUID4_REG_EXP, UserName, UUID4Type
+from cml_mcp.cml.simple_webserver.schemas.common import UUID4_REG, UserName, UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabAssociations, LabNotes, LabRequest, LabTitle
 from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
 from cml_mcp.cml_client import CMLClient
@@ -65,7 +65,7 @@ def _validate_lab_associations(items: list[dict] | None, kind: str) -> None:
                 f"(missing={sorted(missing)}, unexpected={sorted(extra)})"
             )
         ent_id = entry["id"]
-        if not isinstance(ent_id, str) or not UUID4_REG_EXP.match(ent_id):
+        if not isinstance(ent_id, str) or not UUID4_REG.match(ent_id):
             raise ToolError(f"{prefix}: 'id' must be a UUID4 string, got {ent_id!r}")
         perms = entry["permissions"]
         if not isinstance(perms, list) or not perms:
@@ -175,9 +175,9 @@ def register_tools(mcp):  # noqa: C901
         },
     )
     async def create_empty_lab(
-        title: LabTitle | None = None,
+        title: LabTitle | None = None,  # pyright: ignore[reportInvalidTypeForm]
         description: Annotated[str | None, field_from(LabRequest, "description")] = None,
-        notes: LabNotes | None = None,
+        notes: LabNotes | None = None,  # pyright: ignore[reportInvalidTypeForm]
         owner: Annotated[str | None, field_from(LabRequest, "owner")] = None,
     ) -> UUID4Type:
         """
@@ -220,9 +220,9 @@ def register_tools(mcp):  # noqa: C901
     )
     async def modify_cml_lab(
         lab_id: UUID4Type,
-        title: LabTitle | None = None,
+        title: LabTitle | None = None,  # pyright: ignore[reportInvalidTypeForm]
         description: Annotated[str | None, field_from(LabRequest, "description")] = None,
-        notes: LabNotes | None = None,
+        notes: LabNotes | None = None,  # pyright: ignore[reportInvalidTypeForm]
         owner: Annotated[str | None, field_from(LabRequest, "owner")] = None,
     ) -> bool:
         """
@@ -483,7 +483,7 @@ def register_tools(mcp):  # noqa: C901
     @mcp.tool(
         annotations={"title": "Get a CML Lab by Title", "readOnlyHint": True},
     )
-    async def get_cml_lab_by_title(title: LabTitle) -> Lab:
+    async def get_cml_lab_by_title(title: LabTitle) -> Lab:  # pyright: ignore[reportInvalidTypeForm]
         """
         Look up a single CML lab by its exact, case-sensitive title. Returns the Lab object.
 
@@ -531,7 +531,7 @@ def register_tools(mcp):  # noqa: C901
     @mcp.tool(
         annotations={"title": "Clone CML Lab", "readOnlyHint": False, "destructiveHint": False},
     )
-    async def clone_cml_lab(lab_id: UUID4Type, new_title: LabTitle | None = None) -> UUID4Type:
+    async def clone_cml_lab(lab_id: UUID4Type, new_title: LabTitle | None = None) -> UUID4Type:  # pyright: ignore[reportInvalidTypeForm]
         """
         Clone an existing lab by UUID, optionally with a new title. Returns the new lab's UUID.
         If new_title is omitted, the clone is named "Copy of <original title>".

@@ -17,6 +17,8 @@ from simple_webserver.schemas.common import (
     IPNetwork,
     Label,
     MACAddress,
+    MultiLineStr,
+    OneLineStr,
     TagArray,
     Timeout,
     UUID4ArrayType,
@@ -48,6 +50,7 @@ class ExternalConnectorBase(BaseModel):
     )
 
 
+# External connector models will be moved to separate file soon.
 ExternalConnectorLabel = Annotated[
     Label, Field(description="Unique label for the external connector.")
 ]
@@ -78,7 +81,7 @@ class ExternalConnectorState(ExternalConnectorBase, extra="forbid"):
     """
 
     label: ExternalConnectorLabel | None = Field(...)
-    interface: str | None = Field(...)
+    interface: OneLineStr | None = Field(...)
     forwarding: ExternalConnectorForwarding = Field(
         description="""
             External connector bridge forwarding mode.
@@ -199,7 +202,7 @@ class ComputeHostBase(BaseModel, extra="forbid"):
     """
 
     id: UUID4Type = Field(..., description="The compute host's unique identifier.")
-    server_address: str = Field(
+    server_address: OneLineStr = Field(
         ..., description="Host address on the internal cluster network."
     )
     hostname: Hostname = Field(..., description="The compute host's unique hostname.")
@@ -211,9 +214,6 @@ class ComputeHostBase(BaseModel, extra="forbid"):
         description="Host is used for external connector and unmanaged switch nodes.",
     )
     admission_state: ComputeStateField
-    nodes: UUID4ArrayType = Field(
-        ..., description="List of node ID's deployed on the host."
-    )
     node_counts: NodeCounts = Field(
         ..., description="Count of nodes and orphans deployed and running on the host."
     )
@@ -251,7 +251,7 @@ SystemNoticeLabel = Annotated[
 ]
 
 SystemNoticeContent = Annotated[
-    str, Field(max_length=8192, description="Content of the notice message.")
+    MultiLineStr, Field(max_length=8192, description="Content of the notice message.")
 ]
 
 SystemNoticeEnabled = Annotated[
@@ -411,8 +411,7 @@ class BasicComputeHostStats(BaseModel):
     """
 
     cpu: CpuStats = Field(
-        ...,
-        description="CPU statistics that shows number of cpus and load percent",
+        ..., description="CPU statistics that shows number of cpus and load percent"
     )
     memory: MemoryStats = Field(
         ..., description="Memory statistics of the compute host."
@@ -429,7 +428,7 @@ class SystemInformation(BaseModel, extra="forbid"):
     System information details.
     """
 
-    version: str = Field(..., description="The CML release version.")
+    version: OneLineStr = Field(..., description="The CML release version.")
     ready: bool = Field(
         ...,
         description="Indicate whether there is at least one compute capable of starting nodes.",
@@ -442,7 +441,7 @@ class SystemInformation(BaseModel, extra="forbid"):
         ..., description="The OUI prefix used for all assigned interface MAC addresses."
     )
     timeout: Timeout
-    features: list[str] = Field(
+    features: list[OneLineStr] = Field(
         default_factory=list, description="Enabled features on this system."
     )
 
@@ -455,10 +454,9 @@ class DomInfo(NodeCountsBase, extra="forbid"):
 
 
 class CpuHealthStats(BasicCpuStats, extra="forbid"):
-    model: str = Field(..., description="The CPU model name.")
-    # Give this a default for CML 2.9.1b3 and earlier.
+    model: OneLineStr = Field(..., description="The CPU model name.")
     hyperthreading: bool = Field(
-        default=False, description="Indicates if hyperthreading is enabled."
+        ..., description="Indicates if hyperthreading is enabled."
     )
     predicted: int = Field(..., description="The number of predicted CPUs.", ge=0)
     load: list[float] = Field(..., description="The CPU load (last few entries).")
@@ -516,9 +514,12 @@ class ComputeHealth(BaseModel, extra="forbid"):
     fabric: bool | None = Field(..., description="Link fabric service is ready")
     device_mux: bool | None = Field(..., description="Console service is ready")
     docker_shim: bool | None = Field(..., description="Container service is ready")
-    cpu_overload: bool = Field(default=False, description="CPU overload prevents node starts")
-    memory_overload: bool = Field(default=False, description="RAM overload prevents node starts")
-    disk_overload: bool = Field(default=False, description="Disk overload prevents node starts")
+    # Set to None for CML 2.9.
+    cpu_overload: bool | None = Field(default=None, description="CPU overload prevents node starts")
+    # Set to None for CML 2.9.
+    memory_overload: bool | None = Field(default=None, description="RAM overload prevents node starts")
+    # Set to None for CML 2.9.
+    disk_overload: bool | None = Field(default=None, description="Disk overload prevents node starts")
     refplat_images_available: bool | None = Field(
         ..., description="Images stored on controller are accessible on this compute"
     )
@@ -530,6 +531,7 @@ class ComputeHealth(BaseModel, extra="forbid"):
 
 class ControllerHealth(BaseModel, extra="forbid"):
     core_connected: bool | None = Field(..., description="Core service is connected")
+    # Set these next three fields to None for CML 2.9, as they are not currently reported by the controller.
     airhandler: bool | None = Field(default=None, description="Wireless link service is ready")
     dispatcher: bool | None = Field(default=None, description="Console/PCAP service is ready")
     ipsnooper: bool | None = Field(default=None, description="Layer3 address service is ready")
@@ -604,17 +606,15 @@ class DefinitionReport(BaseModel, extra="forbid"):
     removed: list[DefinitionID] = Field(
         default_factory=list, description="List of removed definitions."
     )
-    failed: list[str] = Field(
+    failed: list[MultiLineStr] = Field(
         default_factory=list, description="List of error messages."
     )
 
 
 class DefinitionReportResponse(BaseModel, extra="forbid"):
     node_definitions: DefinitionReport = Field(
-        default_factory=DefinitionReport,
-        description="Node definitions reload report.",
+        default_factory=DefinitionReport, description="Node definitions reload report."
     )
     image_definitions: DefinitionReport = Field(
-        default_factory=DefinitionReport,
-        description="Image definitions reload report.",
+        default_factory=DefinitionReport, description="Image definitions reload report."
     )

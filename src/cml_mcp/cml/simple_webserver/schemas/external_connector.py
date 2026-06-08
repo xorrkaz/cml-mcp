@@ -3,18 +3,17 @@
 # Copyright (c) 2019-2026, Cisco Systems, Inc.
 # All rights reserved.
 #
-import re
 from typing import Annotated
 
 from fastapi import Body
 from pydantic import BaseModel, Field
 
-from simple_webserver.schemas.common import Tag, TagArray
+from simple_webserver.schemas.common import OneLineStr, Tag, TagArray
 
 ExternalConnectorDeviceName = Annotated[
-    str,
+    OneLineStr,
     Field(
-        pattern=re.compile(r"^(bridge|local|virbr|vlan)\d{1,4}$"),
+        pattern=r"^(bridge|local|virbr|vlan)\d{1,4}$",
         description="A Linux bridge name usable for external connectivity.",
     ),
 ]
@@ -39,7 +38,7 @@ class ExternalConnectorMappingBase(BaseModel, extra="forbid"):
 class ExternalConnectorMapping(ExternalConnectorMappingBase, extra="forbid"):
     """Mapping of external connector lab node configs to available bridges."""
 
-    label: str = Field(
+    label: OneLineStr = Field(
         description="Unique label for the external connector.",
         max_length=128,
     )

@@ -13,11 +13,16 @@ from simple_webserver.schemas.common import (
     DOMAIN_REG,
     PORT_REG,
     GroupName,
+    MultiLineStr,
+    OneLineStr,
     Password,
     Timeout,
     UserName,
     UUID4Type,
 )
+
+RESOURCE_POOL_DESCRIPTION = "Resource pool or template ID for new user accounts."
+LDAP_SERVER_URLS_PATTERN = rf"^(?:ldaps?://(?:{DOMAIN_REG})(?::{PORT_REG})?)(?: ldaps?://(?:{DOMAIN_REG})(?::{PORT_REG})?)*$"
 
 
 class UserAuthData(BaseModel, extra="forbid"):
@@ -36,12 +41,14 @@ AuthDataBody = Annotated[
 
 
 CNArray = Annotated[
-    list[str],
+    list[OneLineStr],
     Field(description="An array of LDAP CNs.", examples=["group-1", "group-2"]),
 ]
 
+# length validation moved to backend so it does not return entered certificate
+# in response on unsuccessful validation
 PublicCertificate = Annotated[
-    str,
+    MultiLineStr,
     Field(
         description="Contents of the public certificate in PEM format.",
         examples=[
@@ -58,7 +65,7 @@ PublicCertificate = Annotated[
 ]
 
 JwtToken = Annotated[
-    str,
+    OneLineStr,
     Field(
         description="JWT token",
         pattern="^[A-Za-z0-9-_]+.[A-Za-z0-9-_]+.[A-Za-z0-9-_]+$",
@@ -80,13 +87,14 @@ class GroupAuthData(BaseModel, extra="forbid"):
     group_name: GroupName = Field(...)
 
 
+# --- MODULAR AUTH CONFIG SECTION ---
 class LocalAuthConfig(BaseModel, extra="forbid"):
     method: Literal["local"]
 
 
-class LDAPAuthConfig(BaseModel, extra="forbid"):
+class LDAPAuthConfigResponse(BaseModel, extra="forbid"):
     method: Literal["ldap"]
-    manager_password: str | None = Field(
+    manager_password: OneLineStr | None = Field(
         default=None,
         max_length=256,
         description="""
@@ -95,14 +103,12 @@ class LDAPAuthConfig(BaseModel, extra="forbid"):
           Otherwise, the cleartext password will be stored using obfuscation.
         """,
     )
-    server_urls: str | None = Field(
+    server_urls: OneLineStr | None = Field(
         default=None,
         max_length=256,
         description="URI of LDAP server, either LDAP or LDAPS, multiple servers can be specified, separate with space.",
         examples=["ldaps://ad.corp.com:3269"],
-        pattern=re.compile(
-            rf"^(?!.*[\n\r])(?:ldaps?://(?:{DOMAIN_REG})(?::{PORT_REG})?)(?: ldaps?://(?:{DOMAIN_REG})(?::{PORT_REG})?)*$"
-        ),
+        pattern=LDAP_SERVER_URLS_PATTERN,
     )
     verify_tls: bool | None = Field(
         default=None,
@@ -115,19 +121,19 @@ class LDAPAuthConfig(BaseModel, extra="forbid"):
         default=None,
         description="If `true` then password for manager user will be stored as NTLM hash. Only works with ActiveDirectory servers.",
     )
-    root_dn: str | None = Field(
+    root_dn: OneLineStr | None = Field(
         default=None,
         max_length=256,
         description="The root DN that will be applied.",
         examples=["DC=corp,DC=com"],
     )
-    user_search_base: str | None = Field(
+    user_search_base: OneLineStr | None = Field(
         default=None,
         max_length=256,
         description="The user search base where users should be looked up. Typically a OU or CN. Will be combined with the root DN.",
         examples=["CN=users,CN=accounts"],
     )
-    user_search_filter: str | None = Field(
+    user_search_filter: OneLineStr | None = Field(
         default=None,
         max_length=1024,
         description="The filter that will be applied to the user. Must have a placeholder `{0}` replaced with the username.",
@@ -135,7 +141,7 @@ class LDAPAuthConfig(BaseModel, extra="forbid"):
             "(&(uid={0})(memberOf=CN=cmlusers,CN=groups,CN=accounts,DC=corp,DC=com))"
         ],
     )
-    admin_search_filter: str | None = Field(
+    admin_search_filter: OneLineStr | None = Field(
         default=None,
         max_length=1024,
         description="Same as for the user search filter. Grants admin rights if matched.",
@@ -143,13 +149,13 @@ class LDAPAuthConfig(BaseModel, extra="forbid"):
             "(&(uid={0})(memberOf=CN=cmladmins,CN=groups,CN=accounts,DC=corp,DC=com))"
         ],
     )
-    group_search_base: str | None = Field(
+    group_search_base: OneLineStr | None = Field(
         default=None,
         max_length=256,
         description="The group search base where groups should be looked up. Typically a OU or CN. Will be combined with the root DN.",
         examples=["CN=groups,CN=accounts"],
     )
-    group_search_filter: str | None = Field(
+    group_search_filter: OneLineStr | None = Field(
         default=None,
         max_length=1024,
         description="The filter applied to groups. Must have a placeholder `{0}` replaced with the group name.",
@@ -159,45 +165,56 @@ class LDAPAuthConfig(BaseModel, extra="forbid"):
         default=None,
         description="If `true`, use `group_user_attribute` to determine user group memberships.",
     )
-    group_user_attribute: str | None = Field(
+    group_user_attribute: OneLineStr | None = Field(
         default=None,
         max_length=64,
         description="Attribute of the user that holds group memberships.",
         examples=["memberOf"],
     )
-    group_membership_filter: str | None = Field(
+    group_membership_filter: OneLineStr | None = Field(
         default=None,
         max_length=1024,
         description="Filter to apply to groups specifying the user.",
         examples=["(member={0})"],
     )
-    manager_dn: str | None = Field(
+    manager_dn: OneLineStr | None = Field(
         default=None,
         max_length=256,
         description="Manager user DN for lookup if anonymous search is not allowed.",
         examples=["uid=someuser,cn=users,cn=accounts,dc=corp,dc=com"],
     )
     timeout: Timeout
-    display_attribute: str | None = Field(
+    display_attribute: OneLineStr | None = Field(
         default=None,
         max_length=256,
         description="User attribute for displaying the logged in user.",
         examples=["displayName"],
     )
-    group_display_attribute: str | None = Field(
+    group_display_attribute: OneLineStr | None = Field(
         default=None,
         max_length=256,
         description="Group attribute for displaying group description.",
         examples=["description"],
     )
-    email_address_attribute: str | None = Field(
+    email_address_attribute: OneLineStr | None = Field(
         default=None,
         max_length=64,
         description="User attribute for displaying the email address.",
         examples=["mail"],
     )
     resource_pool: UUID4Type | None = Field(
-        default=None, description="Resource pool or template ID for new user accounts."
+        default=None, description=RESOURCE_POOL_DESCRIPTION
+    )
+
+
+# makes server_urls required for request model.
+class LDAPAuthConfigRequest(LDAPAuthConfigResponse, extra="forbid"):
+    server_urls: OneLineStr = Field(
+        ...,
+        max_length=256,
+        description="URI of LDAP server, either LDAP or LDAPS, multiple servers can be specified, separate with space.",
+        examples=["ldaps://ad.corp.com:3269"],
+        pattern=LDAP_SERVER_URLS_PATTERN,
     )
 
 
@@ -210,14 +227,39 @@ class RadiusAuthConfigBase(BaseModel, extra="forbid"):
         description="Default RADIUS server port (used when entry has no ':port').",
     )
     timeout: Timeout
-    nas_identifier: str | None = Field(
+    nas_identifier: OneLineStr | None = Field(
         default=None,
         max_length=256,
         description="NAS-Identifier to include in requests (optional).",
     )
     resource_pool: UUID4Type | None = Field(
         default=None,
-        description="Resource pool or template ID for new user accounts.",
+        description=RESOURCE_POOL_DESCRIPTION,
+    )
+    groups_key: OneLineStr | None = Field(
+        default=None,
+        max_length=256,
+        description="RADIUS attribute key used to read group memberships.",
+    )
+    permitted_key: OneLineStr | None = Field(
+        default=None,
+        max_length=256,
+        description="Optional RADIUS attribute key required for access.",
+    )
+    permitted_value: OneLineStr | None = Field(
+        default=None,
+        max_length=1024,
+        description="Optional regex/value expected for permitted_key.",
+    )
+    admin_key: OneLineStr | None = Field(
+        default=None,
+        max_length=256,
+        description="RADIUS attribute key used to determine admin role.",
+    )
+    admin_value: OneLineStr | None = Field(
+        default=None,
+        max_length=1024,
+        description="Regex/value expected for admin_key to grant admin role.",
     )
 
     @classmethod
@@ -229,8 +271,6 @@ class RadiusAuthConfigBase(BaseModel, extra="forbid"):
             if allow_empty:
                 return
             raise ValueError("server_hosts must contain at least one host")
-        if any(ch in raw for ch in ("\n", "\r")):
-            raise ValueError("server_hosts must not contain line breaks")
         for entry in raw.split():
             host, port_str = cls._split_host_port(entry)
             cls._validate_host_value(host)
@@ -260,7 +300,7 @@ class RadiusAuthConfigBase(BaseModel, extra="forbid"):
 
 
 class RadiusAuthConfigRequest(RadiusAuthConfigBase):
-    server_hosts: str = Field(
+    server_hosts: OneLineStr = Field(
         ...,
         max_length=1024,
         description=(
@@ -268,7 +308,7 @@ class RadiusAuthConfigRequest(RadiusAuthConfigBase):
             "Entries without ':port' use the global 'port' value."
         ),
     )
-    secret: str = Field(
+    secret: OneLineStr = Field(
         ..., max_length=256, description="Shared secret for the RADIUS server(s)."
     )
 
@@ -281,7 +321,7 @@ class RadiusAuthConfigRequest(RadiusAuthConfigBase):
 
 
 class RadiusAuthConfigResponse(RadiusAuthConfigBase):
-    server_hosts: str | None = Field(
+    server_hosts: OneLineStr | None = Field(
         default=None,
         max_length=1024,
         description=(
@@ -289,7 +329,7 @@ class RadiusAuthConfigResponse(RadiusAuthConfigBase):
             "Entries without ':port' use the global 'port' value."
         ),
     )
-    secret: str | None = Field(
+    secret: OneLineStr | None = Field(
         default=None,
         max_length=256,
         description="Shared secret for the RADIUS server(s).",
@@ -303,31 +343,163 @@ class RadiusAuthConfigResponse(RadiusAuthConfigBase):
         return self
 
 
+class OIDCAuthConfig(BaseModel, extra="forbid"):
+    method: Literal["oidc"]
+    issuer_url: OneLineStr | None = Field(default=None, max_length=512)
+    client_id: OneLineStr | None = Field(default=None, max_length=256)
+    client_secret: OneLineStr | None = Field(default=None, max_length=1024)
+    timeout: Timeout = Field(default=10, description="HTTP timeout in seconds.")
+    authorization_endpoint: OneLineStr | None = Field(default=None, max_length=512)
+    token_endpoint: OneLineStr | None = Field(default=None, max_length=512)
+    userinfo_endpoint: OneLineStr | None = Field(default=None, max_length=512)
+    jwks_uri: OneLineStr | None = Field(default=None, max_length=512)
+    redirect_uri_override: OneLineStr | None = Field(default=None, max_length=512)
+    scopes: OneLineStr | None = Field(default=None, max_length=256)
+    username_claim: OneLineStr | None = Field(default=None, max_length=128)
+    admin_claim: OneLineStr | None = Field(default=None, max_length=128)
+    admin_value: OneLineStr | None = Field(default=None, max_length=256)
+    groups_claim: OneLineStr | None = Field(default=None, max_length=128)
+    permitted_claim: OneLineStr | None = Field(default=None, max_length=128)
+    permitted_value: OneLineStr | None = Field(default=None, max_length=256)
+    resource_pool: UUID4Type | None = Field(
+        default=None, description=RESOURCE_POOL_DESCRIPTION
+    )
+
+
+class OAuth2AuthConfig(BaseModel, extra="forbid"):
+    method: Literal["oauth2"]
+    provider: OneLineStr | None = Field(default=None, max_length=64)
+    timeout: Timeout = Field(default=30, description="HTTP timeout in seconds.")
+    authorization_endpoint: OneLineStr | None = Field(default=None, max_length=512)
+    token_endpoint: OneLineStr | None = Field(default=None, max_length=512)
+    client_id: OneLineStr | None = Field(default=None, max_length=256)
+    client_secret: OneLineStr | None = Field(default=None, max_length=1024)
+    scopes: OneLineStr | None = Field(default=None, max_length=256)
+    user_info_endpoint: OneLineStr | None = Field(default=None, max_length=512)
+    groups_endpoint: OneLineStr | None = Field(default=None, max_length=512)
+    username_field: OneLineStr | None = Field(default=None, max_length=128)
+    email_field: OneLineStr | None = Field(default=None, max_length=128)
+    groups_field: OneLineStr | None = Field(default=None, max_length=128)
+    admin_group: OneLineStr | None = Field(default=None, max_length=256)
+    permitted_claim: OneLineStr | None = Field(default=None, max_length=128)
+    permitted_value: OneLineStr | None = Field(default=None, max_length=256)
+    resource_pool: UUID4Type | None = Field(
+        default=None, description=RESOURCE_POOL_DESCRIPTION
+    )
+    redirect_uri_override: OneLineStr | None = Field(default=None, max_length=512)
+
+
+class SAMLAuthConfig(BaseModel, extra="forbid"):
+    method: Literal["saml"]
+    sp_entity_id: OneLineStr | None = Field(default=None, max_length=512)
+    sp_acs_url: OneLineStr | None = Field(default=None, max_length=512)
+    sp_sls_url: OneLineStr | None = Field(default=None, max_length=512)
+    sp_cert: MultiLineStr | None = Field(default=None)
+    sp_private_key: MultiLineStr | None = Field(default=None)
+    idp_entity_id: OneLineStr | None = Field(default=None, max_length=512)
+    idp_sso_url: OneLineStr | None = Field(default=None, max_length=512)
+    idp_slo_url: OneLineStr | None = Field(default=None, max_length=512)
+    idp_cert: MultiLineStr | None = Field(default=None)
+    username_attribute: OneLineStr | None = Field(default=None, max_length=128)
+    email_attribute: OneLineStr | None = Field(default=None, max_length=128)
+    groups_attribute: OneLineStr | None = Field(default=None, max_length=128)
+    admin_group: OneLineStr | None = Field(default=None, max_length=256)
+    permitted_attribute: OneLineStr | None = Field(default=None, max_length=128)
+    permitted_value: OneLineStr | None = Field(default=None, max_length=256)
+    want_assertions_signed: bool | None = Field(default=None)
+    want_messages_signed: bool | None = Field(default=None)
+    resource_pool: UUID4Type | None = Field(
+        default=None, description=RESOURCE_POOL_DESCRIPTION
+    )
+
+
+class SAMLDiscoverResponse(BaseModel, extra="forbid"):
+    success: bool
+    metadata: MultiLineStr | None = None
+    idp_entity_id: OneLineStr | None = Field(default=None, max_length=512)
+    idp_sso_url: OneLineStr | None = Field(default=None, max_length=512)
+    error: MultiLineStr | None = None
+
+
+class OAuthAuthorizationUrlResponse(BaseModel, extra="forbid"):
+    authorization_url: OneLineStr
+    state: OneLineStr
+
+
+class SamlLoginUrlResponse(BaseModel, extra="forbid"):
+    authorization_url: OneLineStr
+    relay_state: OneLineStr
+
+
+class OIDCDiscoverResponse(BaseModel, extra="forbid"):
+    success: bool
+    issuer: OneLineStr | None = Field(default=None, max_length=512)
+    authorization_endpoint: OneLineStr | None = Field(default=None, max_length=512)
+    token_endpoint: OneLineStr | None = Field(default=None, max_length=512)
+    userinfo_endpoint: OneLineStr | None = Field(default=None, max_length=512)
+    jwks_uri: OneLineStr | None = Field(default=None, max_length=512)
+    claims_supported: list[OneLineStr] | None = None
+    scopes_supported: list[OneLineStr] | None = None
+    claim_warnings: list[OneLineStr] | None = None
+    error: MultiLineStr | None = None
+
+
+class OAuth2TestResponse(BaseModel, extra="forbid"):
+    success: bool
+    provider: OneLineStr | None = Field(default=None, max_length=64)
+    authorization_endpoint: OneLineStr | None = Field(default=None, max_length=512)
+    token_endpoint: OneLineStr | None = Field(default=None, max_length=512)
+    user_info_endpoint: OneLineStr | None = Field(default=None, max_length=512)
+    groups_endpoint: OneLineStr | None = Field(default=None, max_length=512)
+    error: MultiLineStr | None = None
+
+
+# Flat discriminated unions used by API
 SystemAuthConfigRequest = Annotated[
-    LocalAuthConfig | LDAPAuthConfig | RadiusAuthConfigRequest,
+    LocalAuthConfig
+    | LDAPAuthConfigRequest
+    | RadiusAuthConfigRequest
+    | OIDCAuthConfig
+    | OAuth2AuthConfig
+    | SAMLAuthConfig,
     Field(discriminator="method"),
 ]
 SystemAuthConfigResponse = Annotated[
-    LocalAuthConfig | LDAPAuthConfig | RadiusAuthConfigResponse,
+    LocalAuthConfig
+    | LDAPAuthConfigResponse
+    | RadiusAuthConfigResponse
+    | OIDCAuthConfig
+    | OAuth2AuthConfig
+    | SAMLAuthConfig,
     Field(discriminator="method"),
 ]
 
 
+# Compatibility wrapper for tests that instantiate SystemAuthConfigBase directly
 class SystemAuthConfigBase(BaseModel):
-    config: LDAPAuthConfig | RadiusAuthConfigResponse
+    config: (
+        LDAPAuthConfigRequest
+        | RadiusAuthConfigRequest
+        | OIDCAuthConfig
+        | OAuth2AuthConfig
+        | SAMLAuthConfig
+    )
 
     @model_validator(mode="before")
     @classmethod
     def _wrap_union(cls, v):
+        # Allow constructing with top-level union fields
         if isinstance(v, dict) and "config" not in v and v.get("method") is not None:
             return {"config": v}
         return v
 
     @model_serializer(mode="wrap")
     def _ser(self, handler):
+        # Flatten wrapper to inner union on serialization
         return handler(self.config)
 
     def __getattr__(self, item):
+        # Delegate attribute access to inner model for compatibility
         return getattr(self.config, item)
 
 
@@ -372,7 +544,7 @@ class SystemAuthTestData(BaseModel, extra="forbid"):
         return self
 
 
-AuthTestAttributes = dict[str, str | list[str]]
+AuthTestAttributes = dict[str, MultiLineStr | list[MultiLineStr]]
 
 
 class AuthTestUserResponse(BaseModel, extra="forbid"):
@@ -384,11 +556,11 @@ class AuthTestUserResponse(BaseModel, extra="forbid"):
         default=False,
         description="The user has admin rights. If LDAP is configured, then the admin filter must match.",
     )
-    display: str = Field(
+    display: OneLineStr = Field(
         default="",
         description="The user's display name, if the configured attribute was found.",
     )
-    email: str = Field(
+    email: OneLineStr = Field(
         default="",
         description="The user's email address, if the configured attribute was found.",
     )
@@ -415,7 +587,7 @@ class AuthTestGroupResponse(BaseModel, extra="forbid"):
             "if either the user or the group could not be found on the LDAP server."
         ),
     )
-    display: str = Field(
+    display: OneLineStr = Field(
         default="",
         description="The group's display name, if the configured attribute was found.",
     )
@@ -440,15 +612,17 @@ class AuthTestResponse(BaseModel, extra="forbid"):
 class AuthenticateResponse(BaseModel, extra="forbid"):
     """Authenticate response."""
 
-    username: str | None = Field(default=None, examples=["admin"])
+    username: OneLineStr | None = Field(default=None, examples=["admin"])
     id: UUID4Type | None = Field(default=None, description="ID of a user")
     token: JwtToken | None = Field(default=None)
     admin: bool | None = Field(default=None, examples=[False])
-    error: str | None = Field(
+    error: MultiLineStr | None = Field(
         default=None,
         description="Error messages for errors that occurred while authenticating, "
         "but did not interrupt the login, such as LDAP group membership "
-        "refresh errors.",
+        "refresh errors. May span multiple lines when the underlying "
+        "exception (e.g. LDAPExceptionError) carries a multi-line "
+        "diagnostic message.",
         examples=[
             "Could not refresh LDAP group memberships "
             "(Invalid base DN or root DN format)"

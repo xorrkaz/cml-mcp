@@ -8,16 +8,18 @@ from typing import Annotated
 from fastapi import Body
 from pydantic import Field
 
+from simple_webserver.schemas.common import OneLineStr
+
 LicensingReservationModeBodyParameter = Annotated[
     bool, Body(description="The license reservation feature status.")
 ]
 
 LicensingReservationRequestCode = Annotated[
-    str, Field(description="Reservation request code for the CSSM.")
+    OneLineStr, Field(description="Reservation request code for the CSSM.")
 ]
 
 LicensingAuthorizationCodeBodyParameter = Annotated[
-    str,
+    OneLineStr,
     Body(
         description="Authorization request code from the CSSM.",
         pattern=r"^[a-zA-Z0-9,_.:<>=/+ -]{1,8192}$",
@@ -25,13 +27,15 @@ LicensingAuthorizationCodeBodyParameter = Annotated[
 ]
 
 LicensingConfirmationCode = Annotated[
-    str | None, Field(description="The confirmation code from a completed reservation.")
+    OneLineStr | None,
+    Field(description="The confirmation code from a completed reservation."),
 ]
 
 LicensingReturnCode = Annotated[
-    str | None, Field(description="The return code from a released reservation.")
+    OneLineStr | None, Field(description="The return code from a released reservation.")
 ]
 
 LicensingDiscardCode = Annotated[
-    str, Field(description="The discard code for an already cancelled reservation.")
+    OneLineStr,
+    Field(description="The discard code for an already cancelled reservation."),
 ]

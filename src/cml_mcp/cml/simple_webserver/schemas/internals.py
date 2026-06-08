@@ -9,15 +9,16 @@ from typing import Annotated
 
 from pydantic import BaseModel, Field, conlist
 
-from simple_webserver.schemas.common import Hostname, IPAddress, UUID4Type
+from simple_webserver.schemas.common import Hostname, IPAddress, OneLineStr, UUID4Type
 from simple_webserver.schemas.keys import ConsoleKeysResponse, VNCKeysResponse
 
 HostPubKey = Annotated[
-    str,
+    OneLineStr,
     Field(pattern=r"^[a-zA-Z\d_-]{1,40}(?:@openssh.com)? [a-zA-Z0-9+/=]{1,16000}$"),
 ]
 
 
+# $id: http://virl.lab/compute_host.json
 class ComputeHostInternal(BaseModel, extra="forbid"):
     id: UUID4Type = Field(...)
     server_address: IPAddress = Field(...)
@@ -34,7 +35,7 @@ ComputeHostBody = Annotated[
 
 
 class RegisterComputeHostResponse(BaseModel, extra="forbid"):
-    ssh_authorized_key: str | None = None
+    ssh_authorized_key: OneLineStr | None = None
 
 
 class ConsolesResponse(BaseModel, extra="forbid"):

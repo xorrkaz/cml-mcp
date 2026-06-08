@@ -34,6 +34,7 @@ class ConsoleLabDetails(BaseLabDetails, extra="forbid"):
 
 class VNCLabDetails(BaseLabDetails, extra="forbid"):
     compute_address: IPAddress
+    driver: UpperDomainDriver
 
 
 class LinkCaptureDetails(BaseModel, extra="forbid"):
@@ -42,6 +43,7 @@ class LinkCaptureDetails(BaseModel, extra="forbid"):
     label: LinkLabel
 
 
+# preferable over Annotated dict as it is pydantic model.
 class ConsoleKeysResponse(RootModel[dict[UUID4Type, ConsoleLabDetails]]):
     pass
 

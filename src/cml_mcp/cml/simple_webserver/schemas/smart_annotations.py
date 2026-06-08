@@ -12,27 +12,32 @@ from simple_webserver.schemas.common import (
     COLOR_EXAMPLES_STR,
     AnnotationColor,
     BorderStyle,
+    OneLineStr,
     UUID4Type,
 )
+
+SmartTag = Annotated[
+    OneLineStr,
+    Field(
+        min_length=1,
+        max_length=64,
+        description="A tag associated with the smart annotation.",
+    ),
+]
 
 
 class SmartAnnotationBase(BaseModel):
     """Configuration for a smart annotation with various styling and positioning
     attributes."""
 
+    tag: SmartTag
     is_on: bool = Field(
         default=True, description="Indicates if the smart annotation is active or not."
     )
     padding: int = Field(
         default=35, ge=1, le=200, description="Padding around the smart annotation."
     )
-    tag: str = Field(
-        default=None,
-        min_length=1,
-        max_length=64,
-        description="A tag associated with the smart annotation.",
-    )
-    label: str = Field(
+    label: OneLineStr = Field(
         default=None,
         min_length=0,
         max_length=256,
@@ -66,7 +71,7 @@ class SmartAnnotationBase(BaseModel):
         default=1,
         ge=1,
         le=32,
-        description="Thickness of the smart annotation’s border or line.",
+        description="Thickness of the smart annotation's border or line.",
     )
     border_style: BorderStyle = Field(
         default=BorderStyle.SOLID,
@@ -102,7 +107,7 @@ class SmartAnnotation(SmartAnnotationBase, extra="forbid"):
 class SmartAnnotationUpdate(SmartAnnotationBase, extra="forbid"):
     """Parameters that the smart annotation will be updated with."""
 
-    pass
+    tag: SmartTag | None = Field(default=None)
 
 
 SmartAnnotationUpdateBody = Annotated[

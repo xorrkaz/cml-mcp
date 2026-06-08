@@ -3,16 +3,17 @@
 # Copyright (c) 2019-2026, Cisco Systems, Inc.
 # All rights reserved.
 #
-import re
 from typing import Annotated
 
 from fastapi import Body
 from pydantic import BaseModel, Field, field_validator
 
-from simple_common.schemas import OptInStatus
+from simple_common.schemas import AuthSource, OptInStatus
 from simple_webserver.schemas.common import (
     BaseDBModel,
+    DirectoryDn,
     GenericDescription,
+    OneLineStr,
     Password,
     UserFullName,
     UserName,
@@ -20,6 +21,8 @@ from simple_webserver.schemas.common import (
     UUID4Type,
 )
 from simple_webserver.schemas.labs import LabUserAssociation
+
+ADMIN_RIGHTS_DESCRIPTION = "Whether user has administrative rights or not."
 
 NewPassword = Annotated[
     Password, Field(..., description="The new password for the user.")
@@ -38,27 +41,18 @@ class PasswordChange(BaseModel, extra="forbid"):
 
 
 SshPubkey = Annotated[
-    str,
+    OneLineStr,
     Field(
         description="""
             The content of an OpenSSH public/authorized key, settable only if console
             server authentication is enabled by global configuration. Clear with empty
             string.
         """,
-        pattern=re.compile(
-            r"^([a-zA-Z\d-]{1,30} [a-zA-Z\d+/]{1,4096}={0,2}(?: [a-zA-Z\d@.+_-]{0,64})?)?$"
+        pattern=(
+            r"^([a-zA-Z0-9-]{1,30} [a-zA-Z0-9+/]{1,4096}={0,2}(?: [a-zA-Z0-9@.+_-]{0,64})?"
+            r")?$"
         ),
         examples=["ssh-ecdsa-sha2-nistp256 AAAAE...tCyk44= user@cml"],
-    ),
-]
-
-
-DirectoryDn = Annotated[
-    str,
-    Field(
-        description="User distinguished name from LDAP or external auth identifier",
-        examples=["CN=John Doe,CN=users,DC=corp,DC=com", "RADIUS"],
-        max_length=255,
     ),
 ]
 
@@ -73,7 +67,7 @@ class UserBase(BaseModel):
         description="Additional, textual free-form detail of the user.",
         examples=["Rules the network simulation world, location: unknown"],
     )
-    email: str = Field(
+    email: OneLineStr = Field(
         default=None,
         description="The optional e-mail address of the user.",
         examples=["johndoe@cisco.com"],
@@ -81,7 +75,7 @@ class UserBase(BaseModel):
     )
     admin: bool = Field(
         default=None,
-        description="Whether user has administrative rights or not.",
+        description=ADMIN_RIGHTS_DESCRIPTION,
         examples=[True],
     )
     groups: UUID4ArrayType = Field(
@@ -104,14 +98,14 @@ class UserBase(BaseModel):
     @field_validator("opt_in", mode="before")
     @classmethod
     def _coerce_opt_in(cls, v):
-        """CML 2.9 returns a boolean; older servers may return None."""
+        """CML 2.9 returns a boolean."""
         if v is None:
             return OptInStatus.UNSET
         if isinstance(v, bool):
             return OptInStatus.ACCEPTED if v else OptInStatus.DECLINED
+        
         return v
-
-    tour_version: str = Field(
+    tour_version: OneLineStr = Field(
         default=None,
         description="""
             The newest version of the introduction tour that the user has seen.
@@ -141,9 +135,9 @@ UserCreateBody = Annotated[UserCreate, Body(...)]
 class UserResponse(BaseDBModel, UserBase, extra="forbid"):
     """User info"""
 
-    directory_dn: DirectoryDn | None = Field(default=None)
+    directory_dn: DirectoryDn = Field(...)
     labs: UUID4ArrayType = Field(default=None, description="Labs owned by the user.")
-    pubkey_info: str | None = Field(
+    pubkey_info: OneLineStr | None = Field(
         default=None,
         description="""
             The size, SHA256 fingerprint, description and algorithm of a SSH public key
@@ -161,7 +155,7 @@ class UserResponse(BaseDBModel, UserBase, extra="forbid"):
         description="Additional, textual free-form detail of the user.",
         examples=["Rules the network simulation world, location: unknown"],
     )
-    email: str | None = Field(
+    email: OneLineStr | None = Field(
         default=None,
         description="The optional e-mail address of the user.",
         examples=["johndoe@cisco.com"],
@@ -169,7 +163,7 @@ class UserResponse(BaseDBModel, UserBase, extra="forbid"):
     )
     admin: bool | None = Field(
         default=None,
-        description="Whether user has administrative rights or not.",
+        description=ADMIN_RIGHTS_DESCRIPTION,
         examples=[True],
     )
     groups: UUID4ArrayType | None = Field(
@@ -188,7 +182,7 @@ class UserResponse(BaseDBModel, UserBase, extra="forbid"):
         description="Telemetry opt-in state for user.",
         examples=[status.value for status in OptInStatus],
     )
-    tour_version: str | None = Field(
+    tour_version: OneLineStr | None = Field(
         default=None,
         description="""
             The newest version of the introduction tour that the user has seen.
@@ -196,8 +190,21 @@ class UserResponse(BaseDBModel, UserBase, extra="forbid"):
         examples=["2.7.0"],
         max_length=128,
     )
+    auth_source: AuthSource = Field(
+        default=AuthSource.LOCAL,
+        description="Source used to authenticate this user account.",
+    )
+    last_login: OneLineStr | None = Field(
+        default=None,
+        description="Timestamp of the user's last successful login.",
+    )
 
 
 class UserBriefResponse(BaseModel, extra="forbid"):
     id: UUID4Type = Field(...)
     username: UserName = Field(...)
+    admin: bool = Field(
+        ...,
+        description=ADMIN_RIGHTS_DESCRIPTION,
+        examples=[True],
+    )

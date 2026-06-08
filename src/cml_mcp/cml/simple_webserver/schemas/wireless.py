@@ -11,7 +11,7 @@ from typing import Annotated
 from fastapi import Body
 from pydantic import BaseModel, Field, model_validator
 
-from simple_webserver.schemas.common import UUID4Type
+from simple_webserver.schemas.common import OneLineStr, UUID4Type
 from simple_webserver.schemas.pcap import PCAPStartBase, PCAPStatusBase
 
 
@@ -64,6 +64,6 @@ class WirelessPcapStatusResponse(BaseModel, extra="forbid"):
 
 
 WirelessPcapActionResponse = Annotated[
-    str,
+    OneLineStr,
     Field(description="Result message from the wireless PCAP operation."),
 ]

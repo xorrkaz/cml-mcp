@@ -31,6 +31,8 @@ class LinkResponse(LinkConnectionInfo, extra="forbid"):
     """Link object."""
 
     lab_id: UUID4Type = Field(default=None, description="ID of the lab.")
+    # TODO: Remove in CML 2.10 + 2 releases
+    # Get the Literal "" for CML 2.9
     link_capture_key: UUID4Type | Literal[""] | None = Field(
         default=None,
         description="Deprecated. The link capture key is now the same as link ID.",
@@ -49,6 +51,7 @@ class SimplifiedLinkResponse(BaseModel, extra="forbid"):
     state: LabStateModel = Field(..., description="The status of the link in the lab.")
 
 
+# this must be in sync with the schema in the fabric
 class LinkCondition(BaseModel):
     bandwidth: int | None = Field(
         default=None, description="Bandwidth of the link in kbps.", ge=0, le=10000000

@@ -13,7 +13,9 @@ from simple_webserver.schemas.common import (
     Coordinate,
     DefinitionID,
     Label,
+    MultiLineStr,
     NodeStateModel,
+    OneLineStr,
     PinnedComputeID,
     PyAtsCredentials,
     TagArray,
@@ -62,14 +64,16 @@ IOLAppId = Annotated[
     int | None, Field(ge=1, le=1022, description="IOL Application ID. Can be null.")
 ]
 
+# max length is 20MB and is checked by nginx
+# it makes no sense to validate it here as it mostly just pollutes logs
 NodeConfigurationContent = Annotated[
-    str | None, Field(description="Node configuration (no more than 20MB).")
+    MultiLineStr | None, Field(description="Node configuration (no more than 20MB).")
 ]
 
 
 class NodeConfigurationFile(BaseModel, extra="forbid"):
     name: Annotated[
-        str,
+        OneLineStr,
         Field(
             ...,
             min_length=1,
@@ -83,11 +87,17 @@ class NodeConfigurationFile(BaseModel, extra="forbid"):
     content: NodeConfigurationContent = Field(default=None)
 
 
+# When GET, we need to both be backwards compatible and return all files, which
+# is only possible by deprecating the old `/configuration` parameter and adding a new
+# `/configurations` parameter which returns an array of files.
 NodeConfigurationFiles = Annotated[
     list[NodeConfigurationFile],
     Field(description="List of node configuration file objects."),
 ]
 
+# When PATCHing, all these formats make sense; just a string if all you want to touch
+# is the main config, a single object if you just want to edit one non-main config,
+# or an array if you want to do multiple files at once.
 NodeConfiguration = Annotated[
     NodeConfigurationContent | NodeConfigurationFiles | NodeConfigurationFile,
     Field(
@@ -100,7 +110,7 @@ NodeConfiguration = Annotated[
 
 
 NodeParameters = Annotated[
-    dict[str, str | None],
+    dict[OneLineStr, MultiLineStr | None],
     Field(
         default_factory=dict,
         description="Node-specific parameters.",
@@ -109,6 +119,7 @@ NodeParameters = Annotated[
 ]
 
 
+# Shared properties for all Node objects, excluding configuration
 class NodeBase(BaseModel):
     """Node object base."""
 
@@ -137,13 +148,14 @@ class NodeBaseExtended(NodeBase):
         ge=0,
         le=10000,
     )
-    # None added for CML 2.9
-    pyats: PyAtsCredentials | None = Field(
+    pyats: PyAtsCredentials = Field(
         default_factory=PyAtsCredentials,
         description="pyATS specific credentials for the node.",
     )
 
 
+# Exactly the base properties are updatable, but we can also use string to set just
+# the main config file or a single object outside an array
 class NodeUpdate(NodeBaseExtended, extra="forbid"):
     cpus: Cpus = Field(default=None)
     pinned_compute_id: PinnedComputeID = Field(default=None)
@@ -202,6 +214,7 @@ class NodeOperationalData(BaseModel, extra="forbid"):
     serial_consoles: list[ConsoleKeyDetails] = Field(default_factory=list)
 
 
+# Node with operational data and proper UUID id
 class Node(NodeDefinedBase):
     id: NodeId
     boot_progress: BootProgress = Field(
@@ -233,9 +246,10 @@ NodeUpdateBody = Annotated[
 ]
 
 
+# responses
 class NodeStateResponse(BaseModel, extra="forbid"):
-    state: str = Field(default=None)
-    progress: str = Field(default=None)
+    state: OneLineStr = Field(default=None)
+    progress: OneLineStr = Field(default=None)
 
 
 class SimplifiedNodeResponse(NodeBase, extra="forbid"):
