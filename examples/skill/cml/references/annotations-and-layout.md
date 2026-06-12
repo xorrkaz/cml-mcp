@@ -1,6 +1,6 @@
 # Layout recipes and annotations
 
-Read when laying out a non-trivial topology or adding visual grouping. Coordinates range −15000..15000; the recipes below assume a ~150–200 unit gap between adjacent devices, which keeps labels and links from overlapping in the CML canvas.
+Read when laying out a non-trivial topology or adding visual grouping. Coordinates range −15000..15000; the recipes below keep at least a ~150–200 unit gap between any two nearby nodes on the canvas, which stops labels and links from overlapping in the CML UI.
 
 ## Coordinate recipes
 
