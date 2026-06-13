@@ -24,7 +24,7 @@ Default sequence:
 
 **Why incremental beats `create_full_lab_topology`:** the full-import tool requires a complete, schema-valid Topology object — exact `version`, every node `id`, every interface `id`, and links referencing those interface IDs by hand. A single mismatch fails the whole import with little to localize the error. The incremental tools validate and return real UUIDs at each step, so failures are isolated and self-correcting.
 
-**Escape hatch:** reach for `create_full_lab_topology` only when the user hands you an already-structured topology object — an exported/serialized model, or the equivalent complete `lab`/`nodes`/`links` object — or explicitly insists on a single atomic import. A detailed request *described in prose* ("three routers in a triangle, each running OSPF") is **not** a reason to one-shot it; build those incrementally too. When you do import, load `references/topology-schema.md` first.
+**Escape hatch:** reach for `create_full_lab_topology` only when the user hands you an already-structured topology object — an exported/serialized model, or the equivalent complete `lab`/`nodes`/`links` object — or explicitly insists on a single atomic import. A detailed request _described in prose_ ("three routers in a triangle, each running OSPF") is **not** a reason to one-shot it; build those incrementally too. When you do import, load `references/topology-schema.md` first.
 
 ## Connecting nodes (prescriptive — follow exactly)
 
@@ -59,11 +59,11 @@ For labs with distinct functional zones (Core, DMZ, Branch, etc.), group them vi
 Two ways to get config onto a device — they have different state requirements, and mixing them up is a common failure:
 
 - **Startup config (preferred for initial setup):** `configure_cml_node(lab_id, node_id, config)`. Requires the node in **CREATED** state (freshly added or freshly wiped). Faster than booting, and survives wipes-to-config. `config` is a plain string of CLI lines. Use this to seed hostnames, interfaces, and protocols before first boot.
-- **Live CLI (for a running device):** `send_cli_command`. Identifies the node by **`label`, not UUID** (unlike every other tool here), and requires the node **BOOTED**. With `config_command=true`, send config lines *without* `configure terminal`/`end` — the tool handles mode entry. With `config_command=false` (default) it runs exec commands like `show ip route`.
+- **Live CLI (for a running device):** `send_cli_command`. Identifies the node by **`label`, not UUID** (unlike every other tool here), and requires the node **BOOTED**. `config_command=true` **must** be passed when commands are configuration-mode commands (e.g., `router ospf`, `interface GigabitEthernet0/0`). With `config_command=true`, send config lines _without_ `configure terminal`/`end` — the tool handles mode entry. With `config_command=false` (default) it runs exec commands like `show ip route`.
 
 When the user just wants a working baseline, prefer seeding startup configs on CREATED nodes, then start the lab — rather than booting everything and configuring live.
 
-**Changing config after a node has booted:** `configure_cml_node` won't work on a running node — it needs CREATED state. Two options: for incremental changes to a live device, use `send_cli_command` (this is the usual path — don't wipe just to tweak config). To replace the *startup* config wholesale, the node must return to CREATED, which means wiping it — a destructive step: confirm with the user, then `stop_cml_node` → `wipe_cml_node` → `configure_cml_node` → `start_cml_node`.
+**Changing config after a node has booted:** `configure_cml_node` won't work on a running node — it needs CREATED state. Two options: for incremental changes to a live device, use `send_cli_command` (this is the usual path — don't wipe just to tweak config). To replace the _startup_ config wholesale, the node must return to CREATED, which means wiping it — a destructive step: confirm with the user, then `stop_cml_node` → `wipe_cml_node` → `configure_cml_node` → `start_cml_node`.
 
 ## Verifying and troubleshooting
 
