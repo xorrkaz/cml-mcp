@@ -115,7 +115,7 @@ The server provides 51 MCP tools organized into the following categories:
 
 ### Interface & Link Management
 
-- **add_interface_to_node** - Add an interface to a node
+- **add_interface_to_node** - Add an interface to a node. Returns a list of created interfaces (a single slot request may add multiple interfaces depending on the node type)
 - **get_interfaces_for_node** - Get all interfaces for a node
 - **connect_two_nodes** - Create a link between two interfaces
 - **get_all_links_for_lab** - Get all links in a lab
@@ -252,6 +252,8 @@ For more troubleshooting help, see [INSTALLATION.md](https://github.com/xorrkaz/
 - **[INSTALLATION.md](https://github.com/xorrkaz/cml-mcp/blob/main/INSTALLATION.md)** - Detailed installation instructions for all platforms and transport modes
 - **[DEVELOPMENT.md](https://github.com/xorrkaz/cml-mcp/blob/main/DEVELOPMENT.md)** - Development setup, testing, and contribution guidelines
 - **[CONTRIBUTING.md](https://github.com/xorrkaz/cml-mcp/blob/main/CONTRIBUTING.md)** - How to contribute to the project
+- **[examples/skill/cml/SKILL.md](https://github.com/xorrkaz/cml-mcp/blob/main/examples/skill/cml/SKILL.md)** - Example agent skill that complements this MCP server with guidance on how to use CML effectively (topology design, layout, operations)
+- **[examples/skill/INSTALL.md](https://github.com/xorrkaz/cml-mcp/blob/main/examples/skill/INSTALL.md)** - How to install the example skill into Claude Code, Claude Desktop, Cursor, and VS Code + GitHub Copilot
 
 ## License
 

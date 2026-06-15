@@ -367,6 +367,7 @@ The server will start and listen for plain HTTP connections at `http://0.0.0.0:9
 **What you need to know:**
 
 - **CML Credentials**: Instead of being set via environment variables (`CML_USERNAME`/`CML_PASSWORD`), CML credentials are provided via the `X-Authorization` HTTP header using Basic authentication format.
+- **Optional fallback credentials**: If `CML_USERNAME` and `CML_PASSWORD` are set in the server's environment, they are used as a fallback when a request omits the `X-Authorization` header. **Security warning:** in HTTP mode this means any unauthenticated client can assume those credentials. Leave both unset unless you specifically want a shared default identity (e.g. a single-tenant lab).
 - **PyATS Credentials**: For CLI command execution, PyATS credentials can be provided via the `X-PyATS-Authorization` header (Basic auth) instead of `PYATS_USERNAME`/`PYATS_PASSWORD` environment variables, and the enable password via the `X-PyATS-Enable` header instead of `PYATS_AUTH_PASS`.
 - **Multiple CML Hosts**: When running in HTTP mode, clients can connect to different CML servers by providing the `X-CML-URL` header. For security, you must configure allowed URLs via the `CML_ALLOWED_URLS` environment variable (comma-separated list) or `CML_URL_PATTERN` (regex pattern).
 - **Unauthenticated tool discovery**: MCP protocol initialization (`initialize`) and tool listing (`tools/list`) do **not** require credentials. This allows AI clients such as Cisco AI Canvas to discover available tools before the user has supplied CML credentials. Actual tool calls always require authentication.
@@ -675,6 +676,8 @@ If credentials appear corrupted, you are likely hitting the Cursor / Windows Cla
 - `CML_URL` - URL of your CML server (e.g., `https://cml.example.com`)
 - `CML_USERNAME` - Username for CML authentication
 - `CML_PASSWORD` - Password for CML authentication
+
+  > **HTTP mode:** `CML_USERNAME` and `CML_PASSWORD` are *optional* and act as fallback credentials when an incoming request omits the `X-Authorization` header. Leave them unset unless you intentionally want any unauthenticated client to assume those credentials.
 
 ### Optional
 
