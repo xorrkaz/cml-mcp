@@ -7,7 +7,7 @@ description: Build, edit, and operate Cisco Modeling Labs (CML) virtual network 
 
 Build and operate CML labs through the CML MCP tools. The guidance below covers the conventions and pitfalls an agent will not infer correctly on its own. General networking knowledge (e.g., what OSPF is, how a switch works) is assumed and not repeated here.
 
-**IDs are opaque — copy them, never reconstruct them.** When a tool returns an identifier (lab, node, interface, or link UUID), pass that exact value to later calls. Never retype an ID from memory or rebuild one from context; a single altered character makes the call fail, and the corrupted value can still look well-formed, so you cannot catch the error by inspecting it. If you are not certain you have the exact value, re-fetch it with the relevant listing tool (`get_nodes_for_cml_lab`, `get_interfaces_for_node`, `get_all_links_for_lab`) rather than guessing.
+**IDs are opaque — copy them, never reconstruct them.** When a tool returns an identifier (lab, node, interface, or link UUID), pass that exact value to later calls. Never retype an ID from memory or rebuild one from context; a single altered character makes the call fail, and the corrupted value can still look well-formed, so you cannot catch the error by inspecting it. If you are not certain you have the exact value, re-fetch it with the relevant listing tool (`get_nodes_for_cml_lab`, `get_interfaces_for_node`, `get_all_links_for_lab`) rather than guessing. **One exception:** `send_cli_command` identifies its node by `label`, not UUID — see Configuration.
 
 ## Default approach: build incrementally, not in one shot
 
@@ -16,15 +16,19 @@ Build a lab by composing small, verifiable steps. **Do not** try to hand-assembl
 Default sequence:
 
 1. `create_empty_lab` (title, optional description/notes) → capture the returned `lab_id`.
-2. `get_cml_node_definitions` once, to learn valid `node_definition` values for this server. Do not guess names like `csr1000v`/`iosv` — servers differ in what's installed. **If the device type the user asked for isn't in the returned list, stop and tell them** — name the closest available definitions and let them choose. Never silently substitute a different device type.
+2. `get_cml_node_definitions` once, to learn valid `node_definition` values for this server. Do not guess names like `csr1000v`/`iosv` — servers differ in what's installed. If `get_cml_node_definitions` returns an error or an empty list, stop immediately and tell the user: the server returned no node definitions and you cannot proceed without them. Do not guess any `node_definition` value. **If the device type the user asked for isn't in the returned list, stop and tell them** — name the closest available definitions and let them choose. Never silently substitute a different device type. **If `get_cml_node_definitions` returns 2 or more definitions whose names or descriptions could reasonably satisfy the user's request** (i.e., they are the same device family or serve the same functional role — e.g. "a Cisco router" matching `iol-xe`, `iosv`, `csr1000v`, `cat8000v`), list every matching definition by its exact name and ask the user to pick one before proceeding. Do not silently choose the first match.
 3. `add_node_to_cml_lab` per device. Set `label`, `node_definition`, and `x`/`y` (see Layout). Each add auto-creates that definition's default interfaces.
 4. Connect nodes (see Connecting nodes — this is the step most often done wrong).
 5. Apply configuration (see Configuration).
-6. Start nodes when the user wants the lab running.
+6. Start nodes when the user wants the lab running. To start an entire lab, use `start_cml_lab(lab_id)`. To start nodes in a specific order (e.g., core infrastructure before edge devices), call `start_cml_node(lab_id, node_id)` sequentially, using `wait_for_convergence=true` on each node before starting the next when a later node depends on an earlier one being reachable. See `references/operations.md` for full lifecycle details.
 
 **Why incremental beats `create_full_lab_topology`:** the full-import tool requires a complete, schema-valid Topology object — exact `version`, every node `id`, every interface `id`, and links referencing those interface IDs by hand. A single mismatch fails the whole import with little to localize the error. The incremental tools validate and return real UUIDs at each step, so failures are isolated and self-correcting.
 
-**Escape hatch:** reach for `create_full_lab_topology` only when the user hands you an already-structured topology object — an exported/serialized model, or the equivalent complete `lab`/`nodes`/`links` object — or explicitly insists on a single atomic import. A detailed request _described in prose_ ("three routers in a triangle, each running OSPF") is **not** a reason to one-shot it; build those incrementally too. When you do import, load `references/topology-schema.md` first.
+**Escape hatch:** use `create_full_lab_topology` only when (a) the user provides a complete, schema-valid topology object (e.g. an exported/serialized model, or the equivalent complete `lab`/`nodes`/`links` object) **or** (b) the user explicitly demands a single atomic import. In both cases, load `references/topology-schema.md` before constructing or validating the topology object. A detailed request _described in prose_ ("three routers in a triangle, each running OSPF") is **not** a reason to one-shot it; build those incrementally too.
+
+## Working with existing labs
+
+If the user references an existing lab by name or description, call `get_cml_labs` (or `get_cml_lab_by_title`) to retrieve its `lab_id` before any modification. Never create a new lab when the user intends to extend an existing one. Once you have the `lab_id`, resume at whatever step of the default sequence is appropriate (e.g., step 3 to add nodes, step 4 to connect them).
 
 ## Connecting nodes (prescriptive — follow exactly)
 
@@ -33,11 +37,11 @@ Default sequence:
 For each link:
 
 1. `get_interfaces_for_node(lab_id, node_id)` for both endpoints.
-2. Pick a free interface on each (default interfaces exist after `add_node_to_cml_lab`).
+2. Pick a free interface on each. **Free means `is_connected == false` on the interface object returned by `get_interfaces_for_node`** — never just take the first interface in the list. Also skip loopbacks (e.g. `Loopback0`) and any management-only interface; pick a physical data interface (e.g. `Ethernet0/0`, `GigabitEthernet0/1`).
 3. `connect_two_nodes(lab_id, src_int=<iface UUID>, dst_int=<iface UUID>)`.
-4. If a node has no free interface left, `add_interface_to_node` first, then re-fetch.
+4. If every physical interface on a node is already connected, `add_interface_to_node` first, then re-fetch.
 
-If `connect_two_nodes` fails, re-fetch interfaces on both nodes (the one you picked may already be linked), choose genuinely free ones, and retry once. If it fails again, report the error to the user rather than looping.
+If `connect_two_nodes` fails, re-fetch interfaces on both nodes (the one you picked may have just been linked), choose genuinely free ones, and retry once. If it fails again, stop and report to the user: state which two nodes you were trying to connect, the interface UUIDs you selected, the exact error returned by the tool, and the current interface availability on both nodes (from the re-fetched list). Do not attempt further retries.
 
 After connecting, optionally `get_all_links_for_lab` to confirm the topology matches intent before configuring or starting.
 
@@ -48,7 +52,7 @@ Unless the user specifies coordinates, place nodes so a person opening the lab i
 The goal, not rigid rules: legible, conventional, minimal crossings. In practice that means:
 
 - Reflect network hierarchy spatially: core/spine devices toward the top or center, distribution in the middle, access/edge and end hosts toward the periphery.
-- Give nodes real breathing room — keep at least ~150–200 units between any two nodes placed near each other on the canvas (whether or not they're linked), so icons and labels never overlap.
+- Give nodes real breathing room — keep at least 150–200 units between any two nodes regardless of whether they are linked, as a universal minimum so icons and labels never overlap. For nodes on the same row or column, use at least 200 units of separation.
 - Align peers on a shared row/column (e.g. two core routers at the same `y`) and keep the layout roughly symmetric.
 - Route to minimize link crossings; if two valid placements exist, prefer the one with fewer crossings.
 
@@ -56,10 +60,15 @@ For labs with distinct functional zones (Core, DMZ, Branch, etc.), group them vi
 
 ## Configuration: match the method to node state
 
-Two ways to get config onto a device — they have different state requirements, and mixing them up is a common failure:
+Pick the tool by scenario; each row is independent:
 
-- **Startup config (preferred for initial setup):** `configure_cml_node(lab_id, node_id, config)`. Requires the node in **CREATED** state (freshly added or freshly wiped). Faster than booting, and survives wipes-to-config. `config` is a plain string of CLI lines. Use this to seed hostnames, interfaces, and protocols before first boot.
-- **Live CLI (for a running device):** `send_cli_command`. Identifies the node by **`label`, not UUID** (unlike every other tool here), and requires the node **BOOTED**. `config_command=true` **must** be passed when commands are configuration-mode commands (e.g., `router ospf`, `interface GigabitEthernet0/0`). With `config_command=true`, send config lines _without_ `configure terminal`/`end` — the tool handles mode entry. With `config_command=false` (default) it runs exec commands like `show ip route`.
+| Scenario | Tool | Node state required | Node identity arg | `config_command` flag |
+|---|---|---|---|---|
+| Initial/startup config | `configure_cml_node` | CREATED | UUID (`node_id`) | N/A |
+| Live incremental config | `send_cli_command` | BOOTED | `label` | `true` |
+| Live exec/show commands | `send_cli_command` | BOOTED | `label` | `false` (default) |
+
+Notes: `configure_cml_node`'s `config` arg is a plain string of CLI lines. With `send_cli_command` and `config_command=true`, send config lines _without_ `configure terminal`/`end` — the tool handles mode entry.
 
 When the user just wants a working baseline, prefer seeding startup configs on CREATED nodes, then start the lab — rather than booting everything and configuring live.
 
@@ -85,6 +94,6 @@ When the user just wants a working baseline, prefer seeding startup configs on C
 
 ## Reference files (load on demand)
 
-- `references/topology-schema.md` — the full `create_full_lab_topology` object shape. Read this **only** when doing a one-shot bulk import of a complete, user-supplied topology.
+- `references/topology-schema.md` — the full `create_full_lab_topology` object shape. Read this only when calling `create_full_lab_topology` — either because the user supplied an already-structured topology object, or because the user explicitly demanded a single atomic import.
 - `references/annotations-and-layout.md` — coordinate recipes for common layouts (hub-spoke, spine-leaf, linear) and the argument shapes for text/shape/smart annotations and link conditioning. Read when laying out a non-trivial topology or adding visual grouping.
 - `references/operations.md` — lifecycle (start/stop lab), packet capture on links, link conditioning (latency/loss/jitter), and user/group/permission admin. Read when the task goes beyond building and configuring.
