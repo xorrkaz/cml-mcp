@@ -242,9 +242,17 @@ class CustomHttpRequestMiddleware(Middleware):
         verify_ssl = verify_ssl_header == "true"
 
         if not auth_header or " " not in auth_header:
-            # Fall back to default credentials from settings if configured
-            if settings.cml_username and settings.cml_password:
-                logger.debug("Using default CML credentials from settings")
+            # Fall back to default credentials from settings only when explicitly enabled via
+            # CML_MCP_ALLOW_UNAUTHENTICATED. The fallback lets any client that can reach the
+            # HTTP port act as the configured identity, so it is opt-in.
+            if (
+                settings.cml_mcp_allow_unauthenticated
+                and settings.cml_username
+                and settings.cml_password
+            ):
+                logger.debug(
+                    "Using default CML credentials from settings (unauthenticated mode enabled)"
+                )
                 username = settings.cml_username
                 password = settings.cml_password
             else:

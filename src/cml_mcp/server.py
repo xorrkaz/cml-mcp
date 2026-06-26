@@ -53,6 +53,17 @@ if not logger.handlers:
 # Load ACL configuration if using HTTP transport
 if settings.cml_mcp_transport == "http":
     middleware.load_acl_data()
+    # Warn loudly when the unauthenticated fallback is enabled with default credentials configured.
+    if (
+        settings.cml_mcp_allow_unauthenticated
+        and settings.cml_username
+        and settings.cml_password
+    ):
+        logger.warning(
+            "HTTP transport accepting unauthenticated requests; clients with no X-Authorization header will run as '%s'."
+            " Disable CML_MCP_ALLOW_UNAUTHENTICATED for production deployments.",
+            settings.cml_username,
+        )
 
 # Initialize FastMCP server
 server_mcp = FastMCP(

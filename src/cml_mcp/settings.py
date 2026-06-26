@@ -76,6 +76,14 @@ class Settings(BaseSettings):
         default=None,
         description="Path to a YAML file specifying access control lists for various MCP capabilities (only used in HTTP transport mode).",
     )
+    cml_mcp_allow_unauthenticated: bool = Field(
+        default=False,
+        description=(
+            "HTTP transport only. When True, requests that omit X-Authorization fall back to CML_USERNAME/CML_PASSWORD"
+            " from the server environment. This lets any client that can reach the port act as that identity \u2014 only"
+            " enable for trusted single-tenant deployments."
+        ),
+    )
     cml_session_ttl: int = Field(
         default=3600,
         description="Idle time in seconds before a cached CML client session expires (only applicable in HTTP transport mode).",

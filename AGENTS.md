@@ -63,10 +63,11 @@ Each module exposes a `register_tools(mcp)` function called from `server.py`.
 | Variable | Required | Description |
 |---|---|---|
 | `CML_URL` | Yes | CML server URL |
-| `CML_USERNAME` | stdio: yes / HTTP: optional | CML login username. **HTTP mode:** acts as a fallback when the request omits `X-Authorization`. Setting it in HTTP mode lets any unauthenticated client assume these credentials — leave unset unless you specifically want a default identity. |
+| `CML_USERNAME` | stdio: yes / HTTP: optional | CML login username. **HTTP mode:** ignored unless `CML_MCP_ALLOW_UNAUTHENTICATED=true` is also set, in which case requests with no `X-Authorization` header fall back to these credentials. Leave unset unless you specifically want a default identity. |
 | `CML_PASSWORD` | stdio: yes / HTTP: optional | CML login password. Same HTTP-mode caveat as `CML_USERNAME`. |
 | `CML_VERIFY_SSL` | No | Set `false` for self-signed certs |
 | `CML_MCP_TRANSPORT` | No | `http` for HTTP mode (default: `stdio`) |
+| `CML_MCP_ALLOW_UNAUTHENTICATED` | No | HTTP mode only. When `true`, requests without an `X-Authorization` header fall back to `CML_USERNAME`/`CML_PASSWORD`. Default `false` (such requests are rejected). Lets any client reaching the port act as the configured identity — opt in only for trusted single-tenant deployments. Server logs a warning at startup when active. |
 | `CML_SESSION_TTL` | No | Idle TTL in seconds for cached HTTP sessions (default: `3600`) |
 | `PYATS_USERNAME` | No | Device login username |
 | `PYATS_PASSWORD` | No | Device login password |
