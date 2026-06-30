@@ -80,7 +80,7 @@ class Settings(BaseSettings):
         default=False,
         description=(
             "HTTP transport only. When True, requests that omit X-Authorization fall back to CML_USERNAME/CML_PASSWORD"
-            " from the server environment. This lets any client that can reach the port act as that identity \u2014 only"
+            " from the server environment. This lets any client that can reach the port act as that identity.  Only"
             " enable for trusted single-tenant deployments."
         ),
     )
