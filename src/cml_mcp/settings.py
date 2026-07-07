@@ -80,8 +80,10 @@ class Settings(BaseSettings):
         default=False,
         description=(
             "HTTP transport only. When True, requests that omit X-Authorization fall back to CML_USERNAME/CML_PASSWORD"
-            " from the server environment. This lets any client that can reach the port act as that identity.  Only"
-            " enable for trusted single-tenant deployments."
+            " from the server environment. The fallback applies only to the statically configured CML_URL; requests"
+            " that supply their own X-CML-Server-URL never receive these credentials, so the configured identity"
+            " cannot be exfiltrated to a client-chosen server. This lets any client that can reach the port act as"
+            " that identity. Only enable for trusted single-tenant deployments."
         ),
     )
     cml_session_ttl: int = Field(

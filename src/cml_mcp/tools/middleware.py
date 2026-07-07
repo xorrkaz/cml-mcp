@@ -150,11 +150,7 @@ class CustomHttpRequestMiddleware(Middleware):
         # cannot bypass the allow list or pattern. AnyHttpUrl.port is always populated
         # with the scheme default (80/443) when not explicitly specified.
         try:
-            target = (
-                url
-                if isinstance(url, AnyHttpUrl)
-                else _url_adapter.validate_python(str(url))
-            )
+            target = url if isinstance(url, AnyHttpUrl) else _url_adapter.validate_python(str(url))
         except ValidationError:
             raise McpError(
                 ErrorData(
@@ -163,10 +159,7 @@ class CustomHttpRequestMiddleware(Middleware):
                 )
             )
         if allowed_urls:
-            if not any(
-                (target.scheme, target.host, target.port) == (a.scheme, a.host, a.port)
-                for a in allowed_urls
-            ):
+            if not any((target.scheme, target.host, target.port) == (a.scheme, a.host, a.port) for a in allowed_urls):
                 raise McpError(
                     ErrorData(
                         message=f"CML server URL '{url}' is not in the list of allowed URLs",
@@ -276,15 +269,12 @@ class CustomHttpRequestMiddleware(Middleware):
         if not auth_header or " " not in auth_header:
             # Fall back to default credentials from settings only when explicitly enabled via
             # CML_MCP_ALLOW_UNAUTHENTICATED. The fallback lets any client that can reach the
-            # HTTP port act as the configured identity, so it is opt-in.
-            if (
-                settings.cml_mcp_allow_unauthenticated
-                and settings.cml_username
-                and settings.cml_password
-            ):
-                logger.debug(
-                    "Using default CML credentials from settings (unauthenticated mode enabled)"
-                )
+            # HTTP port act as the configured identity, so it is opt-in. It is further restricted
+            # to the statically configured CML_URL: a request that supplies its own
+            # X-CML-Server-URL must authenticate, so the configured credentials can never be
+            # forwarded to (and harvested by) a client-chosen server, even an allow-listed one.
+            if settings.cml_mcp_allow_unauthenticated and not client_provided_url and settings.cml_username and settings.cml_password:
+                logger.debug("Using default CML credentials from settings (unauthenticated mode enabled)")
                 username = settings.cml_username
                 password = settings.cml_password
             else:
