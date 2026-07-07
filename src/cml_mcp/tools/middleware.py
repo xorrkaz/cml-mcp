@@ -227,6 +227,7 @@ class CustomHttpRequestMiddleware(Middleware):
         if not cml_url:
             if settings.cml_url:
                 cml_url = str(settings.cml_url)
+                client_provided_url = False
             else:
                 logger.warning("Request rejected: missing X-CML-Server-URL header and no default CML_URL configured")
                 raise McpError(
@@ -238,8 +239,15 @@ class CustomHttpRequestMiddleware(Middleware):
         else:
             # Validate the server URL is allowed.
             CustomHttpRequestMiddleware._validate_url(cml_url, settings.cml_allowed_urls, settings.cml_url_pattern)
-        verify_ssl_header = headers.get("x-cml-verify-ssl", "").lower()
-        verify_ssl = verify_ssl_header == "true"
+            client_provided_url = True
+        # SSL verification can only be adjusted by clients that supply their own remote CML URL.
+        # When falling back to the statically configured CML_URL, the server's CML_VERIFY_SSL
+        # setting is authoritative and cannot be downgraded via the X-CML-Verify-SSL header.
+        if client_provided_url:
+            verify_ssl_header = headers.get("x-cml-verify-ssl", "").lower()
+            verify_ssl = verify_ssl_header == "true"
+        else:
+            verify_ssl = settings.cml_verify_ssl
 
         if not auth_header or " " not in auth_header:
             # Fall back to default credentials from settings only when explicitly enabled via
