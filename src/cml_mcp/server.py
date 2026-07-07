@@ -36,7 +36,19 @@ from cml_mcp.settings import settings
 
 # Import dependencies first to ensure global client initialization happens before other imports
 from cml_mcp.tools import dependencies  # noqa: F401 - imported for side effects (global client init)
-from cml_mcp.tools import annotations, cli, interfaces, labs, links, middleware, node_definitions, nodes, pcap, system, users_groups
+from cml_mcp.tools import (
+    annotations,
+    cli,
+    interfaces,
+    labs,
+    links,
+    middleware,
+    node_definitions,
+    nodes,
+    pcap,
+    system,
+    users_groups,
+)
 
 # Set up root logging for cml-mcp and all submodules
 logger = logging.getLogger("cml-mcp")
@@ -54,11 +66,7 @@ if not logger.handlers:
 if settings.cml_mcp_transport == "http":
     middleware.load_acl_data()
     # Warn loudly when the unauthenticated fallback is enabled with default credentials configured.
-    if (
-        settings.cml_mcp_allow_unauthenticated
-        and settings.cml_username
-        and settings.cml_password
-    ):
+    if settings.cml_mcp_allow_unauthenticated and settings.cml_username and settings.cml_password:
         logger.warning(
             "HTTP transport accepting unauthenticated requests; clients with no X-Authorization header will run as '%s'."
             " Disable CML_MCP_ALLOW_UNAUTHENTICATED for production deployments.",
