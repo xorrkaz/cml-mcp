@@ -322,7 +322,7 @@ uvicorn cml_mcp.server:app --host 0.0.0.0 --port 9000 --workers 1
 Or create a `.env` file with these settings:
 
 ```sh
-CML_URL=<URL_OF_CML_SERVER>  # Optional in HTTP mode if using X-CML-URL header
+CML_URL=<URL_OF_CML_SERVER>  # Optional in HTTP mode if using X-CML-Server-URL header
 CML_MCP_TRANSPORT=http
 CML_MCP_BIND=0.0.0.0
 CML_MCP_PORT=9000
@@ -369,7 +369,8 @@ The server will start and listen for plain HTTP connections at `http://0.0.0.0:9
 - **CML Credentials**: Instead of being set via environment variables (`CML_USERNAME`/`CML_PASSWORD`), CML credentials are provided via the `X-Authorization` HTTP header using Basic authentication format.
 - **Optional fallback credentials (opt-in)**: By default, HTTP requests with no `X-Authorization` header are rejected. To allow such requests to fall back to a server-configured identity, set `CML_MCP_ALLOW_UNAUTHENTICATED=true` **and** set `CML_USERNAME`/`CML_PASSWORD`. **Security warning:** with the fallback enabled, any client that can reach the HTTP port can act as the configured identity without authenticating. Only enable this for trusted single-tenant deployments (e.g. a personal lab). The server logs a warning at startup whenever the fallback is active.
 - **PyATS Credentials**: For CLI command execution, PyATS credentials can be provided via the `X-PyATS-Authorization` header (Basic auth) instead of `PYATS_USERNAME`/`PYATS_PASSWORD` environment variables, and the enable password via the `X-PyATS-Enable` header instead of `PYATS_AUTH_PASS`.
-- **Multiple CML Hosts**: When running in HTTP mode, clients can connect to different CML servers by providing the `X-CML-URL` header. For security, you must configure allowed URLs via the `CML_ALLOWED_URLS` environment variable (comma-separated list) or `CML_URL_PATTERN` (regex pattern).
+- **Multiple CML Hosts**: When running in HTTP mode, clients can connect to different CML servers by providing the `X-CML-Server-URL` header. For security, you must configure allowed URLs via the `CML_ALLOWED_URLS` environment variable (comma-separated list) or `CML_URL_PATTERN` (regex pattern). Matching compares only the **scheme, host, and port** of the requested URL — any userinfo (e.g. `https://trusted.example.com@evil.example.com`), path, or query is ignored, so a credentials-style prefix cannot be used to spoof an allowed host. `CML_URL_PATTERN` is applied to a canonical `scheme://host:port` origin (default ports 80/443 are filled in when omitted).
+- **SSL verification**: The `X-CML-Verify-SSL` header (`true`/`false`) is honored **only** when the client supplies its own CML server via `X-CML-Server-URL`. Requests that fall back to the statically configured `CML_URL` always use the server's `CML_VERIFY_SSL` setting and cannot downgrade SSL verification via the header.
 - **Unauthenticated tool discovery**: MCP protocol initialization (`initialize`) and tool listing (`tools/list`) do **not** require credentials. This allows AI clients such as Cisco AI Canvas to discover available tools before the user has supplied CML credentials. Actual tool calls always require authentication.
 
 Example headers:
@@ -378,7 +379,8 @@ Example headers:
 X-Authorization: Basic <base64_encoded_cml_username:cml_password>
 X-PyATS-Authorization: Basic <base64_encoded_device_username:device_password>
 X-PyATS-Enable: Basic <base64_encoded_enable_password>
-X-CML-URL: https://cml-server.example.com
+X-CML-Server-URL: https://cml-server.example.com
+X-CML-Verify-SSL: false
 ```
 
 **Note:** The `X-PyATS-Enable` header only needs the Base64-encoded enable password (not typical Basic auth format with username:password).
@@ -692,8 +694,8 @@ If credentials appear corrupted, you are likely hitting the Cursor / Windows Cla
 - `CML_MCP_TRANSPORT` - Set to `http` for HTTP mode (default: `stdio`)
 - `CML_MCP_BIND` - IP address to bind HTTP server (default: `0.0.0.0`)
 - `CML_MCP_PORT` - Port for HTTP server (default: `9000`)
-- `CML_ALLOWED_URLS` - Comma-separated list of allowed CML URLs in HTTP mode
-- `CML_URL_PATTERN` - Regex pattern for allowed CML URLs (alternative to `CML_ALLOWED_URLS`)
+- `CML_ALLOWED_URLS` - Comma-separated list of allowed CML URLs in HTTP mode (matched on scheme/host/port only)
+- `CML_URL_PATTERN` - Regex pattern for allowed CML URLs, applied to a canonical `scheme://host:port` origin (alternative to `CML_ALLOWED_URLS`)
 - `CML_MCP_ACL_FILE` - Path to YAML file for access control lists (tool restrictions per user)
 - `CML_SESSION_TTL` - Idle time-to-live (in seconds) for cached CML sessions in HTTP mode (default: `3600`). The timer resets on every request — sessions only expire after this many seconds of inactivity. Expired sessions are closed automatically. If a cached session's CML token expires mid-use, the server re-authenticates transparently. Lower this value to reclaim resources sooner after users become inactive, or to force re-authentication after credential rotation.
 

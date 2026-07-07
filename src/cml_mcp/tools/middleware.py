@@ -40,12 +40,15 @@ from fastmcp.server.middleware import Middleware, MiddlewareContext
 from fastmcp.tools.base import Tool
 from mcp.shared.exceptions import McpError
 from mcp.types import ErrorData
-from pydantic import AnyHttpUrl
+from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
 
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.settings import settings
 
 logger = logging.getLogger("cml-mcp.middleware")
+
+# Adapter used to parse client-provided CML URLs into their scheme/host/port parts.
+_url_adapter = TypeAdapter(AnyHttpUrl)
 
 # ACL data
 acl_data: dict[str, Any] = {}
@@ -140,11 +143,30 @@ class CustomHttpRequestMiddleware(Middleware):
                     code=-31003,
                 )
             )
+
+        # Parse with Pydantic's AnyHttpUrl so matching uses the scheme/host/port only.
+        # AnyHttpUrl.host ignores any userinfo component, so a spoofed host in the
+        # userinfo (e.g. https://good.server@bad.server, whose real host is bad.server)
+        # cannot bypass the allow list or pattern. AnyHttpUrl.port is always populated
+        # with the scheme default (80/443) when not explicitly specified.
+        try:
+            target = (
+                url
+                if isinstance(url, AnyHttpUrl)
+                else _url_adapter.validate_python(str(url))
+            )
+        except ValidationError:
+            raise McpError(
+                ErrorData(
+                    message=f"CML server URL '{url}' is malformed",
+                    code=-31004,
+                )
+            )
         if allowed_urls:
-            for allowed_url in allowed_urls:
-                if str(url).lower() == str(allowed_url).lower():
-                    break
-            else:
+            if not any(
+                (target.scheme, target.host, target.port) == (a.scheme, a.host, a.port)
+                for a in allowed_urls
+            ):
                 raise McpError(
                     ErrorData(
                         message=f"CML server URL '{url}' is not in the list of allowed URLs",
@@ -152,7 +174,9 @@ class CustomHttpRequestMiddleware(Middleware):
                     )
                 )
         if url_pattern:
-            if not re.match(url_pattern, str(url)):
+            # Match against a canonical origin (no userinfo, path, or query).
+            canonical = f"{target.scheme}://{target.host}:{target.port}"
+            if not re.match(url_pattern, canonical):
                 raise McpError(
                     ErrorData(
                         message=f"CML server URL '{url}' does not match the required pattern",

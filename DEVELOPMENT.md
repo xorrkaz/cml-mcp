@@ -333,7 +333,7 @@ cml-mcp/
 - Each `tools/*.py` module exports a `register_tools(mcp)` function called from `server.py`.
 - Tools obtain the CML client through `get_cml_client_dep()` (never instantiate `CMLClient` directly inside a tool).
 - The session cache in `cache.py` keeps authenticated `CMLClient` instances warm across HTTP requests, keyed by `username:pwd_hash:cml_url:verify_ssl` with an idle TTL (default 1 hour).
-- Middleware in `middleware.py` enforces optional ACLs in HTTP mode (see `acl.yaml.example`).
+- Middleware in `middleware.py` enforces optional ACLs in HTTP mode (see `acl.yaml.example`). It also validates client-supplied CML URLs against `CML_ALLOWED_URLS` / `CML_URL_PATTERN` by parsing them with Pydantic's `AnyHttpUrl` and comparing only the scheme/host/port (userinfo, path, and query are ignored so they cannot spoof an allowed host). The `X-CML-Verify-SSL` header is honored only for requests that supply their own `X-CML-Server-URL`; requests using the default `CML_URL` always use `CML_VERIFY_SSL`.
 
 ### Why this layout
 
