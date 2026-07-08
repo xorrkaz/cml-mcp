@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.xorrkaz/cml-mcp",
-  "title": "Cisco Modeling Labs (CML)",
+  "title": "Cisco Modeling Labs CML",
   "description": "An MCP server that provides access to common Cisco Modeling Labs (CML) operations.",
   "repository": {
     "url": "https://github.com/xorrkaz/cml-mcp",

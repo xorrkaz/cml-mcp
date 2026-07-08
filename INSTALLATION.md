@@ -88,7 +88,7 @@ This configuration gives you most features and works on any platform (Linux, Mac
 ```json
 {
   "mcpServers": {
-    "Cisco Modeling Labs (CML)": {
+    "Cisco Modeling Labs CML": {
       "command": "uvx",
       "args": [
         "cml-mcp"
@@ -122,7 +122,7 @@ This configuration gives you most features and works on any platform (Linux, Mac
 ```json
 {
   "mcpServers": {
-    "Cisco Modeling Labs (CML)": {
+    "Cisco Modeling Labs CML": {
       "command": "uvx",
       "args": [
         "cml-mcp[pyats]"
@@ -163,7 +163,7 @@ Windows users wanting CLI command support should use WSL:
 ```json
 {
   "mcpServers": {
-    "Cisco Modeling Labs (CML)": {
+    "Cisco Modeling Labs CML": {
       "command": "wsl",
       "args": [
         "uvx",
@@ -192,7 +192,7 @@ For any platform using Docker:
 ```json
 {
   "mcpServers": {
-    "Cisco Modeling Labs (CML)": {
+    "Cisco Modeling Labs CML": {
       "command": "docker",
       "args": [
         "run",
@@ -439,7 +439,7 @@ Now that you have your Base64-encoded credentials, add this to your MCP client c
 ```json
 {
   "mcpServers": {
-    "Cisco Modeling Labs (CML)": {
+    "Cisco Modeling Labs CML": {
       "command": "npx",
       "args": [
         "-y",
@@ -477,7 +477,7 @@ If your reverse proxy uses a self-signed certificate, add `NODE_TLS_REJECT_UNAUT
 ```json
 {
   "mcpServers": {
-    "Cisco Modeling Labs (CML)": {
+    "Cisco Modeling Labs CML": {
       "command": "npx",
       "args": [
         "-y",
