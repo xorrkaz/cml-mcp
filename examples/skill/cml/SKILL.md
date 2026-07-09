@@ -15,8 +15,8 @@ Build a lab by composing small, verifiable steps. **Do not** try to hand-assembl
 
 Default sequence:
 
-1. `create_empty_lab` (title, optional description/notes) → capture the returned `lab_id`.
-2. `get_cml_node_definitions` once, to learn valid `node_definition` values for this server. Do not guess names like `csr1000v`/`iosv` — servers differ in what's installed. If `get_cml_node_definitions` returns an error or an empty list, stop immediately and tell the user: the server returned no node definitions and you cannot proceed without them. Do not guess any `node_definition` value. **If the device type the user asked for isn't in the returned list, stop and tell them** — name the closest available definitions and let them choose. Never silently substitute a different device type. **If `get_cml_node_definitions` returns 2 or more definitions whose names or descriptions could reasonably satisfy the user's request** (i.e., they are the same device family or serve the same functional role — e.g. "a Cisco router" matching `iol-xe`, `iosv`, `csr1000v`, `cat8000v`), list every matching definition by its exact name and ask the user to pick one before proceeding. Do not silently choose the first match.
+1. `create_empty_lab` (title, optional description/notes) → capture the returned `lab_id`. Lab notes are rendered as Markdown in the CML UI, so record the topology's purpose / high-level description there — it's what a human sees when they open the lab.
+2. `get_cml_node_definitions` once, to learn valid `node_definition` values for this server. Do not guess names like `csr1000v`/`iosv` — servers differ in what's installed. If `get_cml_node_definitions` returns an error or an empty list, stop immediately and tell the user: the server returned no node definitions and you cannot proceed without them. Do not guess any `node_definition` value. **If the device type the user asked for isn't in the returned list, stop and tell them** — name the closest available definitions and let them choose. Never silently substitute a different device type. **If `get_cml_node_definitions` returns 2 or more definitions whose names or descriptions could reasonably satisfy the user's request** (i.e., they are the same device family or serve the same functional role — e.g. "a Cisco router" matching `iol-xe`, `iosv`, `csr1000v`, `cat8000v`), list every matching definition by its exact name and ask the user to pick one before proceeding. Do not silently choose the first match. For which definition to recommend as the default among installed options (e.g. `iol-xe` for routers, `ioll2-xe` for switches), see `references/node_selection_guidance.md`.
 3. `add_node_to_cml_lab` per device. Set `label`, `node_definition`, and `x`/`y` (see Layout). Each add auto-creates that definition's default interfaces.
 4. Connect nodes (see Connecting nodes — this is the step most often done wrong).
 5. Apply configuration (see Configuration).
@@ -72,6 +72,8 @@ Notes: `configure_cml_node`'s `config` arg is a plain string of CLI lines. With 
 
 When the user just wants a working baseline, prefer seeding startup configs on CREATED nodes, then start the lab — rather than booting everything and configuring live.
 
+**Generating the baseline:** `scripts/base_config.py` emits a minimal, valid startup config for common node types (`iol-xe`, `ioll2-xe`, and the Alpine-based `alpine`/`server`/`desktop`) — setting the hostname, a `cisco`/`cisco` admin user, and `example.com` domain. Run `uv run scripts/base_config.py --node-type <type> --hostname <name> --interface-count <n>` and feed the output to `configure_cml_node`, then layer task-specific config on top. It matters most for `iol-xe`: IOS XE drops into the interactive initial-configuration dialog on first boot unless every ethernet interface already has some config present, and the script pre-seeds those interface stanzas (grouped in modules of 4) to prevent it. Alpine-based nodes get a shell script sourced at boot, not IOS CLI — configure their IP addresses with the Linux `ip` command.
+
 **Changing config after a node has booted:** `configure_cml_node` won't work on a running node — it needs CREATED state. Two options: for incremental changes to a live device, use `send_cli_command` (this is the usual path — don't wipe just to tweak config). To replace the _startup_ config wholesale, the node must return to CREATED, which means wiping it — a destructive step: confirm with the user, then `stop_cml_node` → `wipe_cml_node` → `configure_cml_node` → `start_cml_node`.
 
 ## Verifying and troubleshooting
@@ -94,6 +96,11 @@ When the user just wants a working baseline, prefer seeding startup configs on C
 
 ## Reference files (load on demand)
 
+- `references/node_selection_guidance.md` — which `node_definition` to prefer for a given role (routers, switches, hosts, firewalls, special nodes) and how to map loose requests ("a Nexus switch") to installed definitions. Read when picking node types or when the user names a device family rather than an exact definition.
 - `references/topology-schema.md` — the full `create_full_lab_topology` object shape. Read this only when calling `create_full_lab_topology` — either because the user supplied an already-structured topology object, or because the user explicitly demanded a single atomic import.
 - `references/annotations-and-layout.md` — coordinate recipes for common layouts (hub-spoke, spine-leaf, linear) and the argument shapes for text/shape/smart annotations and link conditioning. Read when laying out a non-trivial topology or adding visual grouping.
 - `references/operations.md` — lifecycle (start/stop lab), packet capture on links, link conditioning (latency/loss/jitter), and user/group/permission admin. Read when the task goes beyond building and configuring.
+
+## Helper scripts
+
+- `scripts/base_config.py` — generates a minimal, boot-safe startup config for `iol-xe`, `ioll2-xe`, and Alpine-based (`alpine`/`server`/`desktop`) nodes. Run `uv run scripts/base_config.py --node-type <type> --hostname <name> --interface-count <n>` and pass the output to `configure_cml_node`. See **Configuration** for when to use it.
