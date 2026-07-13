@@ -49,7 +49,7 @@ class Settings(BaseSettings):
     cml_username: str | None = Field(default=None, description="Username for CML server authentication")
     cml_password: str | None = Field(default=None, description="Password for CML server authentication")
     cml_verify_ssl: bool = Field(
-        default=False,
+        default=True,
         description="Whether to verify the CML server's SSL certificate",
     )
     cml_mcp_transport: TransportEnum = Field(

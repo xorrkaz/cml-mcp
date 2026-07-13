@@ -86,6 +86,7 @@ USE_MOCKS=false pytest -m live_only tests/
 - `CML_URL` - URL of your CML server (e.g., `https://cml-server.example.com`)
 - `CML_USERNAME` - CML username
 - `CML_PASSWORD` - CML password
+- `CML_VERIFY_SSL` - Verify SSL certificates (default: `true`); set `false` for CML's self-signed certificate
 
 Example:
 

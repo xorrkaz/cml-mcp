@@ -252,7 +252,7 @@ An alternative is to use FastMCP CLI to install the server into your favorite cl
     CML_URL=<URL_OF_CML_SERVER>
     CML_USERNAME=<USERNAME_ON_CML_SERVER>
     CML_PASSWORD=<PASSWORD_ON_CML_SERVER>
-    CML_VERIFY_SSL=false  # Set to true to verify SSL certificates
+    CML_VERIFY_SSL=false  # Default is true; CML's self-signed cert requires false
     DEBUG=false  # Set to true to enable debug logging
     # Optional in order to run commands
     PYATS_USERNAME=<DEVICE_USERNAME>
@@ -326,7 +326,7 @@ CML_URL=<URL_OF_CML_SERVER>  # Optional in HTTP mode if using X-CML-Server-URL h
 CML_MCP_TRANSPORT=http
 CML_MCP_BIND=0.0.0.0
 CML_MCP_PORT=9000
-CML_VERIFY_SSL=false  # Set to true to verify SSL certificates
+CML_VERIFY_SSL=false  # Default is true; CML's self-signed cert requires false
 DEBUG=false  # Set to true to enable debug logging
 # For multiple CML hosts support, use one of:
 CML_ALLOWED_URLS=https://cml1.example.com,https://cml2.example.com  # Comma-separated list
@@ -683,7 +683,7 @@ If credentials appear corrupted, you are likely hitting the Cursor / Windows Cla
 
 ### Optional
 
-- `CML_VERIFY_SSL` - Verify SSL certificates (default: `false`)
+- `CML_VERIFY_SSL` - Verify SSL certificates (default: `true`). CML ships with a self-signed certificate, so most users must set this to `false` (or install a CA-signed certificate / point `CA_BUNDLE` at the self-signed cert).
 - `DEBUG` - Enable debug logging (default: `false`)
 - `PYATS_USERNAME` - Device username for CLI commands
 - `PYATS_PASSWORD` - Device password for CLI commands
