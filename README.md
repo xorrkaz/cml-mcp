@@ -1,5 +1,7 @@
 # Model Context Protocol (MCP) Server for Cisco Modeling Labs (CML)
 
+[![MCP Toplist](https://mcptoplist.com/badge/io.github.xorrkaz%2Fcml-mcp.svg)](https://mcptoplist.com/server/io.github.xorrkaz%2Fcml-mcp)
+
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/xorrkaz/cml-mcp)
 
 mcp-name: io.github.xorrkaz/cml-mcp
