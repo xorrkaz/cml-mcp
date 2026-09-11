@@ -19,6 +19,7 @@ This guide will help you set up the CML MCP server so you can control Cisco Mode
   - [Running the HTTP Server](#running-the-http-server)
   - [Configuring MCP Clients](#configuring-mcp-clients)
   - [Docker with HTTP](#docker-with-http-transport)
+- [Observability (OpenTelemetry)](#observability-opentelemetry)
 
 ## Requirements
 
@@ -671,6 +672,50 @@ If credentials appear corrupted, you are likely hitting the Cursor / Windows Cla
 
 `mcp-remote` requires Node.js 18 or later. Run `node --version` to check. Claude Desktop uses your system Node, even if a newer version is installed via a version manager.
 
+## Observability (OpenTelemetry)
+
+`cml-mcp` can export a trace span for every tool call, so you can see request latency and failures in an observability backend like Jaeger, Grafana Tempo, or Datadog. It's off by default and adds no overhead until you turn it on.
+
+### Enable it
+
+1. Install with the `opentelemetry` extra:
+
+    ```sh
+    uvx cml-mcp[opentelemetry]   # combine with PyATS: cml-mcp[pyats,opentelemetry]
+    ```
+
+2. Point it at your OTLP/gRPC collector:
+
+    ```json
+    "env": {
+        "ENABLE_OTEL": "true",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317"
+    }
+    ```
+
+Both variables are required together. If you didn't install the `opentelemetry` extra, tracing is silently skipped and the server starts normally.
+
+### Try it locally
+
+Don't have a collector handy? Run a lightweight one:
+
+```sh
+brew install nico-barbas/brew/otel-desktop-viewer   # macOS
+otel-desktop-viewer                                  # UI at http://localhost:8000, OTLP on :4317
+```
+
+Or use [Jaeger](https://www.jaegertracing.io/) for a fuller UI:
+
+```sh
+docker run -d --name jaeger -p 16686:16686 -p 4317:4317 jaegertracing/all-in-one:latest
+```
+
+Then browse to [http://localhost:16686](http://localhost:16686).
+
+### Need something else?
+
+For other exporters, sampling, or auto-instrumentation options, see FastMCP's [telemetry docs](https://gofastmcp.com/v3/servers/telemetry).
+
 ## Environment Variables Reference
 
 ### Required (stdio mode)
@@ -688,6 +733,8 @@ If credentials appear corrupted, you are likely hitting the Cursor / Windows Cla
 - `PYATS_USERNAME` - Device username for CLI commands
 - `PYATS_PASSWORD` - Device password for CLI commands
 - `PYATS_AUTH_PASS` - Device enable password for CLI commands
+- `ENABLE_OTEL` - Set to `true` to enable the built-in OpenTelemetry OTLP/gRPC trace exporter (default: `false`; requires `cml-mcp[opentelemetry]`)
+- `OTEL_EXPORTER_OTLP_ENDPOINT` - OTLP/gRPC collector endpoint (e.g. `http://localhost:4317`); required alongside `ENABLE_OTEL=true`
 
 ### HTTP Transport Mode
 

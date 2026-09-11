@@ -30,8 +30,6 @@ This module initializes the FastMCP server and registers all tools from modular 
 import logging
 import os
 
-from fastmcp import FastMCP
-
 from cml_mcp.settings import settings
 
 # Import dependencies first to ensure global client initialization happens before other imports
@@ -72,6 +70,25 @@ if settings.cml_mcp_transport == "http":
             " Disable CML_MCP_ALLOW_UNAUTHENTICATED for production deployments.",
             settings.cml_username,
         )
+
+# OTel needs to be enabled before FastMCP is imported.
+if os.getenv("ENABLE_OTEL", "false").lower() == "true" and os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", ""):
+    try:
+        from opentelemetry import trace
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+        from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+        provider = TracerProvider()
+        processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=f"{os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT')}"))
+        provider.add_span_processor(processor)
+        trace.set_tracer_provider(provider)
+    except ImportError:
+        pass
+    except Exception:
+        logger.exception("Failed to initialize OpenTelemetry")
+
+from fastmcp import FastMCP  # noqa: E402  # OTel must be configured before importing FastMCP
 
 # Initialize FastMCP server
 server_mcp = FastMCP(
