@@ -84,7 +84,10 @@ if os.getenv("ENABLE_OTEL", "false").lower() == "true" and os.getenv("OTEL_EXPOR
         provider.add_span_processor(processor)
         trace.set_tracer_provider(provider)
     except ImportError:
-        pass
+        logger.warning(
+            "OpenTelemetry is enabled but required packages are not installed. Install opentelemetry-sdk and"
+            "opentelemetry-exporter-otlp to enable tracing."
+        )
     except Exception:
         logger.exception("Failed to initialize OpenTelemetry")
 
