@@ -95,7 +95,7 @@ from fastmcp import FastMCP  # noqa: E402  # OTel must be configured before impo
 
 # Initialize FastMCP server
 server_mcp = FastMCP(
-    name="Cisco Modeling Labs (CML)",
+    name="Cisco Modeling Labs CML",
     website_url="https://www.cisco.com/go/cml",
     # icons=[Icon(src="https://www.marcuscom.com/cml-mcp/img/cml_icon.png", mimeType="image/png", sizes=["any"])],
 )
