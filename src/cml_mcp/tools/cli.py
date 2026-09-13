@@ -35,6 +35,7 @@ import tempfile
 import httpx
 from fastmcp.exceptions import ToolError
 from fastmcp.telemetry import get_tracer
+from fastmcp import Context
 from virl2_client.models.cl_pyats import ClPyats, PyatsNotInstalled
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
@@ -53,6 +54,7 @@ def _send_cli_command_sync(
     commands: str,
     config_command: bool,
     console: int,
+    ctx: Context,
 ) -> str:
     """
     Synchronous helper for send_cli_command to isolate blocking operations in a thread.
@@ -61,7 +63,8 @@ def _send_cli_command_sync(
     cwd = os.getcwd()  # Save the current working directory
     tracer = get_tracer()
     try:
-        with tracer.start_as_current_span("send_cli_command.setup"):
+        with tracer.start_as_current_span("send_cli_command.setup") as span:
+            span.set_attribute("mcp.session.id", ctx.session_id)
             os.chdir(tempfile.gettempdir())  # Change to a writable directory (required by pyATS/ClPyats)
             lab = client.vclient.join_existing_lab(str(lab_id))  # Join the existing lab using the provided lab ID
             try:
@@ -88,6 +91,7 @@ def _send_cli_command_sync(
                 pylab.switch_serial_console(str(label), console)
 
         with tracer.start_as_current_span("send_cli_command.execute") as span:
+            span.set_attribute("mcp.session.id", ctx.session_id)
             span.set_attribute("send_cli_command.num_commands", len(commands.splitlines()))
 
             if config_command:
@@ -106,7 +110,6 @@ def _send_cli_command_sync(
                 output = str(results)
 
             span.set_attribute("send_cli_command.output_length", len(output))
-
         return output
     finally:
         os.chdir(cwd)  # Restore the original working directory
@@ -166,6 +169,7 @@ def register_tools(mcp):
         lab_id: UUID4Type,
         label: NodeLabel,  # pyright: ignore[reportInvalidTypeForm]
         commands: str,
+        ctx: Context,
         config_command: bool = False,
         console: int = 0,
     ) -> str:
@@ -197,7 +201,7 @@ def register_tools(mcp):
         # Use asyncio.to_thread to prevent blocking the event loop with synchronous operations
         # and to avoid os.chdir() race conditions between concurrent requests
         try:
-            output = await asyncio.to_thread(_send_cli_command_sync, client, lab_id, label, commands, config_command, console)
+            output = await asyncio.to_thread(_send_cli_command_sync, client, lab_id, label, commands, config_command, console, ctx)
             return output
         except Exception as e:
             logger.exception("Error sending CLI command to node %s in lab %s", label, lab_id)
