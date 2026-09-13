@@ -35,10 +35,10 @@ import yaml
 from fastmcp import Context
 from fastmcp.exceptions import ToolError
 
+from cml_mcp.border_style import normalize_topology_border_styles, wire_topology_border_styles
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4_REG, UserName, UUID4Type
 from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabAssociations, LabNotes, LabRequest, LabTitle
 from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
-from cml_mcp.border_style import normalize_topology_border_styles, wire_topology_border_styles
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
 from cml_mcp.tools.model_helpers import build_payload, field_from, lenient_construct, parse_json_arg

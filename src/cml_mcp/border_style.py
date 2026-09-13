@@ -16,9 +16,7 @@ _LEGACY_TO_CANONICAL: dict[str, str] = {
     "4,2": "dashed",
 }
 
-_CANONICAL_TO_LEGACY: dict[str, str] = {
-    v: k for k, v in _LEGACY_TO_CANONICAL.items()
-}
+_CANONICAL_TO_LEGACY: dict[str, str] = {v: k for k, v in _LEGACY_TO_CANONICAL.items()}
 
 
 def _to_canonical(value: str) -> str:
