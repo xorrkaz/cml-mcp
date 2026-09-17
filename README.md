@@ -28,7 +28,7 @@ This is accomplished through the [Model Context Protocol (MCP)](https://modelcon
 - **Console Log Access:** Retrieve console logs from running nodes for troubleshooting and monitoring, with support for selecting specific serial console ports.
 - **Modular Architecture:** Tools are organized into logical modules (labs, nodes, links, pcap, etc.) for maintainability and extensibility.
 - **Access Control Lists (HTTP Mode):** When running in HTTP transport mode, you can restrict which users can access which tools using a YAML-based ACL configuration file.
-- **Observability:** Optional OpenTelemetry tracing (via `cml-mcp[opentelemetry]`) exports spans for every tool, resource, and prompt call to any OTLP-compatible backend (Jaeger, Grafana Tempo, Datadog, etc.).
+- **Observability:** Optional OpenTelemetry tracing exports spans for every tool call to any OTLP-compatible backend (Jaeger, Grafana Tempo, Datadog, etc.).
 
 ## Quick Start
 
@@ -51,7 +51,7 @@ The easiest way to get started is using `uvx` with Claude Desktop (or other MCP-
             "CML_URL": "{CML_URL}",                           
             "CML_USERNAME": "{CML_USERNAME}",                                                 
             "CML_PASSWORD": "{CML_PASSWORD}!",
-            "CML_VERIFY_SSL": "false"
+            "CML_VERIFY_SSL": "true"
           }                                                                         
         }
     }
@@ -62,7 +62,7 @@ The easiest way to get started is using `uvx` with Claude Desktop (or other MCP-
 
 - `CML_URL`: Your CML server address (e.g., `https://cml.example.com` or `https://10.10.20.50`)
 - `CML_USERNAME` and `CML_PASSWORD`: Your CML login credentials
-- `CML_VERIFY_SSL`: TLS certificate verification now defaults to `"true"`. CML ships with a self-signed certificate out of the box, so **most users need to set this to `"false"`** (as shown above). Leave it at `"true"` only if you have installed a CA-signed certificate on your CML server (or point `CA_BUNDLE` at a file containing your self-signed certificate).
+- `CML_VERIFY_SSL`: TLS certificate verification now defaults to `"true"`. CML ships with a self-signed certificate out of the box, so **most users need to set this to `"false"`**. Leave it at `"true"` only if you have installed a CA-signed certificate on your CML server (or point `CA_BUNDLE` at a file containing your self-signed certificate).
 
 > [!TIP]
 > **"Command not found" for `uvx`?** MCP clients like Claude Desktop run in a restricted environment that does not always inherit your shell's `PATH`. If `uvx` can't be found, use its full path in the `"command"` field. To find it, run `which uvx` in a terminal on macOS/Linux, or `where uvx` in Command Prompt on Windows (e.g., `"/Users/alice/.local/bin/uvx"` on macOS, `"C:\Users\alice\.local\bin\uvx.exe"` on Windows). The same applies to `uv`, `npx`, or any other command used in MCP configurations.
