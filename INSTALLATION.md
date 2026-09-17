@@ -61,7 +61,7 @@ This guide will help you set up the CML MCP server so you can control Cisco Mode
 
 ## Standard I/O (stdio) Transport
 
-This is the standard way to connect your AI assistant (like Claude Desktop) directly to the CML MCP server. Think of it like a direct phone line between the AI and your CML server.
+This is the simplest way to connect your AI assistant (like Claude Desktop) directly to the CML MCP server. Think of it like a direct phone line between the AI and your CML server.
 
 **When to use this:** For personal use on your own computer, or when your AI client is on the same machine where you want to run the server.
 
@@ -98,7 +98,6 @@ This configuration gives you most features and works on any platform (Linux, Mac
         "CML_URL": "<URL_OF_CML_SERVER>",
         "CML_USERNAME": "<USERNAME_ON_CML_SERVER>",
         "CML_PASSWORD": "<PASSWORD_ON_CML_SERVER>",
-        "CML_VERIFY_SSL": "false",
         "DEBUG": "false"
       }
     }
@@ -111,6 +110,7 @@ This configuration gives you most features and works on any platform (Linux, Mac
 - Replace `<URL_OF_CML_SERVER>` with your actual CML server URL (e.g., `https://cml.mylab.com` or `https://10.10.20.50`)
 - Use your actual CML username and password
 - Set `DEBUG` to `"true"` if you need troubleshooting information (keeps it in logs)
+- You may need to add `CML_VERIFY_SSL` and set it to `"false"` if you're using a self-signed certificate on the CML server
 
 **Restart required:** After saving the configuration file, restart your MCP client for changes to take effect.
 
@@ -132,7 +132,6 @@ This configuration gives you most features and works on any platform (Linux, Mac
         "CML_URL": "<URL_OF_CML_SERVER>",
         "CML_USERNAME": "<USERNAME_ON_CML_SERVER>",
         "CML_PASSWORD": "<PASSWORD_ON_CML_SERVER>",
-        "CML_VERIFY_SSL": "false",
         "PYATS_USERNAME": "<DEVICE_USERNAME>",
         "PYATS_PASSWORD": "<DEVICE_PASSWORD>",
         "PYATS_AUTH_PASS": "<DEVICE_ENABLE_PASSWORD>",
@@ -177,7 +176,6 @@ Windows users wanting CLI command support should use WSL:
         "PYATS_USERNAME": "<DEVICE_USERNAME>",
         "PYATS_PASSWORD": "<DEVICE_PASSWORD>",
         "PYATS_AUTH_PASS": "<DEVICE_ENABLE_PASSWORD>",
-        "CML_VERIFY_SSL": "false",
         "DEBUG": "false",
         "WSLENV": "CML_URL/u:CML_USERNAME/u:CML_PASSWORD/u:CML_VERIFY_SSL/u:PYATS_USERNAME/u:PYATS_PASSWORD/u:PYATS_AUTH_PASS/u:DEBUG/u"
       }
@@ -223,7 +221,6 @@ For any platform using Docker:
         "CML_URL": "<URL_OF_CML_SERVER>",
         "CML_USERNAME": "<USERNAME_ON_CML_SERVER>",
         "CML_PASSWORD": "<PASSWORD_ON_CML_SERVER>",
-        "CML_VERIFY_SSL": "false",
         "PYATS_USERNAME": "<DEVICE_USERNAME>",
         "PYATS_PASSWORD": "<DEVICE_PASSWORD>",
         "PYATS_AUTH_PASS": "<DEVICE_ENABLE_PASSWORD>",
@@ -253,7 +250,7 @@ An alternative is to use FastMCP CLI to install the server into your favorite cl
     CML_URL=<URL_OF_CML_SERVER>
     CML_USERNAME=<USERNAME_ON_CML_SERVER>
     CML_PASSWORD=<PASSWORD_ON_CML_SERVER>
-    CML_VERIFY_SSL=false  # Default is true; CML's self-signed cert requires false
+    CML_VERIFY_SSL=true  # Default is true; set to false if using a self-signed certificate
     DEBUG=false  # Set to true to enable debug logging
     # Optional in order to run commands
     PYATS_USERNAME=<DEVICE_USERNAME>
@@ -327,7 +324,7 @@ CML_URL=<URL_OF_CML_SERVER>  # Optional in HTTP mode if using X-CML-Server-URL h
 CML_MCP_TRANSPORT=http
 CML_MCP_BIND=0.0.0.0
 CML_MCP_PORT=9000
-CML_VERIFY_SSL=false  # Default is true; CML's self-signed cert requires false
+CML_VERIFY_SSL=true  # Default is true; set to false if using a self-signed certificate
 DEBUG=false  # Set to true to enable debug logging
 # For multiple CML hosts support, use one of:
 CML_ALLOWED_URLS=https://cml1.example.com,https://cml2.example.com  # Comma-separated list
@@ -381,7 +378,6 @@ X-Authorization: Basic <base64_encoded_cml_username:cml_password>
 X-PyATS-Authorization: Basic <base64_encoded_device_username:device_password>
 X-PyATS-Enable: Basic <base64_encoded_enable_password>
 X-CML-Server-URL: https://cml-server.example.com
-X-CML-Verify-SSL: false
 ```
 
 **Note:** The `X-PyATS-Enable` header only needs the Base64-encoded enable password (not typical Basic auth format with username:password).
