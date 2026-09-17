@@ -72,11 +72,22 @@ Each module exposes a `register_tools(mcp)` function called from `server.py`.
 | `PYATS_USERNAME` | No | Device login username |
 | `PYATS_PASSWORD` | No | Device login password |
 | `PYATS_AUTH_PASS` | No | Device enable password |
+| `ENABLE_OTEL` | No | Set to `true` to configure an OpenTelemetry OTLP/gRPC trace exporter before `FastMCP` is imported (requires `cml-mcp[opentelemetry]`) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | No | OTLP/gRPC collector endpoint (e.g. `http://localhost:4317`); required alongside `ENABLE_OTEL=true` for tracing to activate |
 
 ## Transport Modes
 
 - **stdio** (default) — run via `uvx cml-mcp` or `uvx cml-mcp[pyats]`
 - **HTTP** — set `CML_MCP_TRANSPORT=http` and run `cml-mcp`; optionally enable ACL via `CML_MCP_ACL_FILE=/path/to/acl.yaml`
+
+## Observability
+
+FastMCP ships native OpenTelemetry instrumentation (spans for `tools/call`, `resources/read`, `prompts/get`, etc. — see the [FastMCP telemetry docs](https://gofastmcp.com/v3/servers/telemetry)) that is a zero-overhead no-op until an SDK/exporter is configured. `server.py` optionally wires up a minimal OTLP/gRPC exporter itself, gated on both `ENABLE_OTEL=true` and `OTEL_EXPORTER_OTLP_ENDPOINT` being set:
+
+- The OTel SDK **must** be configured before `from fastmcp import FastMCP` runs, so this block sits above the `FastMCP` import in `server.py` (with `# noqa: E402` on the deferred import) instead of at the top of the file with the other imports.
+- The `opentelemetry.*` imports are wrapped in `try/except ImportError: pass` so the server still runs normally when the optional `cml-mcp[opentelemetry]` extra isn't installed; any other exception during setup is logged (`logger.exception(...)`) but does not prevent startup.
+- This wiring only covers the common OTLP/gRPC case. For other exporters (console, OTLP/HTTP, vendor SDKs) or `opentelemetry-instrument`-based auto-instrumentation, follow FastMCP's [Programmatic Configuration](https://gofastmcp.com/v3/servers/telemetry#programmatic-configuration) guide rather than extending the block in `server.py`.
+- Don't add custom spans inside tool modules unless a specific tool has a genuinely expensive or hard-to-debug sub-step worth isolating — FastMCP's built-in per-tool spans are usually sufficient.
 
 ### ACL File (HTTP mode only)
 
@@ -198,4 +209,4 @@ Register the tool by adding (or relying on) the module's `register_tools(mcp)` c
 ## Dependencies
 
 Core: `httpx`, `fastmcp>=3.1.1,<4`, `fastapi`, `pydantic_strict_partial`, `typer`, `virl2_client`  
-Optional: `pyats`, `genie` (install as `cml-mcp[pyats]`)
+Optional: `pyats`, `genie` (install as `cml-mcp[pyats]`); `opentelemetry-distro`, `opentelemetry-exporter-otlp` (install as `cml-mcp[opentelemetry]`)

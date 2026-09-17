@@ -34,6 +34,8 @@ import tempfile
 
 import httpx
 from fastmcp.exceptions import ToolError
+from fastmcp.telemetry import get_tracer
+from fastmcp import Context
 from virl2_client.models.cl_pyats import ClPyats, PyatsNotInstalled
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
@@ -52,53 +54,62 @@ def _send_cli_command_sync(
     commands: str,
     config_command: bool,
     console: int,
+    ctx: Context,
 ) -> str:
     """
     Synchronous helper for send_cli_command to isolate blocking operations in a thread.
     This prevents os.chdir() race conditions and event loop blocking.
     """
     cwd = os.getcwd()  # Save the current working directory
+    tracer = get_tracer()
     try:
-        os.chdir(tempfile.gettempdir())  # Change to a writable directory (required by pyATS/ClPyats)
-        lab = client.vclient.join_existing_lab(str(lab_id))  # Join the existing lab using the provided lab ID
-        try:
-            pylab = ClPyats(lab)  # Create a ClPyats object for interacting with the lab
-            pylab.sync_testbed(client.vclient.username, client.vclient.password)  # Sync the testbed with CML credentials
+        with tracer.start_as_current_span("send_cli_command.setup") as span:
+            span.set_attribute("mcp.session.id", ctx.session_id)
+            os.chdir(tempfile.gettempdir())  # Change to a writable directory (required by pyATS/ClPyats)
+            lab = client.vclient.join_existing_lab(str(lab_id))  # Join the existing lab using the provided lab ID
+            try:
+                pylab = ClPyats(lab)  # Create a ClPyats object for interacting with the lab
+                pylab.sync_testbed(client.vclient.username, client.vclient.password)  # Sync the testbed with CML credentials
 
-            # Set the credentials for all devices other than the Terminal Server
-            # For HTTP transport: use contextvars (request-scoped, prevents race conditions)
-            # For stdio transport: fall back to environment variables
-            for device in pylab._testbed.devices.values():
-                if device.name != "terminal_server":
-                    device.credentials.default.username = _pyats_username.get() or os.getenv("PYATS_USERNAME", "cisco")
-                    device.credentials.default.password = _pyats_password.get() or os.getenv("PYATS_PASSWORD", "cisco")
-                    device.credentials.enable.password = (
-                        _pyats_auth_pass.get() or os.getenv("PYATS_AUTH_PASS") or device.credentials.default.password
-                    )
+                # Set the credentials for all devices other than the Terminal Server
+                # For HTTP transport: use contextvars (request-scoped, prevents race conditions)
+                # For stdio transport: fall back to environment variables
+                for device in pylab._testbed.devices.values():
+                    if device.name != "terminal_server":
+                        device.credentials.default.username = _pyats_username.get() or os.getenv("PYATS_USERNAME", "cisco")
+                        device.credentials.default.password = _pyats_password.get() or os.getenv("PYATS_PASSWORD", "cisco")
+                        device.credentials.enable.password = (
+                            _pyats_auth_pass.get() or os.getenv("PYATS_AUTH_PASS") or device.credentials.default.password
+                        )
 
-        except PyatsNotInstalled:
-            raise ImportError(
-                "PyATS and Genie are required to send commands to running devices.  See the documentation on how to install them."
-            )
+            except PyatsNotInstalled:
+                raise ImportError(
+                    "PyATS and Genie are required to send commands to running devices.  See the documentation on how to install them."
+                )
 
-        if console != 0:
-            pylab.switch_serial_console(str(label), console)
+            if console != 0:
+                pylab.switch_serial_console(str(label), console)
 
-        if config_command:
-            # Send the command as a configuration command
-            results = pylab.run_config_command(str(label), commands)
-        else:
-            # Send the command as an exec/operational command
-            results = pylab.run_command(str(label), commands)
+        with tracer.start_as_current_span("send_cli_command.execute") as span:
+            span.set_attribute("mcp.session.id", ctx.session_id)
+            span.set_attribute("send_cli_command.num_commands", len(commands.splitlines()))
 
-        # Genie may return dict output where the key is the command and the value is its output.
-        if isinstance(results, dict):
-            output = ""
-            for cmd, cmd_output in results.items():
-                output += f"Command: {cmd}\nOutput:\n{cmd_output}\n"
-        else:
-            output = str(results)
+            if config_command:
+                # Send the command as a configuration command
+                results = pylab.run_config_command(str(label), commands)
+            else:
+                # Send the command as an exec/operational command
+                results = pylab.run_command(str(label), commands)
 
+            # Genie may return dict output where the key is the command and the value is its output.
+            if isinstance(results, dict):
+                output = ""
+                for cmd, cmd_output in results.items():
+                    output += f"Command: {cmd}\nOutput:\n{cmd_output}\n"
+            else:
+                output = str(results)
+
+            span.set_attribute("send_cli_command.output_length", len(output))
         return output
     finally:
         os.chdir(cwd)  # Restore the original working directory
@@ -158,6 +169,7 @@ def register_tools(mcp):
         lab_id: UUID4Type,
         label: NodeLabel,  # pyright: ignore[reportInvalidTypeForm]
         commands: str,
+        ctx: Context,
         config_command: bool = False,
         console: int = 0,
     ) -> str:
@@ -189,7 +201,7 @@ def register_tools(mcp):
         # Use asyncio.to_thread to prevent blocking the event loop with synchronous operations
         # and to avoid os.chdir() race conditions between concurrent requests
         try:
-            output = await asyncio.to_thread(_send_cli_command_sync, client, lab_id, label, commands, config_command, console)
+            output = await asyncio.to_thread(_send_cli_command_sync, client, lab_id, label, commands, config_command, console, ctx)
             return output
         except Exception as e:
             logger.exception("Error sending CLI command to node %s in lab %s", label, lab_id)

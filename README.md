@@ -28,6 +28,7 @@ This is accomplished through the [Model Context Protocol (MCP)](https://modelcon
 - **Console Log Access:** Retrieve console logs from running nodes for troubleshooting and monitoring, with support for selecting specific serial console ports.
 - **Modular Architecture:** Tools are organized into logical modules (labs, nodes, links, pcap, etc.) for maintainability and extensibility.
 - **Access Control Lists (HTTP Mode):** When running in HTTP transport mode, you can restrict which users can access which tools using a YAML-based ACL configuration file.
+- **Observability:** Optional OpenTelemetry tracing (via `cml-mcp[opentelemetry]`) exports spans for every tool, resource, and prompt call to any OTLP-compatible backend (Jaeger, Grafana Tempo, Datadog, etc.).
 
 ## Quick Start
 
@@ -244,6 +245,27 @@ TLS certificate verification is **enabled by default** (`CML_VERIFY_SSL=true`). 
 3. On Windows, use WSL or Docker for PyATS support
 
 For more troubleshooting help, see [INSTALLATION.md](https://github.com/xorrkaz/cml-mcp/blob/main/INSTALLATION.md).
+
+## Observability
+
+`cml-mcp` can export a trace span for every tool call, so you can see request latency and failures in an observability backend (Jaeger, Grafana Tempo, Datadog, etc.). It's off by default and adds no overhead until you turn it on.
+
+To enable it, install the `opentelemetry` extra and set two environment variables:
+
+```sh
+uvx cml-mcp[opentelemetry]
+```
+
+Need PyATS too? Extras are comma-separated: `uvx cml-mcp[pyats,opentelemetry]`.
+
+```json
+"env": {
+    "ENABLE_OTEL": "true",
+    "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317"
+}
+```
+
+See [INSTALLATION.md](https://github.com/xorrkaz/cml-mcp/blob/main/INSTALLATION.md#observability-opentelemetry) for full setup details, including running a local trace viewer.
 
 ### Getting Help
 

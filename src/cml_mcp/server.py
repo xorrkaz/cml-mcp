@@ -30,8 +30,6 @@ This module initializes the FastMCP server and registers all tools from modular 
 import logging
 import os
 
-from fastmcp import FastMCP
-
 from cml_mcp.settings import settings
 
 # Import dependencies first to ensure global client initialization happens before other imports
@@ -73,9 +71,31 @@ if settings.cml_mcp_transport == "http":
             settings.cml_username,
         )
 
+# OTel needs to be enabled before FastMCP is imported.
+if os.getenv("ENABLE_OTEL", "false").lower() == "true" and os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", ""):
+    try:
+        from opentelemetry import trace
+        from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+        from opentelemetry.sdk.trace import TracerProvider
+        from opentelemetry.sdk.trace.export import BatchSpanProcessor
+
+        provider = TracerProvider()
+        processor = BatchSpanProcessor(OTLPSpanExporter(endpoint=f"{os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT')}"))
+        provider.add_span_processor(processor)
+        trace.set_tracer_provider(provider)
+    except ImportError:
+        logger.warning(
+            "OpenTelemetry is enabled but required packages are not installed. Install opentelemetry-sdk and"
+            "opentelemetry-exporter-otlp to enable tracing."
+        )
+    except Exception:
+        logger.exception("Failed to initialize OpenTelemetry")
+
+from fastmcp import FastMCP  # noqa: E402  # OTel must be configured before importing FastMCP
+
 # Initialize FastMCP server
 server_mcp = FastMCP(
-    name="Cisco Modeling Labs (CML)",
+    name="Cisco Modeling Labs CML",
     website_url="https://www.cisco.com/go/cml",
     # icons=[Icon(src="https://www.marcuscom.com/cml-mcp/img/cml_icon.png", mimeType="image/png", sizes=["any"])],
 )
