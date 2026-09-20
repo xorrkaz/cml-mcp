@@ -33,8 +33,9 @@ from cml_mcp.cml.simple_webserver.schemas.common import (
     UserFullName,
     UserName,
     UUID4Type,
+    BaseDBModel,
 )
-from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabDescription, LabOwner, LabTitle
+from cml_mcp.cml.simple_webserver.schemas.labs import LabDescription, LabOwner, LabTitle
 from cml_mcp.cml.simple_webserver.schemas.node_definitions import General
 
 
@@ -112,7 +113,7 @@ class ConsoleLogOutput(BaseModel, extra="forbid"):
     message: str = Field(..., description="The log message content.")
 
 
-class SimplifiedLab(Lab, extra="ignore"):
+class SimplifiedLab(BaseDBModel, extra="ignore"):
     """A simplified lab object with only essential fields."""
 
     lab_description: LabDescription = Field(default=None)  # pyright: ignore[reportInvalidTypeForm]
