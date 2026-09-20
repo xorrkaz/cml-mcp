@@ -593,7 +593,7 @@ wheels = [
 
 [[package]]
 name = "cml-mcp"
-version = "0.31.3"
+version = "0.32.0"
 source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
