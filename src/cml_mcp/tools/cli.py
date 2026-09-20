@@ -33,9 +33,9 @@ import re
 import tempfile
 
 import httpx
+from fastmcp import Context
 from fastmcp.exceptions import ToolError
 from fastmcp.telemetry import get_tracer
-from fastmcp import Context
 from virl2_client.models.cl_pyats import ClPyats, PyatsNotInstalled
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
