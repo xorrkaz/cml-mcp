@@ -26,7 +26,15 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-from cml_mcp.cml.simple_webserver.schemas.common import DefinitionID, LinuxInterfaceName, UUID4Type
+from cml_mcp.cml.simple_webserver.schemas.common import (
+    DefinitionID,
+    LabStateModel,
+    LinuxInterfaceName,
+    UserFullName,
+    UserName,
+    UUID4Type,
+)
+from cml_mcp.cml.simple_webserver.schemas.labs import Lab, LabDescription, LabOwner, LabTitle
 from cml_mcp.cml.simple_webserver.schemas.node_definitions import General
 
 
@@ -102,3 +110,14 @@ class ConsoleLogOutput(BaseModel, extra="forbid"):
 
     time: int = Field(..., description="The number of milliseconds since the node booted when this log line was recorded.")
     message: str = Field(..., description="The log message content.")
+
+
+class SimplifiedLab(Lab, extra="ignore"):
+    """A simplified lab object with only essential fields."""
+
+    lab_description: LabDescription = Field(default=None)  # pyright: ignore[reportInvalidTypeForm]
+    lab_title: LabTitle = Field(...)  # pyright: ignore[reportInvalidTypeForm]
+    owner: LabOwner = Field(default=None)  # pyright: ignore[reportInvalidTypeForm]
+    owner_username: UserName = Field(default=None, description="The owner username.")
+    owner_fullname: UserFullName = Field(default=None, description="The owner full name.")
+    state: LabStateModel = Field(...)  # pyright: ignore[reportInvalidTypeForm]

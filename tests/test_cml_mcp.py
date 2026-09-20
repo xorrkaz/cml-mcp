@@ -51,7 +51,7 @@ from cml_mcp.cml.simple_webserver.schemas.pcap import PCAPItem, PCAPStatusRespon
 from cml_mcp.cml.simple_webserver.schemas.system import SystemHealth, SystemInformation, SystemStats
 from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
 from cml_mcp.cml.simple_webserver.schemas.users import UserResponse
-from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse
+from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse, SimplifiedLab
 from tests.conftest import COMMON_TEST_LAB_TITLE
 
 
@@ -82,10 +82,10 @@ async def test_get_cml_labs(main_mcp_client: Client[FastMCPTransport], created_l
     assert len(result.data) > 0
     for lab in result.data:
         if isinstance(lab, dict):
-            lab = Lab(**lab)
-        elif not isinstance(lab, Lab):
-            lab = Lab.model_validate(lab, from_attributes=True)
-        assert isinstance(lab, Lab)
+            lab = SimplifiedLab(**lab)
+        elif not isinstance(lab, SimplifiedLab):
+            lab = SimplifiedLab.model_validate(lab, from_attributes=True)
+        assert isinstance(lab, SimplifiedLab)
 
 
 async def test_get_cml_users(main_mcp_client: Client[FastMCPTransport]):
@@ -248,7 +248,7 @@ async def test_get_annotations_for_cml_lab(main_mcp_client: Client[FastMCPTransp
     # Use the first lab's ID
     lab = labs_result.data[0]
     if isinstance(lab, dict):
-        lab = Lab(**lab)
+        lab = SimplifiedLab(**lab)
     lab_id = lab.id
 
     # Retrieve all annotations for the lab
@@ -322,7 +322,7 @@ async def test_packet_capture_operations(main_mcp_client: Client[FastMCPTranspor
     # Use the first lab's ID
     lab = labs_result.data[0]
     if isinstance(lab, dict):
-        lab = Lab(**lab)
+        lab = SimplifiedLab(**lab)
     lab_id = lab.id
 
     # Get links for the lab

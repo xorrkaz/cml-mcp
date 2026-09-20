@@ -42,6 +42,7 @@ from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
 from cml_mcp.cml_client import CMLClient
 from cml_mcp.tools.dependencies import elicit_confirmation, get_cml_client_dep
 from cml_mcp.tools.model_helpers import build_payload, field_from, lenient_construct, parse_json_arg
+from cml_mcp.types import SimplifiedLab
 
 logger = logging.getLogger("cml-mcp.tools.labs")
 
@@ -133,7 +134,7 @@ def register_tools(mcp):  # noqa: C901
             "readOnlyHint": True,
         }
     )
-    async def get_cml_labs(user: UserName | None = None) -> list[Lab]:
+    async def get_cml_labs(user: UserName | None = None) -> list[SimplifiedLab]:
         """
         List CML labs, optionally filtered by owner username.
 
@@ -164,7 +165,7 @@ def register_tools(mcp):  # noqa: C901
                 lab_details = await client.get(f"/labs/{lab}")
                 # Only include labs owned by the specified user
                 if not user or lab_details.get("owner_username") == str(user):
-                    ulabs.append(Lab(**lab_details).model_dump(exclude_unset=True))
+                    ulabs.append(SimplifiedLab(**lab_details).model_dump(exclude_unset=True))
             return ulabs
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
