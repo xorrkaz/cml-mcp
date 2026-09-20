@@ -27,13 +27,13 @@ from typing import Literal
 from pydantic import BaseModel, Field
 
 from cml_mcp.cml.simple_webserver.schemas.common import (
+    BaseDBModel,
     DefinitionID,
     LabStateModel,
     LinuxInterfaceName,
     UserFullName,
     UserName,
     UUID4Type,
-    BaseDBModel,
 )
 from cml_mcp.cml.simple_webserver.schemas.labs import LabDescription, LabOwner, LabTitle
 from cml_mcp.cml.simple_webserver.schemas.node_definitions import General

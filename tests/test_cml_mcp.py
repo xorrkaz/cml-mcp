@@ -51,7 +51,7 @@ from cml_mcp.cml.simple_webserver.schemas.pcap import PCAPItem, PCAPStatusRespon
 from cml_mcp.cml.simple_webserver.schemas.system import SystemHealth, SystemInformation, SystemStats
 from cml_mcp.cml.simple_webserver.schemas.topologies import Topology
 from cml_mcp.cml.simple_webserver.schemas.users import UserResponse
-from cml_mcp.types import SimplifiedInterfaceResponse, SuperSimplifiedNodeDefinitionResponse, SimplifiedLab
+from cml_mcp.types import SimplifiedInterfaceResponse, SimplifiedLab, SuperSimplifiedNodeDefinitionResponse
 from tests.conftest import COMMON_TEST_LAB_TITLE
 
 
