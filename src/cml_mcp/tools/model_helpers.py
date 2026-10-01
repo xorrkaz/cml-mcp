@@ -38,10 +38,15 @@ import json
 import logging
 from typing import TypeVar
 
-from pydantic import BaseModel, ValidationError
+from pydantic import AfterValidator, BaseModel, BeforeValidator, PlainValidator, ValidationError, WrapValidator
 from pydantic.fields import FieldInfo
 
 logger = logging.getLogger("cml-mcp.tools.model_helpers")
+
+# Validator wrapper types that must NOT be copied by field_from(): they run against the
+# source model's non-optional semantics (e.g. reject_newlines assumes a str, not None),
+# but flattened tool params intentionally default omitted optional fields to None.
+_VALIDATOR_METADATA_TYPES = (AfterValidator, BeforeValidator, WrapValidator, PlainValidator)
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -148,6 +153,16 @@ def field_from(model_cls: type[BaseModel], field_name: str) -> FieldInfo:
     Raises ``KeyError`` if the field doesn't exist on the model -- that's
     a programming error worth surfacing loudly.
 
+    Validator callables in the source field's metadata (``AfterValidator`` /
+    ``BeforeValidator`` / ``WrapValidator`` / ``PlainValidator`` -- e.g. CML's
+    ``reject_newlines`` on ``OneLineStr``) are dropped, not copied. Those
+    validators are written against the source model's required-field
+    semantics and may reject ``None``; flattened tool params intentionally
+    default omitted optional fields to ``None``, so copying them verbatim
+    would raise a validation error (or crash) whenever the LLM omits the
+    optional argument. Only constraint metadata (``Ge``/``Le``, ``MinLen``/
+    ``MaxLen``, pattern, etc.) is preserved.
+
     .. warning::
        Reads ``FieldInfo._attributes_set``, a Pydantic **private** attribute,
        to get only the explicitly-set kwargs (so we can drop ``default`` /
@@ -159,11 +174,12 @@ def field_from(model_cls: type[BaseModel], field_name: str) -> FieldInfo:
        the per-field constraints would stop propagating to the JSON Schema.
        Revisit this helper at every Pydantic upgrade.
     """
+
     fi = model_cls.model_fields[field_name]
     # Reconstruct from the explicitly-set attributes, minus default/factory/annotation.
     # NOTE: ``_attributes_set`` is a Pydantic private attribute -- see warning above.
     attrs = {k: v for k, v in fi._attributes_set.items() if k not in _FIELD_FROM_EXCLUDE}
     new_fi = FieldInfo(**attrs)
-    # Preserve annotated_types constraints (Ge, Le, MinLen, MaxLen, …) stored in metadata.
-    new_fi.metadata = fi.metadata[:]
+    # Preserve annotated_types constraints (Ge, Le, MinLen, MaxLen, …); drop validator callables.
+    new_fi.metadata = [m for m in fi.metadata if not isinstance(m, _VALIDATOR_METADATA_TYPES)]
     return new_fi
