@@ -11,7 +11,7 @@ from typing import Annotated
 import pytest
 from fastmcp.client import Client
 from fastmcp.client.transports import FastMCPTransport
-from pydantic import BaseModel, TypeAdapter
+from pydantic import AfterValidator, BaseModel, BeforeValidator, PlainValidator, TypeAdapter, WrapValidator
 
 from cml_mcp.cml.simple_webserver.schemas.annotations import (
     EllipseAnnotation,
@@ -26,6 +26,7 @@ from cml_mcp.cml.simple_webserver.schemas.links import LinkConditionConfiguratio
 from cml_mcp.cml.simple_webserver.schemas.nodes import NodeCreate
 from cml_mcp.cml.simple_webserver.schemas.pcap import PCAPStart
 from cml_mcp.cml.simple_webserver.schemas.users import UserCreate
+from cml_mcp.tools.model_helpers import field_from
 
 # Map flattened tool names to their source Pydantic models
 FLAT_TOOL_SCHEMAS: dict[str, type[BaseModel]] = {
@@ -194,3 +195,60 @@ async def test_constraint_coverage(main_mcp_client: Client[FastMCPTransport]):
 
     if failures:
         pytest.fail(f"Constraint drift detected ({checked_pairs} (tool, field) pairs checked):\n\n" + "\n\n".join(failures))
+
+
+# Validator wrapper types that assume the source model's required-field semantics (e.g. CML's
+# reject_newlines on OneLineStr assumes a str, not None) and must never be copied by field_from().
+_VALIDATOR_TYPES = (AfterValidator, BeforeValidator, WrapValidator, PlainValidator)
+
+
+def test_field_from_never_leaks_validator_metadata():
+    """
+    Regression test for the create_empty_lab ``owner=None`` crash: field_from() must strip
+    validator callables from the FieldInfo it returns, since flattened tool params intentionally
+    default omitted optional fields to None and the source model's validators (e.g.
+    reject_newlines) are not None-safe. Only constraint metadata (Ge/Le, MinLen/MaxLen, pattern,
+    …) should survive.
+    """
+    failures = []
+    for model in set(FLAT_TOOL_SCHEMAS.values()):
+        for field_name in model.model_fields:
+            fi = field_from(model, field_name)
+            leaked = [m for m in fi.metadata if isinstance(m, _VALIDATOR_TYPES)]
+            if leaked:
+                failures.append(f"{model.__name__}.{field_name}: leaked validator metadata {leaked!r}")
+
+    if failures:
+        pytest.fail("field_from() leaked validator callables:\n" + "\n".join(failures))
+
+
+async def test_optional_fields_accept_none(main_mcp_client: Client[FastMCPTransport]):
+    """
+    Every optional parameter built via field_from() must accept the None default an LLM gets
+    by simply omitting the argument -- i.e. the exact call shape a small/open-weight model
+    produces when it skips optional kwargs. Required params are unaffected since they have no
+    None default to validate.
+    """
+    tools = await main_mcp_client.list_tools()
+    tool_map = {tool.name: tool for tool in tools}
+
+    failures = []
+    for tool_name, source_model in FLAT_TOOL_SCHEMAS.items():
+        if tool_name not in tool_map:
+            continue  # test_schema_coverage already flags missing tools
+
+        tool_props = tool_map[tool_name].inputSchema.get("properties", {})
+        omitted = OMIT_REQUIRED.get(source_model, set())
+
+        for field_name, field_info in source_model.model_fields.items():
+            if field_name in omitted or field_name not in tool_props or field_info.is_required():
+                continue  # not an optional, exposed field
+
+            fi = field_from(source_model, field_name)
+            try:
+                TypeAdapter(Annotated[field_info.annotation | None, fi]).validate_python(None)
+            except Exception as exc:  # noqa: BLE001 - we want to report any failure, not just ValidationError
+                failures.append(f"Tool '{tool_name}' / param '{field_name}' rejected None: {exc}")
+
+    if failures:
+        pytest.fail("Optional params that reject an omitted (None) value:\n\n" + "\n\n".join(failures))
