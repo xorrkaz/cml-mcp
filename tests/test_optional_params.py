@@ -32,6 +32,7 @@ before any HTTP request is made -- see tests/test_schema_drift.py for the matchi
 schema-level checks.
 """
 
+import pytest
 from fastmcp.client import Client
 from fastmcp.client.transports import FastMCPTransport
 from mcp.types import TextContent
@@ -40,6 +41,12 @@ from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
 
 # Syntactically-valid UUID4 for link/interface ids the mock client doesn't otherwise validate.
 _FAKE_UUID = UUID4Type("90f84e38-a71c-4d57-8d90-00fa8a197385")
+
+# mock_only: the bug is a FastMCP-side argument-validation failure, identical in mock and live
+# mode, so a live server adds no coverage here. It would also create real labs/users/groups,
+# and start_packet_capture/apply_link_conditioning use a fabricated link_id that only the mock
+# client tolerates -- a live server would just 404 on it.
+pytestmark = pytest.mark.mock_only
 
 
 def _result_uuid(result) -> UUID4Type:
