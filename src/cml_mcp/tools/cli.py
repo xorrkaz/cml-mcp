@@ -62,6 +62,7 @@ def _send_cli_command_sync(
     """
     cwd = os.getcwd()  # Save the current working directory
     tracer = get_tracer()
+    pylab = None  # Tracked so the finally block can always release its SSH/pty connection, even on setup failure
     try:
         with tracer.start_as_current_span("send_cli_command.setup") as span:
             span.set_attribute("mcp.session.id", ctx.session_id)
@@ -112,6 +113,12 @@ def _send_cli_command_sync(
             span.set_attribute("send_cli_command.output_length", len(output))
         return output
     finally:
+        # Cleanup the lab to avoid leaking file descriptors.
+        if pylab is not None:
+            try:
+                pylab.cleanup()
+            except Exception:
+                logger.exception("Error cleaning up pyATS connections for node %s in lab %s", label, lab_id)
         os.chdir(cwd)  # Restore the original working directory
 
 
