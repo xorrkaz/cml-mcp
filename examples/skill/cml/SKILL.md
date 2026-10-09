@@ -7,7 +7,7 @@ description: Build, edit, and operate Cisco Modeling Labs (CML) virtual network 
 
 Build and operate CML labs through the CML MCP tools. The guidance below covers the conventions and pitfalls an agent will not infer correctly on its own. General networking knowledge (e.g., what OSPF is, how a switch works) is assumed and not repeated here.
 
-**IDs are opaque — copy them, never reconstruct them.** When a tool returns an identifier (lab, node, interface, or link UUID), pass that exact value to later calls. Never retype an ID from memory or rebuild one from context; a single altered character makes the call fail, and the corrupted value can still look well-formed, so you cannot catch the error by inspecting it. If you are not certain you have the exact value, re-fetch it with the relevant listing tool (`get_nodes_for_cml_lab`, `get_interfaces_for_node`, `get_all_links_for_lab`) rather than guessing. **One exception:** `send_cli_command` identifies its node by `label`, not UUID — see Configuration.
+**IDs are opaque — copy them, never reconstruct them.** When a tool returns an identifier (lab, node, interface, or link UUID), pass that exact value to later calls. Never retype an ID from memory or rebuild one from context; a single altered character makes the call fail, and the corrupted value can still look well-formed, so you cannot catch the error by inspecting it. If you are not certain you have the exact value, re-fetch it with the relevant listing tool (`get_nodes_for_cml_lab`, `get_interfaces_for_node`, `get_all_links_for_lab`) rather than guessing. **One exception:** `send_cli_command`/`send_cli_config_command` identify their node by `label`, not UUID — see Configuration.
 
 ## Default approach: build incrementally, not in one shot
 
@@ -62,19 +62,19 @@ For labs with distinct functional zones (Core, DMZ, Branch, etc.), group them vi
 
 Pick the tool by scenario; each row is independent:
 
-| Scenario | Tool | Node state required | Node identity arg | `config_command` flag |
-|---|---|---|---|---|
-| Initial/startup config | `configure_cml_node` | CREATED | UUID (`node_id`) | N/A |
-| Live incremental config | `send_cli_command` | BOOTED | `label` | `true` |
-| Live exec/show commands | `send_cli_command` | BOOTED | `label` | `false` (default) |
+| Scenario | Tool | Node state required | Node identity arg |
+|---|---|---|---|
+| Initial/startup config | `configure_cml_node` | CREATED | UUID (`node_id`) |
+| Live incremental config | `send_cli_config_command` | BOOTED | `label` |
+| Live exec/show commands | `send_cli_command` | BOOTED | `label` |
 
-Notes: `configure_cml_node`'s `config` arg is a plain string of CLI lines. With `send_cli_command` and `config_command=true`, send config lines _without_ `configure terminal`/`end` — the tool handles mode entry.
+Notes: `configure_cml_node`'s `config` arg is a plain string of CLI lines. With `send_cli_config_command`, send config lines _without_ `configure terminal`/`end` — the tool handles mode entry.
 
 When the user just wants a working baseline, prefer seeding startup configs on CREATED nodes, then start the lab — rather than booting everything and configuring live.
 
 **Generating the baseline:** `scripts/base_config.py` emits a minimal, valid startup config for common node types (`iol-xe`, `ioll2-xe`, and the Alpine-based `alpine`/`server`/`desktop`) — setting the hostname, a `cisco`/`cisco` admin user, and `example.com` domain. Run `uv run scripts/base_config.py --node-type <type> --hostname <name> --interface-count <n>` and feed the output to `configure_cml_node`, then layer task-specific config on top. It matters most for `iol-xe`: IOS XE drops into the interactive initial-configuration dialog on first boot unless every ethernet interface already has some config present, and the script pre-seeds those interface stanzas (grouped in modules of 4) to prevent it. Alpine-based nodes get a shell script sourced at boot, not IOS CLI — configure their IP addresses with the Linux `ip` command.
 
-**Changing config after a node has booted:** `configure_cml_node` won't work on a running node — it needs CREATED state. Two options: for incremental changes to a live device, use `send_cli_command` (this is the usual path — don't wipe just to tweak config). To replace the _startup_ config wholesale, the node must return to CREATED, which means wiping it — a destructive step: confirm with the user, then `stop_cml_node` → `wipe_cml_node` → `configure_cml_node` → `start_cml_node`.
+**Changing config after a node has booted:** `configure_cml_node` won't work on a running node — it needs CREATED state. Two options: for incremental changes to a live device, use `send_cli_config_command` (this is the usual path — don't wipe just to tweak config). To replace the _startup_ config wholesale, the node must return to CREATED, which means wiping it — a destructive step: confirm with the user, then `stop_cml_node` → `wipe_cml_node` → `configure_cml_node` → `start_cml_node`.
 
 ## Verifying and troubleshooting
 
@@ -89,7 +89,7 @@ When the user just wants a working baseline, prefer seeding startup configs on C
 ## Gotchas
 
 - `connect_two_nodes` wants **interface UUIDs**, not node UUIDs. Always `get_interfaces_for_node` first.
-- Applying config has two traps that differ by tool — node **state** (`configure_cml_node` needs CREATED, `send_cli_command` needs BOOTED) and node **identity** (`send_cli_command` takes the `label`; nearly everything else takes the UUID). See **Configuration** for the full rules.
+- Applying config has two traps that differ by tool — node **state** (`configure_cml_node` needs CREATED, `send_cli_command`/`send_cli_config_command` need BOOTED) and node **identity** (`send_cli_command`/`send_cli_config_command` take the `label`; nearly everything else takes the UUID). See **Configuration** for the full rules.
 - Valid `node_definition` values are server-specific. Call `get_cml_node_definitions` (and `get_node_definition_detail` for interface counts/defaults) instead of assuming a device exists.
 - `add_node_to_cml_lab` auto-creates default interfaces; only `add_interface_to_node` when you've exhausted them.
 - Node coordinates and most resources are optional, but **set `x`/`y` anyway** — unplaced nodes stack at the origin and produce an unreadable canvas.

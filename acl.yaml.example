@@ -10,7 +10,7 @@ users:
         disabled_tools:
             - delete_cml_lab
             - delete_cml_node
-    # jsmith is only allowed to call send_cli_command.
+    # jsmith is only allowed to call exec-mode CLI commands, never config changes.
     jsmith:
         enabled_tools:
             - send_cli_command

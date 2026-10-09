@@ -86,7 +86,7 @@ The easiest way to get started is using `uvx` with Claude Desktop (or other MCP-
 
 ## Available MCP Tools
 
-The server provides 51 MCP tools organized into the following categories:
+The server provides 52 MCP tools organized into the following categories:
 
 ### Lab Management
 
@@ -115,7 +115,8 @@ The server provides 51 MCP tools organized into the following categories:
 - **wipe_cml_node** - Wipe node data (prompts for confirmation if client supports it)
 - **delete_cml_node** - Delete a node (prompts for confirmation if client supports it)
 - **get_console_log** - Get console output history for a node; optional `console` index selects the serial port (default `0`; Docker-based nodes often use both `0` and `1`)
-- **send_cli_command** - Execute CLI commands on running nodes (requires PyATS); optional `console` index selects which serial port to use
+- **send_cli_command** - Execute exec/operational-mode CLI commands on running nodes (requires PyATS); optional `console` index selects which serial port to use
+- **send_cli_config_command** - Execute configuration-mode CLI commands on running nodes (requires PyATS); optional `console` index selects which serial port to use
 
 ### Interface & Link Management
 

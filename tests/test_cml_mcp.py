@@ -71,7 +71,7 @@ def _to_model(obj, cls):
 async def test_list_tools(main_mcp_client: Client[FastMCPTransport]):
     list_tools = await main_mcp_client.list_tools()
 
-    assert len(list_tools) == snapshot(51)
+    assert len(list_tools) == snapshot(52)
 
 
 async def test_get_cml_labs(main_mcp_client: Client[FastMCPTransport], created_lab: UUID4Type):
@@ -757,6 +757,22 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
         name="send_cli_command",
         arguments={"lab_id": lab_id, "label": "MCP Test Node 1", "commands": "ping 192.0.2.2"},
     )
+
+    _ = await main_mcp_client.call_tool(
+        name="send_cli_config_command",
+        arguments={
+            "lab_id": lab_id,
+            "label": "MCP Test Node 1",
+            "commands": "interface Ethernet0/0\ndescription set-by-send_cli_config_command",
+        },
+    )
+
+    show_result = await main_mcp_client.call_tool(
+        name="send_cli_command",
+        arguments={"lab_id": lab_id, "label": "MCP Test Node 1", "commands": "show running-config interface Ethernet0/0"},
+    )
+    assert isinstance(show_result.data, str)
+    assert "set-by-send_cli_config_command" in show_result.data
 
     pcap_status = await main_mcp_client.call_tool(
         name="check_packet_capture_status",

@@ -43,7 +43,7 @@ This guide will help you set up the CML MCP server so you can control Cisco Mode
 
 **Good news:** Basic functionality (creating labs, adding nodes, configuring devices) works great on Windows!
 
-**The catch:** If you want to execute CLI commands directly on running devices (using the `send_cli_command` tool), you'll need one of these options:
+**The catch:** If you want to execute CLI commands directly on running devices (using the `send_cli_command` / `send_cli_config_command` tools), you'll need one of these options:
 
 1. **Windows Subsystem for Linux (WSL)** - Recommended for most users
    - Install WSL2 and Ubuntu from the Microsoft Store
@@ -55,7 +55,7 @@ This guide will help you set up the CML MCP server so you can control Cisco Mode
    - Follow the [Docker instructions](#with-cli-command-support-docker) below
 
 3. **Basic installation without CLI** - Simplest option
-   - Everything works except `send_cli_command`
+   - Everything works except `send_cli_command` / `send_cli_config_command`
    - You can still configure devices, just not execute show commands interactively
    - Follow the [basic installation](#basic-installation-no-cli-support) below
 
@@ -574,7 +574,7 @@ users:
         disabled_tools:
             - delete_cml_lab
             - delete_cml_node
-    # jsmith is only allowed to call send_cli_command.
+    # jsmith is only allowed to call exec-mode CLI commands, never config changes.
     jsmith:
         enabled_tools:
             - send_cli_command
@@ -638,7 +638,7 @@ To configure ACLs, you'll need to know the exact tool names. Here are all availa
 
 **Lab Management:** `get_cml_labs`, `create_empty_lab`, `create_full_lab_topology`, `modify_cml_lab`, `set_cml_lab_permissions`, `start_cml_lab`, `stop_cml_lab`, `wipe_cml_lab`, `delete_cml_lab`, `get_cml_lab_by_title`, `download_lab_topology`, `clone_cml_lab`
 
-**Node Management:** `get_cml_node_definitions`, `get_node_definition_detail`, `add_node_to_cml_lab`, `get_nodes_for_cml_lab`, `configure_cml_node`, `start_cml_node`, `stop_cml_node`, `wipe_cml_node`, `delete_cml_node`, `get_console_log`, `send_cli_command`
+**Node Management:** `get_cml_node_definitions`, `get_node_definition_detail`, `add_node_to_cml_lab`, `get_nodes_for_cml_lab`, `configure_cml_node`, `start_cml_node`, `stop_cml_node`, `wipe_cml_node`, `delete_cml_node`, `get_console_log`, `send_cli_command`, `send_cli_config_command`
 
 **Interface & Link Management:** `add_interface_to_node`, `get_interfaces_for_node`, `connect_two_nodes`, `get_all_links_for_lab`, `apply_link_conditioning`, `start_cml_link`, `stop_cml_link`
 

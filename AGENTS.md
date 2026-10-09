@@ -48,14 +48,14 @@ Each module exposes a `register_tools(mcp)` function called from `server.py`.
 | `pcap.py` | start/stop_packet_capture, check_packet_capture_status, get_captured_packet_overview, get_packet_capture_data |
 | `users_groups.py` | get_cml_users/groups, create/delete_cml_user/group |
 | `system.py` | get_cml_information, get_cml_status, get_cml_statistics, get_cml_licensing_details |
-| `cli.py` | send_cli_command (PyATS/Unicon), get_console_log |
+| `cli.py` | send_cli_command, send_cli_config_command (PyATS/Unicon), get_console_log |
 
 ## Key Conventions
 
 - **Object arguments** — Most tools use flat primitive parameters (str, int, bool, etc.) for better LLM compatibility, especially with smaller / open-weight models. Only `create_full_lab_topology` still accepts `Model | dict | str` and uses `model_helpers.lenient_construct` to strip unknown fields and parse JSON-encoded strings (helpful for clients like AI Canvas).
 - **Destructive tools** — `wipe_*` and `delete_*` tools route confirmation through `elicit_confirmation()` in `tools/dependencies.py`. **Elicitation is currently disabled** (the helper returns `True` unconditionally) because several MCP clients — notably GitHub Copilot — either don't support `ctx.elicit()` cleanly or duplicate the prompt. While disabled, every destructive tool relies entirely on the `CRITICAL:` line in its docstring to push the LLM to ask the user for confirmation. Keep using `await elicit_confirmation(ctx, ...)` in new destructive tools so re-enabling later is a one-line change.
 - **Admin-only tools** — `create_cml_user`, `delete_cml_user`, `create_cml_group`, `delete_cml_group` check `client.is_admin()` at runtime and raise if the caller is not an admin.
-- **CLI commands** — `send_cli_command` uses PyATS (via `virl2_client.ClPyats`). `config_command=true` enters configuration mode; omit `configure terminal` / `end`. `label` is the node label, not the UUID. Both `send_cli_command` and `get_console_log` accept an optional `console` integer (default `0`) to select which serial port to use; Docker-based nodes often expose a second console on index `1`.
+- **CLI commands** — `send_cli_command` (exec/operational mode) and `send_cli_config_command` (configuration mode) both use PyATS (via `virl2_client.ClPyats`) and share the `_run_cli_command_sync` helper in `tools/cli.py`. `send_cli_config_command` enters configuration mode automatically; omit `configure terminal` / `end`. `label` is the node label, not the UUID. Both tools, plus `get_console_log`, accept an optional `console` integer (default `0`) to select which serial port to use; Docker-based nodes often expose a second console on index `1`. The sync helper always calls `pylab.cleanup()` in a `finally` block -- `ClPyats` builds a fresh testbed/connection per call and never reuses it, so skipping cleanup leaks an SSH/pty file descriptor per invocation.
 - **Packet capture data** — `get_packet_capture_data` returns a base64-encoded PCAP binary. Decode and save as `.pcap` for Wireshark/tcpdump.
 
 ## Environment Variables
