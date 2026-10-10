@@ -72,13 +72,25 @@ class ThreadSafeCache:
             await expired_client.close()
         return None
 
-    async def set(self, key: str, value: CMLClient) -> None:
-        """Store value in cache with current timestamp, closing any displaced entry."""
+    async def set(self, key: str, value: CMLClient) -> CMLClient:
+        """Store value, or return the existing client if another request won the race.
+
+        Concurrent requests can both miss the same key and initialize a client.
+        Keep the first cached client and close the redundant new one, rather than
+        replacing and closing a client that another request may already be using.
+        """
         async with self._lock:
             old_entry = self._cache.get(key)
-            self._cache[key] = CacheEntry(value=value)
-        if old_entry and old_entry.value is not value:
-            await old_entry.value.close()
+            if old_entry and not old_entry.is_expired(self._ttl):
+                winner = old_entry.value
+                displaced = value if value is not winner else None
+            else:
+                self._cache[key] = CacheEntry(value=value)
+                winner = value
+                displaced = old_entry.value if old_entry and old_entry.value is not value else None
+        if displaced is not None:
+            await displaced.close()
+        return winner
 
     async def clear(self) -> None:
         """Clear all cache entries and close all sessions.

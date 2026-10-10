@@ -367,7 +367,7 @@ class CustomHttpRequestMiddleware(Middleware):
                 logger.warning("Authentication failed: %s", e)
                 raise McpError(ErrorData(message=f"Unauthorized: {str(e)}", code=-31002))
 
-            await cml_client_cache.set(client_cache_key, request_client)
+            request_client = await cml_client_cache.set(client_cache_key, request_client)
 
         # Store the client in context variable for this request
         _request_client.set(request_client)
