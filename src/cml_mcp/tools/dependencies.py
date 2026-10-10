@@ -31,7 +31,7 @@ import logging
 from typing import Any, Optional
 
 from fastmcp import Context
-from mcp.shared.exceptions import McpError
+from fastmcp.exceptions import McpError
 from mcp.types import INVALID_REQUEST, METHOD_NOT_FOUND
 
 from cml_mcp.cml_client import CMLClient

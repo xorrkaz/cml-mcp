@@ -101,6 +101,7 @@ def register_tools(mcp):  # noqa: C901
                         node["operational"]["image_definition"] = None
                     if node["operational"].get("serial_consoles") is None:
                         node["operational"]["serial_consoles"] = []
+                # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
                 rnodes.append(Node(**node).model_dump(exclude_unset=True))
             return rnodes
         except httpx.HTTPStatusError as e:

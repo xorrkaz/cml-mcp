@@ -165,6 +165,7 @@ def register_tools(mcp):  # noqa: C901
                 lab_details = await client.get(f"/labs/{lab}")
                 # Only include labs owned by the specified user
                 if not user or lab_details.get("owner_username") == str(user):
+                    # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
                     ulabs.append(SimplifiedLab(**lab_details).model_dump(exclude_unset=True))
             return ulabs
         except httpx.HTTPStatusError as e:
@@ -507,6 +508,7 @@ def register_tools(mcp):  # noqa: C901
             for lab_id in labs:
                 lab = await client.get(f"/labs/{lab_id}")
                 if lab["lab_title"] == str(title):
+                    # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
                     return Lab(**lab).model_dump(exclude_unset=True)
             raise ValueError(f"Lab with title '{title}' not found.")
         except httpx.HTTPStatusError as e:

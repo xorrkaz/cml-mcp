@@ -54,7 +54,7 @@ async def add_interface(lab_id: UUID4Type, payload: dict, client: CMLClient) -> 
         list[SimplifiedInterfaceResponse]: The added interfaces details.
     """
     resp = await client.post(f"/labs/{lab_id}/interfaces", data=payload)
-    # See DEVELOPMENT.md "Object-typed return values": dump after construction so FastMCP doesn't double-marshal.
+    # See DEVELOPMENT.md "Object-typed return values" for why these are dicts, not model instances.
     if isinstance(resp, dict):
         return [SimplifiedInterfaceResponse(**resp).model_dump(exclude_unset=True)]
 
@@ -128,7 +128,7 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         try:
             resp = await client.get(f"/labs/{lab_id}/nodes/{node_id}/interfaces", params={"data": True, "operational": False})
-            # See DEVELOPMENT.md "Object-typed return values": dump after construction so FastMCP doesn't double-marshal.
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return [SimplifiedInterfaceResponse(**iface).model_dump(exclude_unset=True) for iface in resp]
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")

@@ -31,8 +31,7 @@ from typing import Annotated
 
 import httpx
 from fastmcp import Context
-from fastmcp.exceptions import ToolError
-from mcp.shared.exceptions import McpError
+from fastmcp.exceptions import McpError, ToolError
 from mcp.types import INVALID_REQUEST, METHOD_NOT_FOUND
 
 from cml_mcp.cml.simple_webserver.schemas.common import GroupName, UserFullName, UserName, UUID4Type
@@ -67,6 +66,7 @@ def register_tools(mcp):  # noqa: C901
         client = get_cml_client_dep()
         try:
             users = await client.get("/users")
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return [UserResponse(**user).model_dump(exclude_unset=True) for user in users]
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -202,6 +202,7 @@ def register_tools(mcp):  # noqa: C901
         client = get_cml_client_dep()
         try:
             groups = await client.get("/groups")
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return [GroupResponse(**group).model_dump(exclude_unset=True) for group in groups]
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")

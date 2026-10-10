@@ -17,7 +17,7 @@ classifiers = [
 ]
 dependencies = [
     "httpx",
-    "fastmcp>=3.1.1,<4",
+    "fastmcp>=3.1.1,<5",
     "fastapi",
     "pydantic_strict_partial",
     "typer",
@@ -68,3 +68,21 @@ asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
 # Enable this for debugging, but it will make the output very verbose
 log_cli = false
+filterwarnings = [
+    # FastMCP 4 serializes tool return values with
+    # TypeAdapter(return_type).dump_python(value, mode="json"). Tools intentionally return
+    # Model(**raw).model_dump(exclude_unset=True) (a plain dict) instead of the model instance
+    # itself -- see DEVELOPMENT.md "Object-typed return values" -- because several auto-generated
+    # CML schemas declare a field as `SomeModel = Field(default=None)` (non-Optional type, None
+    # default); dumping the real instance would serialize unset fields as `null` and fail FastMCP's
+    # output-schema validation. Returning a dict instead is correct but not what a model-typed
+    # TypeAdapter expects, so Pydantic logs this warning on every such call. It is expected noise.
+    "ignore:Pydantic serializer warnings:UserWarning",
+    # PyATS/Unicon opens CLI connections via pexpect's pty.fork(), which CPython 3.12 flags
+    # whenever it runs in a process with other live threads -- true here because
+    # send_cli_command/send_cli_config_command/get_console_log run _run_cli_command_sync via
+    # asyncio.to_thread (see tools/cli.py) to avoid blocking the event loop. The forked child
+    # execs immediately, so the deadlock window is negligible; this is expected and not
+    # something cml-mcp can fix (PyATS/Unicon owns the pty.fork() call).
+    "ignore:This process \\(pid=\\d+\\) is multi-threaded, use of forkpty\\(\\) may lead to deadlocks in the child\\.:DeprecationWarning",
+]

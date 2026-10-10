@@ -140,7 +140,7 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         try:
             status = await client.get(f"/labs/{lab_id}/links/{link_id}/capture/status")
-            # See DEVELOPMENT.md "Object-typed return values": dump after construction so FastMCP doesn't double-marshal.
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return PCAPStatusResponse(**status).model_dump(exclude_unset=True)
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -165,6 +165,7 @@ def register_tools(mcp):
         try:
             key = await get_capture_key(lab_id, link_id, client)
             packets = await client.get(f"/pcap/{key}/packets")
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return [PCAPItem(**packet).model_dump(exclude_unset=True) for packet in packets]
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")

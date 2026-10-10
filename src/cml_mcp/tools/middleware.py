@@ -34,11 +34,10 @@ from pathlib import Path
 from typing import Any, Sequence
 
 import yaml
-from fastmcp.exceptions import ToolError
+from fastmcp.exceptions import McpError, ToolError
 from fastmcp.server.dependencies import get_http_headers
 from fastmcp.server.middleware import Middleware, MiddlewareContext
 from fastmcp.tools.base import Tool
-from mcp.shared.exceptions import McpError
 from mcp.types import ErrorData
 from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
 

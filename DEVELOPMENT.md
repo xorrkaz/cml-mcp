@@ -181,11 +181,15 @@ async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node]:
     return [Node(**n).model_dump(exclude_unset=True) for n in raw_nodes]
 ```
 
-**Why the mismatch?** FastMCP double-marshals returned Pydantic instances (Pydantic instance → dict → JSON via FastMCP's own serializer), and some auto-generated CML schemas validate fields they cannot faithfully round-trip through that second pass. Constructing the model coerces/validates incoming data; `model_dump` then emits a stable dict that FastMCP serializes verbatim. Keeping the annotation as the Pydantic model still gives MCP clients a rich, typed output schema for tool discovery.
+**Why the mismatch?** Several auto-generated CML schemas (`src/cml_mcp/cml/`) declare a field as `SomeModel = Field(default=None)` -- the Python type annotation is the bare model (not `SomeModel | None`), but the default value is `None`. Pydantic allows this at the field-definition level (defaults are not validated against the field's type unless `validate_default=True`), but the field's generated JSON Schema stays non-nullable (`"type": "object"`, no `"null"` in `anyOf`). FastMCP (v4+) serializes a tool's return value with a *single* pass -- `TypeAdapter(return_type).dump_python(value, mode="json")` -- using the function's declared return-type annotation, and the MCP client additionally revalidates the resulting structured content against the tool's output JSON Schema. If an unset field like this is included as `null` (which happens automatically when you `model_dump()` a full instance, or return the raw instance and let FastMCP dump it), that revalidation step fails with an error like `None is not of type 'object'` -- a hard failure, not just a warning. (`NodeDefinition.pyats` is a real example: see `src/cml_mcp/cml/simple_webserver/schemas/node_definitions.py`.)
+
+Constructing the model validates/coerces the incoming CML response data; `.model_dump(exclude_unset=True)` then drops any field the CML server didn't actually return, so the dict handed to FastMCP never contains one of these invalid `null`s for a field the output schema requires to be an object. Keeping the annotation as the Pydantic model still gives MCP clients a rich, typed output schema for tool discovery.
+
+This intentional annotation/runtime mismatch (dict at runtime, model in the type annotation) makes `TypeAdapter(Model).dump_python(dict_value, ...)` log a cosmetic `PydanticSerializationUnexpectedValue` `UserWarning` on every call, since a model-typed `TypeAdapter` expects an instance, not a dict. This is expected and is silenced in `pyproject.toml`'s `[tool.pytest.ini_options]` `filterwarnings`. Do not try to "fix" it by returning the raw instance instead -- that reintroduces the output-schema validation failure described above.
 
 **Dump-flag guidance:**
 
-- `exclude_unset=True` — always; drops fields the server did not set, keeping the payload tight.
+- `exclude_unset=True` — always; drops fields the server did not set, keeping the payload tight and avoiding the non-nullable-field problem above.
 - `exclude_none=True` — add when the response model declares many `Optional[...]` fields whose `None` value carries no signal.
 - `exclude_defaults=True` — only when defaults are clearly noise (rare; risk: hides a server value that happens to equal the default).
 

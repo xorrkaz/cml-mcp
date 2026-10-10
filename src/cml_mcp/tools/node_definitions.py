@@ -51,6 +51,7 @@ async def get_node_def_details(definition_id: DefinitionID, client: CMLClient) -
         NodeDefinition: The node definition details.
     """
     node_definition = await client.get(f"/node_definitions/{definition_id}", params={"json": True})
+    # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
     return NodeDefinition(**node_definition).model_dump(exclude_unset=True)
 
 
@@ -79,6 +80,7 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         try:
             node_definitions = await client.get("/simplified_node_definitions")
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return [SuperSimplifiedNodeDefinitionResponse(**nd).model_dump(exclude_unset=True) for nd in node_definitions]
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")

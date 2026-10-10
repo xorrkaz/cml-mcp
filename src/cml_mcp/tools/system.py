@@ -60,6 +60,7 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         try:
             info = await client.get("/system_information")
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return SystemInformation(**info).model_dump(exclude_unset=True)
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -85,6 +86,7 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         try:
             status = await client.get("/system_health")
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return SystemHealth(**status).model_dump(exclude_unset=True)
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
@@ -111,6 +113,7 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         try:
             stats = await client.get("/system_stats")
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return SystemStats(**stats).model_dump(exclude_unset=True)
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")

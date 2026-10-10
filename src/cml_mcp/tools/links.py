@@ -100,6 +100,7 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         try:
             resp = await client.get(f"/labs/{lab_id}/links", params={"data": True})
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return [LinkResponse(**link).model_dump(exclude_unset=True) for link in resp]
         except httpx.HTTPStatusError as e:
             raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")

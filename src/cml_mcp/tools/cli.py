@@ -60,6 +60,12 @@ def _run_cli_command_sync(
     Synchronous helper shared by send_cli_command and send_cli_config_command to isolate
     blocking operations in a thread. This prevents os.chdir() race conditions and event
     loop blocking.
+
+    Note: PyATS/Unicon opens device connections via pexpect's pty.fork(), which triggers a
+    "process is multi-threaded, use of forkpty() may lead to deadlocks in the child" DeprecationWarning
+    whenever this runs (as it always does here) alongside the asyncio event loop thread. The forked
+    child execs immediately, so the deadlock window is negligible; this is expected and filtered in
+    pyproject.toml rather than fixable here (PyATS/Unicon owns the pty.fork() call).
     """
 
     cwd = os.getcwd()  # Save the current working directory
@@ -168,8 +174,7 @@ def register_tools(mcp):
                 continue
             _, log_time, msg = line.split("|", 2)
             return_lines.append(ConsoleLogOutput(time=int(log_time), message=msg))
-        # See DEVELOPMENT.md "Object-typed return values": dump after construction so FastMCP doesn't double-marshal.
-        return [entry.model_dump(exclude_unset=True) for entry in return_lines]
+        return return_lines
 
     @mcp.tool(
         annotations={"title": "Send Exec CLI Command to CML Node", "readOnlyHint": False, "destructiveHint": False},

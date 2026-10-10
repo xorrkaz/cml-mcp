@@ -113,7 +113,7 @@ def register_tools(mcp):
                 if model is None:
                     raise ToolError(f"Unknown annotation type: {ann_type!r}. " f"Expected one of {sorted(_ANNOTATION_RESPONSE_TYPES)}.")
                 annotation = _normalize_border_style_fields(annotation)
-                # See model_helpers.py / DEVELOPMENT.md: dump after construction to bypass FastMCP double marshalling.
+                # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
                 ann_list.append(model(**annotation).model_dump(exclude_unset=True))
             return ann_list
         except httpx.HTTPStatusError as e:
