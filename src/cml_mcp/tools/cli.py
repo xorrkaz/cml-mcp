@@ -56,10 +56,6 @@ def _run_cli_command_sync(
     ctx: Context,
 ) -> str:
     """
-    Synchronous helper shared by send_cli_command and send_cli_config_command to isolate
-    blocking operations in a thread. A process-wide lock protects os.chdir() because the
-    working directory is shared across threads.
-
     Note: PyATS/Unicon opens device connections via pexpect's pty.fork(), which triggers a
     "process is multi-threaded, use of forkpty() may lead to deadlocks in the child" DeprecationWarning
     whenever this runs (as it always does here) alongside the asyncio event loop thread. The forked
