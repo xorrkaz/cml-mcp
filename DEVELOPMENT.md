@@ -86,15 +86,11 @@ The project uses [`just`](https://github.com/casey/just) as its task runner. **A
 | `just test [args]` | Run the offline test suite (mocks). Pass pytest args, e.g. `just test "-x -k packet"` |
 | `just test-live [args]` | Run tests against a real CML server (`USE_MOCKS=false`) |
 | `just check` | `black --check`, `isort --check-only`, `flake8` over `src/` and `tests/` |
+| `just format` | Auto-fix formatting drift (`black`, `isort`) |
 | `just build` | Build wheel + multi-arch Docker image |
 | `just clean` / `just fresh` | Remove caches/venv (prompts for confirmation) |
 
-If `just check` reports formatting drift, fix it with:
-
-```sh
-uv run black src/ tests/
-uv run isort src/ tests/
-```
+If `just check` reports formatting drift, fix it with `just format`.
 
 The line length is **140**. Auto-generated schemas under `src/cml_mcp/cml/` are excluded from formatting and lint.
 
@@ -285,12 +281,7 @@ See [tests/README.md](tests/README.md) and [tests/QUICK_START.md](tests/QUICK_ST
 
 All three are configured in [pyproject.toml](pyproject.toml). Auto-generated schemas under `src/cml_mcp/cml/` are excluded.
 
-`just check` runs all three in `--check` mode. To auto-fix formatting:
-
-```sh
-uv run black src/ tests/
-uv run isort src/ tests/
-```
+`just check` runs all three in `--check` mode. To auto-fix formatting, run `just format`.
 
 ## Project Structure
 

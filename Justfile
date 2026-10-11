@@ -20,6 +20,12 @@ check:
     uv run isort --check-only src/ tests/
     uv run flake8 src/ tests/
 
+# Auto-fix formatting (black, isort)
+[group('qa')]
+format:
+    uv run black src/ tests/
+    uv run isort src/ tests/
+
 [group('build')]
 build:
     uv build
