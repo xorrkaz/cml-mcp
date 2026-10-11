@@ -30,8 +30,6 @@ import asyncio
 import logging
 import os
 import re
-import tempfile
-import threading
 
 import httpx
 from fastmcp import Context
@@ -46,12 +44,6 @@ from cml_mcp.tools.dependencies import _pyats_auth_pass, _pyats_password, _pyats
 from cml_mcp.types import ConsoleLogOutput
 
 logger = logging.getLogger("cml-mcp.tools.cli")
-
-# PyATS requires a writable working directory, but os.chdir() changes the
-# process-wide directory. Serialize CLI operations so concurrent requests
-# cannot interfere with each other's working-directory save/restore.
-# XXX When we have direct APIs for CLI commands, this lock can be revisited.
-_CLI_COMMAND_LOCK = threading.Lock()
 
 
 def _run_cli_command_sync(
@@ -75,67 +67,63 @@ def _run_cli_command_sync(
     pyproject.toml rather than fixable here (PyATS/Unicon owns the pty.fork() call).
     """
 
-    with _CLI_COMMAND_LOCK:
-        cwd = os.getcwd()  # Save the current working directory after acquiring the lock.
-        tracer = get_tracer()
-        pylab = None  # Tracked so the finally block can always release its SSH/pty connection, even on setup failure
-        try:
-            with tracer.start_as_current_span("cli_command.setup") as span:
-                span.set_attribute("mcp.session.id", ctx.session_id)
-                os.chdir(tempfile.gettempdir())  # Change to a writable directory (required by pyATS/ClPyats)
-                lab = client.vclient.join_existing_lab(str(lab_id))  # Join the existing lab using the provided lab ID
-                try:
-                    pylab = ClPyats(lab)  # Create a ClPyats object for interacting with the lab
-                    pylab.sync_testbed(client.vclient.username, client.vclient.password)  # Sync the testbed with CML credentials
+    tracer = get_tracer()
+    pylab = None  # Tracked so the finally block can always release its SSH/pty connection, even on setup failure
+    try:
+        with tracer.start_as_current_span("cli_command.setup") as span:
+            span.set_attribute("mcp.session.id", ctx.session_id)
+            lab = client.vclient.join_existing_lab(str(lab_id))  # Join the existing lab using the provided lab ID
+            try:
+                pylab = ClPyats(lab)  # Create a ClPyats object for interacting with the lab
+                pylab.sync_testbed(client.vclient.username, client.vclient.password)  # Sync the testbed with CML credentials
 
-                    # Set the credentials for all devices other than the Terminal Server
-                    # For HTTP transport: use contextvars (request-scoped, prevents race conditions)
-                    # For stdio transport: fall back to environment variables
-                    for device in pylab._testbed.devices.values():
-                        if device.name != "terminal_server":
-                            device.credentials.default.username = _pyats_username.get() or os.getenv("PYATS_USERNAME", "cisco")
-                            device.credentials.default.password = _pyats_password.get() or os.getenv("PYATS_PASSWORD", "cisco")
-                            device.credentials.enable.password = (
-                                _pyats_auth_pass.get() or os.getenv("PYATS_AUTH_PASS") or device.credentials.default.password
-                            )
+                # Set the credentials for all devices other than the Terminal Server
+                # For HTTP transport: use contextvars (request-scoped, prevents race conditions)
+                # For stdio transport: fall back to environment variables
+                for device in pylab._testbed.devices.values():
+                    if device.name != "terminal_server":
+                        device.credentials.default.username = _pyats_username.get() or os.getenv("PYATS_USERNAME", "cisco")
+                        device.credentials.default.password = _pyats_password.get() or os.getenv("PYATS_PASSWORD", "cisco")
+                        device.credentials.enable.password = (
+                            _pyats_auth_pass.get() or os.getenv("PYATS_AUTH_PASS") or device.credentials.default.password
+                        )
 
-                except PyatsNotInstalled:
-                    raise ImportError(
-                        "PyATS and Genie are required to send commands to running devices.  See the documentation on how to install them."
-                    )
+            except PyatsNotInstalled:
+                raise ImportError(
+                    "PyATS and Genie are required to send commands to running devices.  See the documentation on how to install them."
+                )
 
-                if console != 0:
-                    pylab.switch_serial_console(str(label), console)
+            if console != 0:
+                pylab.switch_serial_console(str(label), console)
 
-            with tracer.start_as_current_span("cli_command.execute") as span:
-                span.set_attribute("mcp.session.id", ctx.session_id)
-                span.set_attribute("cli_command.num_commands", len(commands.splitlines()))
+        with tracer.start_as_current_span("cli_command.execute") as span:
+            span.set_attribute("mcp.session.id", ctx.session_id)
+            span.set_attribute("cli_command.num_commands", len(commands.splitlines()))
 
-                if configure_mode:
-                    # Send the command as a configuration command
-                    results = pylab.run_config_command(str(label), commands)
-                else:
-                    # Send the command as an exec/operational command
-                    results = pylab.run_command(str(label), commands)
+            if configure_mode:
+                # Send the command as a configuration command
+                results = pylab.run_config_command(str(label), commands)
+            else:
+                # Send the command as an exec/operational command
+                results = pylab.run_command(str(label), commands)
 
-                # Genie may return dict output where the key is the command and the value is its output.
-                if isinstance(results, dict):
-                    output = ""
-                    for cmd, cmd_output in results.items():
-                        output += f"Command: {cmd}\nOutput:\n{cmd_output}\n"
-                else:
-                    output = str(results)
+            # Genie may return dict output where the key is the command and the value is its output.
+            if isinstance(results, dict):
+                output = ""
+                for cmd, cmd_output in results.items():
+                    output += f"Command: {cmd}\nOutput:\n{cmd_output}\n"
+            else:
+                output = str(results)
 
-                span.set_attribute("cli_command.output_length", len(output))
-            return output
-        finally:
-            # Cleanup the lab to avoid leaking file descriptors.
-            if pylab is not None:
-                try:
-                    pylab.cleanup()
-                except Exception:
-                    logger.exception("Error cleaning up pyATS connections for node %s in lab %s", label, lab_id)
-            os.chdir(cwd)  # Restore the original working directory before releasing the lock.
+            span.set_attribute("cli_command.output_length", len(output))
+        return output
+    finally:
+        # Cleanup the lab to avoid leaking file descriptors.
+        if pylab is not None:
+            try:
+                pylab.cleanup()
+            except Exception:
+                logger.exception("Error cleaning up pyATS connections for node %s in lab %s", label, lab_id)
 
 
 def register_tools(mcp):
