@@ -97,10 +97,10 @@ def register_tools(mcp):
             await client.put(f"/labs/{lab_id}/links/{link_id}/capture/start", data=payload)
             return True
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error starting packet capture on link %s in lab %s", link_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={"title": "Stop a Packet Capture on a Link", "readOnlyHint": False, "destructiveHint": False},
@@ -119,10 +119,10 @@ def register_tools(mcp):
             await client.put(f"/labs/{lab_id}/links/{link_id}/capture/stop")
             return True
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error stopping packet capture on link %s in lab %s", link_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={"title": "Check Packet Capture Status on a Link", "readOnlyHint": True},
@@ -143,10 +143,10 @@ def register_tools(mcp):
             # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return PCAPStatusResponse(**status).model_dump(exclude_unset=True)
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error checking packet capture status on link %s in lab %s", link_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={"title": "Get packet capture overview", "readOnlyHint": True},
@@ -168,10 +168,10 @@ def register_tools(mcp):
             # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return [PCAPItem(**packet).model_dump(exclude_unset=True) for packet in packets]
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting packet capture overview on link %s in lab %s", link_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={"title": "Get Full Packets from a Packet Capture", "readOnlyHint": True},
@@ -197,7 +197,7 @@ def register_tools(mcp):
             encoded_pcap = base64.b64encode(pcap_data).decode("utf-8")
             return encoded_pcap
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting packet capture data from link %s in lab %s", link_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e

@@ -117,10 +117,10 @@ def register_tools(mcp):
                 ann_list.append(model(**annotation).model_dump(exclude_unset=True))
             return ann_list
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting annotations for lab %s", lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     # Source schema: TextAnnotation (cml/simple_webserver/schemas/annotations.py)
     # Exposed: x1, y1, border_color, border_style, color, thickness, z_index, rotation,
@@ -190,10 +190,10 @@ def register_tools(mcp):
             resp = await client.post(f"/labs/{lab_id}/annotations", data=_wire_border_style(payload))
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error adding text annotation to lab %s", lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     # Source schema: RectangleAnnotation (cml/simple_webserver/schemas/annotations.py)
     # Exposed: x1, y1, x2, y2, border_color, border_style, color, thickness, z_index, rotation, border_radius
@@ -256,10 +256,10 @@ def register_tools(mcp):
             resp = await client.post(f"/labs/{lab_id}/annotations", data=_wire_border_style(payload))
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error adding rectangle annotation to lab %s", lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     # Source schema: EllipseAnnotation (cml/simple_webserver/schemas/annotations.py)
     # Exposed: x1, y1, x2, y2, border_color, border_style, color, thickness, z_index, rotation
@@ -320,10 +320,10 @@ def register_tools(mcp):
             resp = await client.post(f"/labs/{lab_id}/annotations", data=_wire_border_style(payload))
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error adding ellipse annotation to lab %s", lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     # Source schema: LineAnnotation (cml/simple_webserver/schemas/annotations.py)
     # Exposed: x1, y1, x2, y2, border_color, border_style, color, thickness, z_index, line_start, line_end
@@ -388,10 +388,10 @@ def register_tools(mcp):
             resp = await client.post(f"/labs/{lab_id}/annotations", data=_wire_border_style(payload))
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error adding line annotation to lab %s", lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={
@@ -423,7 +423,7 @@ def register_tools(mcp):
             await client.delete(f"/labs/{lab_id}/annotations/{annotation_id}")
             return True
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error deleting annotation %s from lab %s", annotation_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e

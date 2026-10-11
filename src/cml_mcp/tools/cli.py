@@ -168,11 +168,11 @@ def register_tools(mcp):
             resp = await client.get(f"/labs/{lab_id}/nodes/{node_id}/consoles/{console}/log")
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 400:
-                raise ToolError(f"Console index {console} does not exist for node {node_id}")
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+                raise ToolError(f"Console index {console} does not exist for node {node_id}") from e
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting console log for node %s in lab %s", node_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
         lines = re.split(r"\r?\n", resp)
         for line in lines:
             if not line.startswith("|"):
@@ -229,7 +229,7 @@ def register_tools(mcp):
             return output
         except Exception as e:
             logger.exception("Error sending CLI command to node %s in lab %s", label, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={"title": "Send Configuration CLI Command to CML Node", "readOnlyHint": False, "destructiveHint": True},
@@ -273,4 +273,4 @@ def register_tools(mcp):
             return output
         except Exception as e:
             logger.exception("Error sending CLI config command to node %s in lab %s", label, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e

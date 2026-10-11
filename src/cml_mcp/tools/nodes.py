@@ -105,10 +105,10 @@ def register_tools(mcp):  # noqa: C901
                 rnodes.append(Node(**node).model_dump(exclude_unset=True))
             return rnodes
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting nodes for CML lab %s", lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     # Source schema: NodeCreate (cml/simple_webserver/schemas/nodes.py)
     # Exposed: label, x, y, node_definition, image_definition, ram, cpus, cpu_limit, data_volume, boot_disk_size,
@@ -181,10 +181,10 @@ def register_tools(mcp):  # noqa: C901
             )
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error adding CML node to lab %s", lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={"title": "Configure a CML Node", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True},
@@ -212,10 +212,10 @@ def register_tools(mcp):  # noqa: C901
             await client.patch(f"/labs/{lab_id}/nodes/{node_id}", data=payload)
             return True
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error configuring CML node %s in lab %s", node_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={"title": "Stop a CML Node", "readOnlyHint": False, "destructiveHint": False, "idempotentHint": True},
@@ -234,10 +234,10 @@ def register_tools(mcp):  # noqa: C901
             await stop_node(lab_id, node_id, client)
             return True
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error stopping CML node %s in lab %s", node_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={
@@ -272,10 +272,10 @@ def register_tools(mcp):  # noqa: C901
                     await asyncio.sleep(3)
             return True
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error starting CML node %s in lab %s", node_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={"title": "Wipe a CML Node", "readOnlyHint": False, "destructiveHint": True, "idempotentHint": True},
@@ -299,10 +299,10 @@ def register_tools(mcp):  # noqa: C901
             await wipe_node(lab_id, node_id, client)
             return True
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error wiping CML node %s in lab %s", node_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={"title": "Delete a node from a CML lab.", "readOnlyHint": False, "destructiveHint": True},
@@ -328,7 +328,7 @@ def register_tools(mcp):  # noqa: C901
             await client.delete(f"/labs/{lab_id}/nodes/{node_id}")
             return True
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error deleting CML node %s in lab %s", node_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e

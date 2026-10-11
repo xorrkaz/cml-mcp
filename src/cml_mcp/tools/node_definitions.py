@@ -83,10 +83,10 @@ def register_tools(mcp):
             # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return [SuperSimplifiedNodeDefinitionResponse(**nd).model_dump(exclude_unset=True) for nd in node_definitions]
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting CML node definitions")
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={
@@ -108,7 +108,7 @@ def register_tools(mcp):
         try:
             return await get_node_def_details(definition_id, client)
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting node definition detail for %s", definition_id)
-            raise ToolError(e)
+            raise ToolError(e) from e

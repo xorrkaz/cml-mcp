@@ -101,10 +101,10 @@ def register_tools(mcp):
             )
             return await add_interface(lab_id, payload, client)
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error adding interface to node %s in lab %s", node, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={
@@ -131,7 +131,7 @@ def register_tools(mcp):
             # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return [SimplifiedInterfaceResponse(**iface).model_dump(exclude_unset=True) for iface in resp]
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting interfaces for node %s in lab %s", node_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
