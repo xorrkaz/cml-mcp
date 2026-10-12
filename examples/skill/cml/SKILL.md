@@ -16,11 +16,18 @@ Build a lab by composing small, verifiable steps. **Do not** try to hand-assembl
 Default sequence:
 
 1. `create_empty_lab` (title, optional description/notes) → capture the returned `lab_id`. Lab notes are rendered as Markdown in the CML UI, so record the topology's purpose / high-level description there — it's what a human sees when they open the lab.
-2. `get_cml_node_definitions` once, to learn valid `node_definition` values for this server. Do not guess names like `csr1000v`/`iosv` — servers differ in what's installed. If `get_cml_node_definitions` returns an error or an empty list, stop immediately and tell the user: the server returned no node definitions and you cannot proceed without them. Do not guess any `node_definition` value. **If the device type the user asked for isn't in the returned list, stop and tell them** — name the closest available definitions and let them choose. Never silently substitute a different device type. **If `get_cml_node_definitions` returns 2 or more definitions whose names or descriptions could reasonably satisfy the user's request** (i.e., they are the same device family or serve the same functional role — e.g. "a Cisco router" matching `iol-xe`, `iosv`, `csr1000v`, `cat8000v`), list every matching definition by its exact name and ask the user to pick one before proceeding. Do not silently choose the first match. For which definition to recommend as the default among installed options (e.g. `iol-xe` for routers, `ioll2-xe` for switches), see `references/node_selection_guidance.md`.
+2. `get_cml_node_definitions` once, to learn valid `node_definition` values for this server. Do not guess names like `csr1000v`/`iosv` — servers differ in what's installed.
+   1. Call the tool and check the result. If it returns an error or an empty list, stop immediately and tell the user: the server returned no node definitions and you cannot proceed without them. Do not guess any `node_definition` value.
+   2. **If the device type the user asked for isn't in the returned list, stop and tell them** — name the closest available definitions and let them choose. Never silently substitute a different device type.
+   3. **If two or more definitions share the same vendor and device family as the requested device** (matching the family name in the definition name or the description's product line — e.g. "a Cisco router" matching `iol-xe`, `iosv`, `csr1000v`, `cat8000v`), list each one by its exact name and ask the user to choose before proceeding. Do not silently choose the first match.
+   4. Otherwise, use the single matching definition.
+   5. For which definition to recommend as the default among installed options (e.g. `iol-xe` for routers, `ioll2-xe` for switches), see `references/node_selection_guidance.md`.
 3. `add_node_to_cml_lab` per device. Set `label`, `node_definition`, and `x`/`y` (see Layout). Each add auto-creates that definition's default interfaces.
 4. Connect nodes (see Connecting nodes — this is the step most often done wrong).
 5. Apply configuration (see Configuration).
-6. Start nodes when the user wants the lab running. To start an entire lab, use `start_cml_lab(lab_id)`. To start nodes in a specific order (e.g., core infrastructure before edge devices), call `start_cml_node(lab_id, node_id)` sequentially, using `wait_for_convergence=true` on each node before starting the next when a later node depends on an earlier one being reachable. See `references/operations.md` for full lifecycle details.
+6. Start nodes when the user wants the lab running. Before starting a node, read its current state with `get_nodes_for_cml_lab`. If it is already BOOTED, skip the start call and report that. If the state cannot be read, report that and do not start it. To start an entire lab, use `start_cml_lab(lab_id)`. To start nodes in a specific order (e.g., core infrastructure before edge devices), call `start_cml_node(lab_id, node_id)` sequentially, using `wait_for_convergence=true` on each node before starting the next when a later node depends on an earlier one being reachable. See `references/operations.md` for full lifecycle details.
+
+If `add_node_to_cml_lab`, `configure_cml_node`, or `start_cml_node` returns an error, do not continue to the next step. Report the tool name, the arguments used, and the exact error to the user, then wait for instructions. Retry only if the error indicates a transient fault.
 
 **Why incremental beats `create_full_lab_topology`:** the full-import tool requires a complete, schema-valid Topology object — exact `version`, every node `id`, every interface `id`, and links referencing those interface IDs by hand. A single mismatch fails the whole import with little to localize the error. The incremental tools validate and return real UUIDs at each step, so failures are isolated and self-correcting.
 
@@ -37,7 +44,7 @@ If the user references an existing lab by name or description, call `get_cml_lab
 For each link:
 
 1. `get_interfaces_for_node(lab_id, node_id)` for both endpoints.
-2. Pick a free interface on each. **Free means `is_connected == false` on the interface object returned by `get_interfaces_for_node`** — never just take the first interface in the list. Also skip loopbacks (e.g. `Loopback0`) and any management-only interface; pick a physical data interface (e.g. `Ethernet0/0`, `GigabitEthernet0/1`).
+2. Pick a free interface on each. **Free means `is_connected == false` on the interface object returned by `get_interfaces_for_node`** — never just take the first interface in the list. Also skip loopback interfaces (names beginning with `Loopback`) and any interface whose name starts with `Management` or `GigabitEthernet0/0` on IOS nodes; pick a physical data interface (e.g. `Ethernet0/0`, `GigabitEthernet0/1`).
 3. `connect_two_nodes(lab_id, src_int=<iface UUID>, dst_int=<iface UUID>)`.
 4. If every physical interface on a node is already connected, `add_interface_to_node` first, then re-fetch.
 
@@ -52,7 +59,7 @@ Unless the user specifies coordinates, place nodes so a person opening the lab i
 The goal, not rigid rules: legible, conventional, minimal crossings. In practice that means:
 
 - Reflect network hierarchy spatially: core/spine devices toward the top or center, distribution in the middle, access/edge and end hosts toward the periphery.
-- Give nodes real breathing room — keep at least 150–200 units between any two nodes regardless of whether they are linked, as a universal minimum so icons and labels never overlap. For nodes on the same row or column, use at least 200 units of separation.
+- Give nodes real breathing room — keep at least 200 units between any two nodes, whether or not they are linked, so icons and labels never overlap. For nodes on the same row or column, use at least 200 units of separation.
 - Align peers on a shared row/column (e.g. two core routers at the same `y`) and keep the layout roughly symmetric.
 - Route to minimize link crossings; if two valid placements exist, prefer the one with fewer crossings.
 
