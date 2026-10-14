@@ -29,6 +29,7 @@ Interface management tools for CML MCP server.
 import logging
 
 import httpx
+from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.common import MACAddress, UUID4Type
@@ -61,7 +62,7 @@ async def add_interface(lab_id: UUID4Type, payload: dict, client: CMLClient) -> 
     return [SimplifiedInterfaceResponse(**item).model_dump(exclude_unset=True) for item in resp]
 
 
-def register_tools(mcp):
+def register_tools(mcp: FastMCP) -> None:
     """Register all interface-related tools with the FastMCP server."""
 
     # Source schema: InterfaceCreate (cml/simple_webserver/schemas/interfaces.py)

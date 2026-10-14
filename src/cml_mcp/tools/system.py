@@ -30,6 +30,7 @@ import logging
 from typing import Any
 
 import httpx
+from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.system import SystemHealth, SystemInformation, SystemStats
@@ -38,7 +39,7 @@ from cml_mcp.tools.dependencies import get_cml_client_dep
 logger = logging.getLogger("cml-mcp.tools.system")
 
 
-def register_tools(mcp):
+def register_tools(mcp: FastMCP) -> None:
     """Register all system-related tools with the FastMCP server."""
 
     @mcp.tool(

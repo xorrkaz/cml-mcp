@@ -31,7 +31,7 @@ import logging
 from typing import Annotated
 
 import httpx
-from fastmcp import Context
+from fastmcp import Context, FastMCP
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.common import Coordinate, DefinitionID, TagArray, UUID4Type
@@ -67,7 +67,7 @@ async def wipe_node(lab_id: UUID4Type, node_id: UUID4Type, client: CMLClient) ->
     await client.put(f"/labs/{lab_id}/nodes/{node_id}/wipe_disks")
 
 
-def register_tools(mcp):  # noqa: C901
+def register_tools(mcp: FastMCP) -> None:  # noqa: C901
     """Register all node-related tools with the FastMCP server."""
 
     @mcp.tool(

@@ -32,7 +32,7 @@ import os
 import re
 
 import httpx
-from fastmcp import Context
+from fastmcp import Context, FastMCP
 from fastmcp.exceptions import ToolError
 from fastmcp.telemetry import get_tracer
 from virl2_client.models.cl_pyats import ClPyats, PyatsNotInstalled
@@ -122,7 +122,7 @@ def _run_cli_command_sync(
                 logger.exception("Error cleaning up pyATS connections for node %s in lab %s", label, lab_id)
 
 
-def register_tools(mcp):
+def register_tools(mcp: FastMCP) -> None:
     """Register all CLI and console tools with the FastMCP server."""
 
     @mcp.tool(

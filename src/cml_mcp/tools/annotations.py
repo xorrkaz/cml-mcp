@@ -30,7 +30,7 @@ import logging
 from typing import Annotated, Literal
 
 import httpx
-from fastmcp import Context
+from fastmcp import Context, FastMCP
 from fastmcp.exceptions import ToolError
 from pydantic import BaseModel
 
@@ -82,7 +82,7 @@ def _normalize_border_style_fields(annotation: dict) -> dict:
     }
 
 
-def register_tools(mcp):
+def register_tools(mcp: FastMCP) -> None:
     """Register all annotation-related tools with the FastMCP server."""
 
     @mcp.tool(

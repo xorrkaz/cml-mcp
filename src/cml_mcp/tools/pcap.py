@@ -31,6 +31,7 @@ import logging
 from typing import Annotated, Literal
 
 import httpx
+from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
@@ -52,7 +53,7 @@ async def get_capture_key(lab_id: UUID4Type, link_id: UUID4Type, client: CMLClie
     return key
 
 
-def register_tools(mcp):
+def register_tools(mcp: FastMCP) -> None:
     """Register all packet capture tools with the FastMCP server."""
 
     # Source schema: PCAPStart (cml/simple_webserver/schemas/pcap.py)

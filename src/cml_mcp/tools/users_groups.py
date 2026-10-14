@@ -30,7 +30,7 @@ import logging
 from typing import Annotated
 
 import httpx
-from fastmcp import Context
+from fastmcp import Context, FastMCP
 from fastmcp.exceptions import McpError, ToolError
 from mcp.types import INVALID_REQUEST, METHOD_NOT_FOUND
 
@@ -43,7 +43,7 @@ from cml_mcp.tools.model_helpers import build_payload, field_from
 logger = logging.getLogger("cml-mcp.tools.users_groups")
 
 
-def register_tools(mcp):  # noqa: C901
+def register_tools(mcp: FastMCP) -> None:  # noqa: C901
     """Register all user and group management tools with the FastMCP server."""
 
     @mcp.tool(

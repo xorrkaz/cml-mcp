@@ -29,6 +29,7 @@ Node definition tools for CML MCP server.
 import logging
 
 import httpx
+from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.common import DefinitionID
@@ -55,7 +56,7 @@ async def get_node_def_details(definition_id: DefinitionID, client: CMLClient) -
     return NodeDefinition(**node_definition).model_dump(exclude_unset=True)
 
 
-def register_tools(mcp):
+def register_tools(mcp: FastMCP) -> None:
     """Register all node definition tools with the FastMCP server."""
 
     @mcp.tool(

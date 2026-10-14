@@ -32,7 +32,7 @@ from typing import Annotated
 
 import httpx
 import yaml
-from fastmcp import Context
+from fastmcp import Context, FastMCP
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.border_style import normalize_topology_border_styles, wire_topology_border_styles
@@ -125,7 +125,7 @@ async def create_full_topology_from_obj(topology: Topology, client: CMLClient) -
     return UUID4Type(resp["id"])
 
 
-def register_tools(mcp):  # noqa: C901
+def register_tools(mcp: FastMCP) -> None:  # noqa: C901
     """Register all lab-related tools with the FastMCP server."""
 
     @mcp.tool(

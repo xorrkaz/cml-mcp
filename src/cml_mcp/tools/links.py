@@ -30,6 +30,7 @@ import logging
 from typing import Annotated
 
 import httpx
+from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
@@ -40,7 +41,7 @@ from cml_mcp.tools.model_helpers import build_payload, field_from
 logger = logging.getLogger("cml-mcp.tools.links")
 
 
-def register_tools(mcp):
+def register_tools(mcp: FastMCP) -> None:
     """Register all link-related tools with the FastMCP server."""
 
     # Source schema: LinkCreate (cml/simple_webserver/schemas/links.py)

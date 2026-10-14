@@ -24,12 +24,13 @@
 
 """Definitions for a cache for session management."""
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import time
 from asyncio import Lock
 from dataclasses import dataclass, field
-from typing import Dict, Optional
 
 from cml_mcp.cml_client import CMLClient
 
@@ -52,11 +53,11 @@ class ThreadSafeCache:
     """Thread-safe cache with TTL support."""
 
     def __init__(self, ttl: int = 3600):
-        self._cache: Dict[str, CacheEntry] = {}
+        self._cache: dict[str, CacheEntry] = {}
         self._lock = Lock()
         self._ttl = ttl
 
-    async def get(self, key: str) -> Optional[CMLClient]:
+    async def get(self, key: str) -> CMLClient | None:
         """Retrieve value from cache if not expired."""
         expired_client = None
         async with self._lock:

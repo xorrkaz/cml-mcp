@@ -26,9 +26,10 @@
 Dependency injection module for CML client management.
 """
 
+from __future__ import annotations
+
 import contextvars
 import logging
-from typing import Any, Optional
 
 from fastmcp import Context
 from fastmcp.exceptions import McpError
@@ -61,12 +62,12 @@ else:
 
 
 # Context variable to store request-scoped client for HTTP transport
-_request_client: contextvars.ContextVar[Optional[CMLClient]] = contextvars.ContextVar("request_client", default=None)
+_request_client: contextvars.ContextVar[CMLClient | None] = contextvars.ContextVar("request_client", default=None)
 
 # Context variables for PyATS credentials (per-request isolation)
-_pyats_username: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("pyats_username", default=None)
-_pyats_password: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("pyats_password", default=None)
-_pyats_auth_pass: contextvars.ContextVar[Optional[str]] = contextvars.ContextVar("pyats_auth_pass", default=None)
+_pyats_username: contextvars.ContextVar[str | None] = contextvars.ContextVar("pyats_username", default=None)
+_pyats_password: contextvars.ContextVar[str | None] = contextvars.ContextVar("pyats_password", default=None)
+_pyats_auth_pass: contextvars.ContextVar[str | None] = contextvars.ContextVar("pyats_auth_pass", default=None)
 
 
 async def cleanup_global_client() -> None:
@@ -82,7 +83,7 @@ async def cleanup_global_client() -> None:
         logger.debug("No global CML client to clean up (HTTP mode or client is None)")
 
 
-async def elicit_confirmation(ctx: Context, message: str, response_type: Optional[Any] = ["yes", "no"]) -> bool:
+async def elicit_confirmation(ctx: Context, message: str, response_type: list[str] | None = None) -> bool:
     """
     Request confirmation via elicitation if the client supports it.
 
@@ -98,6 +99,8 @@ async def elicit_confirmation(ctx: Context, message: str, response_type: Optiona
     # selectable "yes", "no" response, Co-Pilot works.  But now, we're duplicating confirmation.
     # So, keep elicitation disabled for now.
     return True
+    if response_type is None:
+        response_type = ["yes", "no"]
     try:
         session = ctx.session
         client_params = session._client_params
