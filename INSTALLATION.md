@@ -242,7 +242,7 @@ An alternative is to use FastMCP CLI to install the server into your favorite cl
     cd cml-mcp
     ```
 
-2. Run `uv sync` to install all the correct dependencies, including FastMCP 3.x. **Note:** on Linux and Mac, run `uv sync --all-extras` to get CLI command support.
+2. Run `uv sync` to install all the correct dependencies, including FastMCP. **Note:** on Linux and Mac, run `uv sync --all-extras` to get CLI command support.
 
 3. Create a `.env` file with the following variables set:
 
