@@ -17,7 +17,7 @@ classifiers = [
 ]
 dependencies = [
     "httpx",
-    "fastmcp>=3.1.1,<5",
+    "fastmcp>=4,<5",
     "fastapi",
     "pydantic_strict_partial",
     "typer",
