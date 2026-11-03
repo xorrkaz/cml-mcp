@@ -103,7 +103,7 @@ async def test_schema_coverage(main_mcp_client: Client[FastMCPTransport]):
             continue
 
         tool = tool_map[tool_name]
-        tool_params = set(tool.inputSchema.get("properties", {}).keys())
+        tool_params = set(tool.input_schema.get("properties", {}).keys())
 
         # Get required fields from the source model
         source_required = {name for name, field_info in source_model.model_fields.items() if field_info.is_required()}
@@ -133,16 +133,17 @@ async def test_constraint_coverage(main_mcp_client: Client[FastMCPTransport]):
     constraints (minimum/maximum/minLength/maxLength/pattern) as the corresponding source
     Pydantic model field.
 
-    Strategy: for every source-model field that also appears in the tool's inputSchema, build
+    Strategy: for every source-model field that also appears in the tool's input_schema, build
     the per-field source JSON Schema via ``TypeAdapter(Annotated[field_info.annotation,
     field_info]).json_schema()`` and compare the extracted constraint values against the tool's
-    ``inputSchema["properties"][field_name]``.  Optional/nullable ``anyOf`` wrappers are
+    ``input_schema["properties"][field_name]``.  Optional/nullable ``anyOf`` wrappers are
     unwrapped via ``_flatten_nullable`` before comparison so constraints are always compared at
     the top level regardless of the Pydantic emission style.
 
     Fields in OMIT_REQUIRED (server-managed / injected) and fields present in the source model
     but not exposed as a tool parameter are skipped -- only the intersection is checked.
     """
+
     tools = await main_mcp_client.list_tools()
     tool_map = {tool.name: tool for tool in tools}
 
@@ -154,7 +155,7 @@ async def test_constraint_coverage(main_mcp_client: Client[FastMCPTransport]):
             continue  # test_schema_coverage already flags missing tools
 
         tool = tool_map[tool_name]
-        tool_props = tool.inputSchema.get("properties", {})
+        tool_props = tool.input_schema.get("properties", {})
         omitted = OMIT_REQUIRED.get(source_model, set())
 
         for field_name, field_info in source_model.model_fields.items():
@@ -166,7 +167,9 @@ async def test_constraint_coverage(main_mcp_client: Client[FastMCPTransport]):
             # Annotated[annotation, field_info] reconstructs exactly what Pydantic would emit
             # for a standalone field carrying these constraints.
             try:
-                src_schema = TypeAdapter(Annotated[field_info.annotation, field_info]).json_schema()
+                src_schema = TypeAdapter(
+                    Annotated[field_info.annotation, field_info]  # pyright: ignore[reportInvalidTypeForm]
+                ).json_schema()
             except Exception:
                 continue  # unhandleable type (e.g. forward ref); skip gracefully
 
@@ -237,7 +240,7 @@ async def test_optional_fields_accept_none(main_mcp_client: Client[FastMCPTransp
         if tool_name not in tool_map:
             continue  # test_schema_coverage already flags missing tools
 
-        tool_props = tool_map[tool_name].inputSchema.get("properties", {})
+        tool_props = tool_map[tool_name].input_schema.get("properties", {})
         omitted = OMIT_REQUIRED.get(source_model, set())
 
         for field_name, field_info in source_model.model_fields.items():
@@ -246,7 +249,7 @@ async def test_optional_fields_accept_none(main_mcp_client: Client[FastMCPTransp
 
             fi = field_from(source_model, field_name)
             try:
-                TypeAdapter(Annotated[field_info.annotation | None, fi]).validate_python(None)
+                TypeAdapter(Annotated[field_info.annotation | None, fi]).validate_python(None)  # pyright: ignore[reportInvalidTypeForm]
             except Exception as exc:  # noqa: BLE001 - we want to report any failure, not just ValidationError
                 failures.append(f"Tool '{tool_name}' / param '{field_name}' rejected None: {exc}")
 

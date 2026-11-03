@@ -30,9 +30,8 @@ import logging
 from typing import Annotated
 
 import httpx
-from fastmcp import Context
-from fastmcp.exceptions import ToolError
-from mcp.shared.exceptions import McpError
+from fastmcp import Context, FastMCP
+from fastmcp.exceptions import McpError, ToolError
 from mcp.types import INVALID_REQUEST, METHOD_NOT_FOUND
 
 from cml_mcp.cml.simple_webserver.schemas.common import GroupName, UserFullName, UserName, UUID4Type
@@ -44,7 +43,7 @@ from cml_mcp.tools.model_helpers import build_payload, field_from
 logger = logging.getLogger("cml-mcp.tools.users_groups")
 
 
-def register_tools(mcp):  # noqa: C901
+def register_tools(mcp: FastMCP) -> None:  # noqa: C901
     """Register all user and group management tools with the FastMCP server."""
 
     @mcp.tool(
@@ -67,12 +66,13 @@ def register_tools(mcp):  # noqa: C901
         client = get_cml_client_dep()
         try:
             users = await client.get("/users")
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return [UserResponse(**user).model_dump(exclude_unset=True) for user in users]
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting CML user information")
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     # Source schema: UserCreate (cml/simple_webserver/schemas/users.py)
     # Exposed: username, password, fullname, description, email, admin, groups, associations, resource_pool, opt_in, tour_version, pubkey
@@ -132,10 +132,10 @@ def register_tools(mcp):  # noqa: C901
             resp = await client.post("/users", data=payload)
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error creating CML user")
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={
@@ -178,10 +178,10 @@ def register_tools(mcp):  # noqa: C901
             await client.delete(f"/users/{user_id}")
             return True
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error deleting CML user")
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={
@@ -202,12 +202,13 @@ def register_tools(mcp):  # noqa: C901
         client = get_cml_client_dep()
         try:
             groups = await client.get("/groups")
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return [GroupResponse(**group).model_dump(exclude_unset=True) for group in groups]
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting CML group information")
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     # Source schema: GroupCreate (cml/simple_webserver/schemas/groups.py)
     # Exposed: name, description, members, associations
@@ -250,10 +251,10 @@ def register_tools(mcp):  # noqa: C901
             resp = await client.post("/groups", data=payload)
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error creating CML group")
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={
@@ -296,7 +297,7 @@ def register_tools(mcp):  # noqa: C901
             await client.delete(f"/groups/{group_id}")
             return True
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error deleting CML group")
-            raise ToolError(e)
+            raise ToolError(e) from e

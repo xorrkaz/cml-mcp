@@ -86,15 +86,11 @@ The project uses [`just`](https://github.com/casey/just) as its task runner. **A
 | `just test [args]` | Run the offline test suite (mocks). Pass pytest args, e.g. `just test "-x -k packet"` |
 | `just test-live [args]` | Run tests against a real CML server (`USE_MOCKS=false`) |
 | `just check` | `black --check`, `isort --check-only`, `flake8` over `src/` and `tests/` |
+| `just format` | Auto-fix formatting drift (`black`, `isort`) |
 | `just build` | Build wheel + multi-arch Docker image |
 | `just clean` / `just fresh` | Remove caches/venv (prompts for confirmation) |
 
-If `just check` reports formatting drift, fix it with:
-
-```sh
-uv run black src/ tests/
-uv run isort src/ tests/
-```
+If `just check` reports formatting drift, fix it with `just format`.
 
 The line length is **140**. Auto-generated schemas under `src/cml_mcp/cml/` are excluded from formatting and lint.
 
@@ -181,11 +177,15 @@ async def get_nodes_for_cml_lab(lid: UUID4Type) -> list[Node]:
     return [Node(**n).model_dump(exclude_unset=True) for n in raw_nodes]
 ```
 
-**Why the mismatch?** FastMCP double-marshals returned Pydantic instances (Pydantic instance → dict → JSON via FastMCP's own serializer), and some auto-generated CML schemas validate fields they cannot faithfully round-trip through that second pass. Constructing the model coerces/validates incoming data; `model_dump` then emits a stable dict that FastMCP serializes verbatim. Keeping the annotation as the Pydantic model still gives MCP clients a rich, typed output schema for tool discovery.
+**Why the mismatch?** Several auto-generated CML schemas (`src/cml_mcp/cml/`) declare a field as `SomeModel = Field(default=None)` -- the Python type annotation is the bare model (not `SomeModel | None`), but the default value is `None`. Pydantic allows this at the field-definition level (defaults are not validated against the field's type unless `validate_default=True`), but the field's generated JSON Schema stays non-nullable (`"type": "object"`, no `"null"` in `anyOf`). FastMCP (v4+) serializes a tool's return value with a *single* pass -- `TypeAdapter(return_type).dump_python(value, mode="json")` -- using the function's declared return-type annotation, and the MCP client additionally revalidates the resulting structured content against the tool's output JSON Schema. If an unset field like this is included as `null` (which happens automatically when you `model_dump()` a full instance, or return the raw instance and let FastMCP dump it), that revalidation step fails with an error like `None is not of type 'object'` -- a hard failure, not just a warning. (`NodeDefinition.pyats` is a real example: see `src/cml_mcp/cml/simple_webserver/schemas/node_definitions.py`.)
+
+Constructing the model validates/coerces the incoming CML response data; `.model_dump(exclude_unset=True)` then drops any field the CML server didn't actually return, so the dict handed to FastMCP never contains one of these invalid `null`s for a field the output schema requires to be an object. Keeping the annotation as the Pydantic model still gives MCP clients a rich, typed output schema for tool discovery.
+
+This intentional annotation/runtime mismatch (dict at runtime, model in the type annotation) makes `TypeAdapter(Model).dump_python(dict_value, ...)` log a cosmetic `PydanticSerializationUnexpectedValue` `UserWarning` on every call, since a model-typed `TypeAdapter` expects an instance, not a dict. This is expected and is silenced in `pyproject.toml`'s `[tool.pytest.ini_options]` `filterwarnings`. Do not try to "fix" it by returning the raw instance instead -- that reintroduces the output-schema validation failure described above.
 
 **Dump-flag guidance:**
 
-- `exclude_unset=True` — always; drops fields the server did not set, keeping the payload tight.
+- `exclude_unset=True` — always; drops fields the server did not set, keeping the payload tight and avoiding the non-nullable-field problem above.
 - `exclude_none=True` — add when the response model declares many `Optional[...]` fields whose `None` value carries no signal.
 - `exclude_defaults=True` — only when defaults are clearly noise (rare; risk: hides a server value that happens to equal the default).
 
@@ -281,12 +281,7 @@ See [tests/README.md](tests/README.md) and [tests/QUICK_START.md](tests/QUICK_ST
 
 All three are configured in [pyproject.toml](pyproject.toml). Auto-generated schemas under `src/cml_mcp/cml/` are excluded.
 
-`just check` runs all three in `--check` mode. To auto-fix formatting:
-
-```sh
-uv run black src/ tests/
-uv run isort src/ tests/
-```
+`just check` runs all three in `--check` mode. To auto-fix formatting, run `just format`.
 
 ## Project Structure
 
@@ -333,6 +328,8 @@ cml-mcp/
 - Each `tools/*.py` module exports a `register_tools(mcp)` function called from `server.py`.
 - Tools obtain the CML client through `get_cml_client_dep()` (never instantiate `CMLClient` directly inside a tool).
 - The session cache in `cache.py` keeps authenticated `CMLClient` instances warm across HTTP requests, keyed by `username:pwd_hash:cml_url:verify_ssl` with an idle TTL (default 1 hour).
+- Concurrent first requests for the same cache key may both initialize a client; cache insertion retains one client and closes the redundant instance without closing the winner in use by another request.
+- PyATS CLI calls run in worker threads and serialize around the process-wide working-directory change required by PyATS.
 - Middleware in `middleware.py` enforces optional ACLs in HTTP mode (see `acl.yaml.example`). It also validates client-supplied CML URLs against `CML_ALLOWED_URLS` / `CML_URL_PATTERN` by parsing them with Pydantic's `AnyHttpUrl` and comparing only the scheme/host/port (userinfo, path, and query are ignored so they cannot spoof an allowed host). The `X-CML-Verify-SSL` header is honored only for requests that supply their own `X-CML-Server-URL`; requests using the default `CML_URL` always use `CML_VERIFY_SSL`.
 
 ### Why this layout

@@ -30,10 +30,9 @@ import asyncio
 import logging
 import os
 import re
-import tempfile
 
 import httpx
-from fastmcp import Context
+from fastmcp import Context, FastMCP
 from fastmcp.exceptions import ToolError
 from fastmcp.telemetry import get_tracer
 from virl2_client.models.cl_pyats import ClPyats, PyatsNotInstalled
@@ -47,26 +46,28 @@ from cml_mcp.types import ConsoleLogOutput
 logger = logging.getLogger("cml-mcp.tools.cli")
 
 
-def _send_cli_command_sync(
+def _run_cli_command_sync(
     client: CMLClient,
     lab_id: UUID4Type,
     label: NodeLabel,  # pyright: ignore[reportInvalidTypeForm]
     commands: str,
-    config_command: bool,
+    configure_mode: bool,
     console: int,
     ctx: Context,
 ) -> str:
     """
-    Synchronous helper for send_cli_command to isolate blocking operations in a thread.
-    This prevents os.chdir() race conditions and event loop blocking.
+    Note: PyATS/Unicon opens device connections via pexpect's pty.fork(), which triggers a
+    "process is multi-threaded, use of forkpty() may lead to deadlocks in the child" DeprecationWarning
+    whenever this runs (as it always does here) alongside the asyncio event loop thread. The forked
+    child execs immediately, so the deadlock window is negligible; this is expected and filtered in
+    pyproject.toml rather than fixable here (PyATS/Unicon owns the pty.fork() call).
     """
-    cwd = os.getcwd()  # Save the current working directory
+
     tracer = get_tracer()
     pylab = None  # Tracked so the finally block can always release its SSH/pty connection, even on setup failure
     try:
-        with tracer.start_as_current_span("send_cli_command.setup") as span:
+        with tracer.start_as_current_span("cli_command.setup") as span:
             span.set_attribute("mcp.session.id", ctx.session_id)
-            os.chdir(tempfile.gettempdir())  # Change to a writable directory (required by pyATS/ClPyats)
             lab = client.vclient.join_existing_lab(str(lab_id))  # Join the existing lab using the provided lab ID
             try:
                 pylab = ClPyats(lab)  # Create a ClPyats object for interacting with the lab
@@ -91,11 +92,11 @@ def _send_cli_command_sync(
             if console != 0:
                 pylab.switch_serial_console(str(label), console)
 
-        with tracer.start_as_current_span("send_cli_command.execute") as span:
+        with tracer.start_as_current_span("cli_command.execute") as span:
             span.set_attribute("mcp.session.id", ctx.session_id)
-            span.set_attribute("send_cli_command.num_commands", len(commands.splitlines()))
+            span.set_attribute("cli_command.num_commands", len(commands.splitlines()))
 
-            if config_command:
+            if configure_mode:
                 # Send the command as a configuration command
                 results = pylab.run_config_command(str(label), commands)
             else:
@@ -110,7 +111,7 @@ def _send_cli_command_sync(
             else:
                 output = str(results)
 
-            span.set_attribute("send_cli_command.output_length", len(output))
+            span.set_attribute("cli_command.output_length", len(output))
         return output
     finally:
         # Cleanup the lab to avoid leaking file descriptors.
@@ -119,10 +120,9 @@ def _send_cli_command_sync(
                 pylab.cleanup()
             except Exception:
                 logger.exception("Error cleaning up pyATS connections for node %s in lab %s", label, lab_id)
-        os.chdir(cwd)  # Restore the original working directory
 
 
-def register_tools(mcp):
+def register_tools(mcp: FastMCP) -> None:
     """Register all CLI and console tools with the FastMCP server."""
 
     @mcp.tool(
@@ -152,11 +152,11 @@ def register_tools(mcp):
             resp = await client.get(f"/labs/{lab_id}/nodes/{node_id}/consoles/{console}/log")
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 400:
-                raise ToolError(f"Console index {console} does not exist for node {node_id}")
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+                raise ToolError(f"Console index {console} does not exist for node {node_id}") from e
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting console log for node %s in lab %s", node_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
         lines = re.split(r"\r?\n", resp)
         for line in lines:
             if not line.startswith("|"):
@@ -166,36 +166,81 @@ def register_tools(mcp):
                 continue
             _, log_time, msg = line.split("|", 2)
             return_lines.append(ConsoleLogOutput(time=int(log_time), message=msg))
-        # See DEVELOPMENT.md "Object-typed return values": dump after construction so FastMCP doesn't double-marshal.
-        return [entry.model_dump(exclude_unset=True) for entry in return_lines]
+        return return_lines
 
     @mcp.tool(
-        annotations={"title": "Send CLI Command to CML Node", "readOnlyHint": False, "destructiveHint": True},
+        annotations={"title": "Send Exec CLI Command to CML Node", "readOnlyHint": False, "destructiveHint": False},
     )
     async def send_cli_command(
         lab_id: UUID4Type,
         label: NodeLabel,  # pyright: ignore[reportInvalidTypeForm]
         commands: str,
         ctx: Context,
-        config_command: bool = False,
         console: int = 0,
     ) -> str:
         """
-        Send CLI commands to a running node via PyATS/Unicon. Identify the node by lab UUID and
-        node label (NOT node UUID). Node must be in BOOTED state. Returns command output text.
+        Send exec/operational-mode CLI commands to a running node via PyATS/Unicon (e.g. "show
+        version", "ping", "traceroute"). Identify the node by lab UUID and node label (NOT node
+        UUID). Node must be in BOOTED state. Returns command output text.
 
         - Separate multiple commands with newlines.
-        - config_command=false (default): exec/operational mode (e.g. "show version").
-        - config_command=true: configuration mode -- DO NOT include "configure terminal" or "end".
+        - Does NOT enter configuration mode -- to change device configuration, use
+          send_cli_config_command instead.
         - Optional console: pick a non-default serial console (e.g. console=1 for some Docker nodes).
 
-        CRITICAL: Can modify device state. Review commands carefully before executing, especially
-        when config_command=true.
+        Note: most exec commands are read-only (show/ping/traceroute), but a few (e.g. "reload",
+        "clear counters", "debug ...") still change device state -- review unfamiliar commands
+        before running them.
 
         Examples:
         - "Run 'show ip route' on router R1 in lab abc123"
-        - "Configure interface Gi0/1 with IP 10.0.0.1/24 on R1"
+        - "Ping 10.0.0.1 from node R1"
         - "Show the running config of the firewall"
+        """
+
+        client = get_cml_client_dep()
+
+        # Verify vclient is available
+        if client.vclient is None:
+            raise ToolError(
+                "PyATS CLI commands require the virl2_client library. Ensure the CML client was initialized with valid credentials."
+            )
+
+        # Use asyncio.to_thread to prevent blocking the event loop with synchronous operations
+        # and to avoid os.chdir() race conditions between concurrent requests
+        try:
+            output = await asyncio.to_thread(_run_cli_command_sync, client, lab_id, label, commands, False, console, ctx)
+            return output
+        except Exception as e:
+            logger.exception("Error sending CLI command to node %s in lab %s", label, lab_id)
+            raise ToolError(e) from e
+
+    @mcp.tool(
+        annotations={"title": "Send Configuration CLI Command to CML Node", "readOnlyHint": False, "destructiveHint": True},
+    )
+    async def send_cli_config_command(
+        lab_id: UUID4Type,
+        label: NodeLabel,  # pyright: ignore[reportInvalidTypeForm]
+        commands: str,
+        ctx: Context,
+        console: int = 0,
+    ) -> str:
+        """
+        Send configuration-mode CLI commands to a running node via PyATS/Unicon. Identify the
+        node by lab UUID and node label (NOT node UUID). Node must be in BOOTED state. Returns
+        command output text.
+
+        - Separate multiple commands with newlines.
+        - Enters configuration mode automatically -- DO NOT include "configure terminal" or "end".
+        - Optional console: pick a non-default serial console (e.g. console=1 for some Docker nodes).
+
+        CRITICAL: Modifies device configuration. Review commands carefully before executing, and
+        confirm with the user before running.
+
+        Examples:
+        - "Configure interface Gi0/1 with IP 10.0.0.1/24 on R1"
+        - "Add a static route on R1 pointing to 0.0.0.0/0 via 10.0.0.1"
+        - "Set the hostname of the firewall to EDGE-FW1"
         """
         client = get_cml_client_dep()
 
@@ -208,8 +253,8 @@ def register_tools(mcp):
         # Use asyncio.to_thread to prevent blocking the event loop with synchronous operations
         # and to avoid os.chdir() race conditions between concurrent requests
         try:
-            output = await asyncio.to_thread(_send_cli_command_sync, client, lab_id, label, commands, config_command, console, ctx)
+            output = await asyncio.to_thread(_run_cli_command_sync, client, lab_id, label, commands, True, console, ctx)
             return output
         except Exception as e:
-            logger.exception("Error sending CLI command to node %s in lab %s", label, lab_id)
-            raise ToolError(e)
+            logger.exception("Error sending CLI config command to node %s in lab %s", label, lab_id)
+            raise ToolError(e) from e

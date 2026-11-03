@@ -48,14 +48,14 @@ Each module exposes a `register_tools(mcp)` function called from `server.py`.
 | `pcap.py` | start/stop_packet_capture, check_packet_capture_status, get_captured_packet_overview, get_packet_capture_data |
 | `users_groups.py` | get_cml_users/groups, create/delete_cml_user/group |
 | `system.py` | get_cml_information, get_cml_status, get_cml_statistics, get_cml_licensing_details |
-| `cli.py` | send_cli_command (PyATS/Unicon), get_console_log |
+| `cli.py` | send_cli_command, send_cli_config_command (PyATS/Unicon), get_console_log |
 
 ## Key Conventions
 
 - **Object arguments** — Most tools use flat primitive parameters (str, int, bool, etc.) for better LLM compatibility, especially with smaller / open-weight models. Only `create_full_lab_topology` still accepts `Model | dict | str` and uses `model_helpers.lenient_construct` to strip unknown fields and parse JSON-encoded strings (helpful for clients like AI Canvas).
 - **Destructive tools** — `wipe_*` and `delete_*` tools route confirmation through `elicit_confirmation()` in `tools/dependencies.py`. **Elicitation is currently disabled** (the helper returns `True` unconditionally) because several MCP clients — notably GitHub Copilot — either don't support `ctx.elicit()` cleanly or duplicate the prompt. While disabled, every destructive tool relies entirely on the `CRITICAL:` line in its docstring to push the LLM to ask the user for confirmation. Keep using `await elicit_confirmation(ctx, ...)` in new destructive tools so re-enabling later is a one-line change.
 - **Admin-only tools** — `create_cml_user`, `delete_cml_user`, `create_cml_group`, `delete_cml_group` check `client.is_admin()` at runtime and raise if the caller is not an admin.
-- **CLI commands** — `send_cli_command` uses PyATS (via `virl2_client.ClPyats`). `config_command=true` enters configuration mode; omit `configure terminal` / `end`. `label` is the node label, not the UUID. Both `send_cli_command` and `get_console_log` accept an optional `console` integer (default `0`) to select which serial port to use; Docker-based nodes often expose a second console on index `1`.
+- **CLI commands** — `send_cli_command` (exec/operational mode) and `send_cli_config_command` (configuration mode) both use PyATS (via `virl2_client.ClPyats`) and share the `_run_cli_command_sync` helper in `tools/cli.py`. `send_cli_config_command` enters configuration mode automatically; omit `configure terminal` / `end`. `label` is the node label, not the UUID. Both tools, plus `get_console_log`, accept an optional `console` integer (default `0`) to select which serial port to use; Docker-based nodes often expose a second console on index `1`. The sync helper serializes CLI operations while it changes the process-wide working directory, and always calls `pylab.cleanup()` in a `finally` block -- `ClPyats` builds a fresh testbed/connection per call and never reuses it, so skipping cleanup leaks an SSH/pty file descriptor per invocation.
 - **Packet capture data** — `get_packet_capture_data` returns a base64-encoded PCAP binary. Decode and save as `.pcap` for Wireshark/tcpdump.
 
 ## Environment Variables
@@ -68,6 +68,7 @@ Each module exposes a `register_tools(mcp)` function called from `server.py`.
 | `CML_VERIFY_SSL` | No | TLS certificate verification. **Defaults to `true`.** CML ships with a self-signed certificate, so most users must set `false`. **HTTP mode:** authoritative for requests that use the default `CML_URL`; the `X-CML-Verify-SSL` header can only adjust verification for requests that supply their own `X-CML-Server-URL`. |
 | `CML_MCP_TRANSPORT` | No | `http` for HTTP mode (default: `stdio`) |
 | `CML_MCP_ALLOW_UNAUTHENTICATED` | No | HTTP mode only. When `true`, requests without an `X-Authorization` header fall back to `CML_USERNAME`/`CML_PASSWORD`. Default `false` (such requests are rejected). The fallback applies **only** to the statically configured `CML_URL` — requests that supply their own `X-CML-Server-URL` never receive these credentials, preventing exfiltration of the configured identity to a client-chosen server. Lets any client reaching the port act as the configured identity — opt in only for trusted single-tenant deployments. Server logs a warning at startup when active. |
+| `CML_MCP_ACL_FILE` | No | HTTP mode only. Path to the ACL YAML file (see `acl.yaml.example`). |
 | `CML_SESSION_TTL` | No | Idle TTL in seconds for cached HTTP sessions (default: `3600`) |
 | `PYATS_USERNAME` | No | Device login username |
 | `PYATS_PASSWORD` | No | Device login password |
@@ -86,7 +87,7 @@ FastMCP ships native OpenTelemetry instrumentation (spans for `tools/call`, `res
 
 - The OTel SDK **must** be configured before `from fastmcp import FastMCP` runs, so this block sits above the `FastMCP` import in `server.py` (with `# noqa: E402` on the deferred import) instead of at the top of the file with the other imports.
 - The `opentelemetry.*` imports are wrapped in `try/except ImportError: pass` so the server still runs normally when the optional `cml-mcp[opentelemetry]` extra isn't installed; any other exception during setup is logged (`logger.exception(...)`) but does not prevent startup.
-- This wiring only covers the common OTLP/gRPC case. For other exporters (console, OTLP/HTTP, vendor SDKs) or `opentelemetry-instrument`-based auto-instrumentation, follow FastMCP's [Programmatic Configuration](https://gofastmcp.com/v3/servers/telemetry#programmatic-configuration) guide rather than extending the block in `server.py`.
+- This wiring only covers the common OTLP/gRPC case. For other exporters (console, OTLP/HTTP, vendor SDKs) or `opentelemetry-instrument`-based auto-instrumentation, follow FastMCP's [Programmatic Configuration](https://gofastmcp.com/servers/telemetry#programmatic-configuration) guide rather than extending the block in `server.py`.
 - Don't add custom spans inside tool modules unless a specific tool has a genuinely expensive or hard-to-debug sub-step worth isolating — FastMCP's built-in per-tool spans are usually sufficient.
 
 ### ACL File (HTTP mode only)
@@ -105,17 +106,14 @@ This project uses [`just`](https://github.com/casey/just) as its task runner. **
 | `just test [args]` | Run offline test suite with mocks (default `USE_MOCKS=true`). Pass pytest args, e.g. `just test "-x -k packet"` |
 | `just test-live [args]` | Run tests against a real CML server (`USE_MOCKS=false`) |
 | `just check` | Run all lint/style checks: `black --check`, `isort --check-only`, `flake8` over `src/` + `tests/` |
+| `just format` | Auto-fix formatting drift (`black`, `isort`) |
 | `just build` | Build wheel + multi-arch Docker image |
 | `just publish` | Publish to PyPI, MCP registry, and Docker Hub |
 | `just clean` / `just fresh` | Remove caches/venv (prompts for confirmation) |
 
 **Before finishing any code change, run `just check` and `just test`.** Both must be green.
 
-If `just check` reports formatting drift, fix it with:
-```sh
-uv run black src/ tests/
-uv run isort src/ tests/
-```
+If `just check` reports formatting drift, fix it with `just format`.
 
 Line length is 140. Auto-generated schemas under `src/cml_mcp/cml/` are excluded from formatting and lint.
 
@@ -132,12 +130,16 @@ When adding a new `@mcp.tool` to a module under `src/cml_mcp/tools/`:
 1. **Get the client via the dependency helper:** `client = get_cml_client_dep()` (do not import settings or instantiate `CMLClient` directly inside a tool).
 2. **Annotate destructive/read-only behavior** in the `annotations={...}` dict on `@mcp.tool` (`readOnlyHint`, `destructiveHint`, `idempotentHint`, `title`).
 3. **Prefer flat primitive parameters** — see [Flat primitive arguments](#flat-primitive-arguments) below. Reserve `Model | dict | str` parameter unions for genuinely deep recursive structures (currently only `create_full_lab_topology`'s `topology`); for those, convert with `lenient_construct(Model, value)` from `tools/model_helpers.py`.
-4. **Wrap the body in `try/except`** — catch `httpx.HTTPStatusError` first and re-raise as `ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")`, then a generic `Exception` handler that logs with `logger.exception(...)` and re-raises as `ToolError(e)`.
+4. **Wrap the body in `try/except`** — catch `httpx.HTTPStatusError` first and re-raise as `raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e`, then a generic `Exception` handler that logs with `logger.exception(...)` and re-raises as `raise ToolError(e) from e`. Always chain with `from e` when re-raising inside an `except ... as e:` block so the original traceback is preserved; omit `from e` only for a `ToolError` raised directly from validation logic with no originating exception in scope.
 5. **For destructive tools**, call `await elicit_confirmation(ctx, "...")` (from `tools/dependencies.py`) and put a `CRITICAL:` line in the docstring so LLMs ask the user even when `elicit` is unavailable.
-6. **For admin-only tools**, gate with `if not await client.is_admin(): raise ValueError(...)`.
+6. **For admin-only tools**, gate with `if not await client.is_admin(): raise ValueError(...)` inside the `try` block from convention 4 — the generic `except Exception` handler there catches it and re-raises it as `ToolError`, so callers always see a `ToolError`, never a raw `ValueError`.
 7. **Docstring format** — docstrings are written **exclusively for LLMs**, never humans. Do NOT reference internal repo paths (e.g. `tests/input_data/...`), contributor workflows, or other developer-only context inside a tool docstring; that material belongs in `AGENTS.md` or `DEVELOPMENT.md`. Use a one-line action summary, a few terse fact lines (required/optional fields, return shape, constraints), and an `Examples:` block with 2–3 sample user prompts to aid LLM tool selection on smaller models.
-8. **Object return types use `model_dump`** — any tool whose return type is a Pydantic response model (or `list[...]` thereof) MUST construct the model from the raw CML response and immediately call `.model_dump(exclude_unset=True)` (returning a plain dict), while keeping the function's annotated return type as the Pydantic model so MCP clients see a typed schema. This intentional annotation/runtime mismatch exists because FastMCP double-marshals returned Pydantic instances and some auto-generated CML schemas don't round-trip cleanly. Drop in `exclude_none=True` when the model has many `Optional` fields whose `None` carries no signal; reserve `exclude_defaults=True` for cases where defaults are clearly noise. Add a one-line comment at each return site pointing at the **"Object-typed return values"** section of [DEVELOPMENT.md](DEVELOPMENT.md) for the rationale.
-9. **Always update markdown docs on every relevant code change** — when a code change affects tool count, tool names, conventions, environment variables, transport modes, or workflow, update both:
+8. **Object return types use `model_dump`** — any tool whose return type is a Pydantic response model (or `list[...]` thereof) MUST construct the model from the raw CML response, then:
+   - (a) Always call `.model_dump(exclude_unset=True)` and return the resulting plain dict, while keeping the function's annotated return type as the Pydantic model so MCP clients see a typed schema.
+   - (b) Add `exclude_none=True` only when the model has many `Optional` fields whose `None` carries no signal; reserve `exclude_defaults=True` for cases where defaults are clearly noise.
+   - (c) Add a one-line comment at each return site pointing at the **"Object-typed return values"** section of [DEVELOPMENT.md](DEVELOPMENT.md).
+   - (d) See that DEVELOPMENT.md section for the full rationale (why the annotation/runtime mismatch exists and why the cosmetic `PydanticSerializationUnexpectedValue` warning is expected and silenced via `filterwarnings` in `pyproject.toml`) — do not duplicate it here.
+9. **Update markdown docs in the same change whenever the change alters tool count, tool names, conventions, environment variables, transport modes, or the development workflow.** Update both:
    - **Repo-root docs**: `README.md`, `INSTALLATION.md`, `DEVELOPMENT.md`, `AGENTS.md`, `server.json` (as appropriate).
    - **Tests docs**: `tests/README.md`, `tests/QUICK_START.md`, `tests/MOCK_FRAMEWORK.md` (as appropriate).
    Treat docs updates as part of the change, not a follow-up. `just check` does not catch stale docs — review them yourself before committing.
@@ -208,5 +210,5 @@ Register the tool by adding (or relying on) the module's `register_tools(mcp)` c
 
 ## Dependencies
 
-Core: `httpx`, `fastmcp>=3.1.1,<4`, `fastapi`, `pydantic_strict_partial`, `typer`, `virl2_client`  
+Core: `httpx`, `fastmcp>=4,<5`, `fastapi`, `pydantic_strict_partial`, `typer`, `virl2_client`  
 Optional: `pyats`, `genie` (install as `cml-mcp[pyats]`); `opentelemetry-distro`, `opentelemetry-exporter-otlp` (install as `cml-mcp[opentelemetry]`)

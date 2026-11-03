@@ -31,6 +31,7 @@ import logging
 from typing import Annotated, Literal
 
 import httpx
+from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
@@ -52,7 +53,7 @@ async def get_capture_key(lab_id: UUID4Type, link_id: UUID4Type, client: CMLClie
     return key
 
 
-def register_tools(mcp):
+def register_tools(mcp: FastMCP) -> None:
     """Register all packet capture tools with the FastMCP server."""
 
     # Source schema: PCAPStart (cml/simple_webserver/schemas/pcap.py)
@@ -97,10 +98,10 @@ def register_tools(mcp):
             await client.put(f"/labs/{lab_id}/links/{link_id}/capture/start", data=payload)
             return True
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error starting packet capture on link %s in lab %s", link_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={"title": "Stop a Packet Capture on a Link", "readOnlyHint": False, "destructiveHint": False},
@@ -119,10 +120,10 @@ def register_tools(mcp):
             await client.put(f"/labs/{lab_id}/links/{link_id}/capture/stop")
             return True
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error stopping packet capture on link %s in lab %s", link_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={"title": "Check Packet Capture Status on a Link", "readOnlyHint": True},
@@ -140,13 +141,13 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         try:
             status = await client.get(f"/labs/{lab_id}/links/{link_id}/capture/status")
-            # See DEVELOPMENT.md "Object-typed return values": dump after construction so FastMCP doesn't double-marshal.
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return PCAPStatusResponse(**status).model_dump(exclude_unset=True)
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error checking packet capture status on link %s in lab %s", link_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={"title": "Get packet capture overview", "readOnlyHint": True},
@@ -165,12 +166,13 @@ def register_tools(mcp):
         try:
             key = await get_capture_key(lab_id, link_id, client)
             packets = await client.get(f"/pcap/{key}/packets")
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return [PCAPItem(**packet).model_dump(exclude_unset=True) for packet in packets]
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting packet capture overview on link %s in lab %s", link_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={"title": "Get Full Packets from a Packet Capture", "readOnlyHint": True},
@@ -196,7 +198,7 @@ def register_tools(mcp):
             encoded_pcap = base64.b64encode(pcap_data).decode("utf-8")
             return encoded_pcap
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting packet capture data from link %s in lab %s", link_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e

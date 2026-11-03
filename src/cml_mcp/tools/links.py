@@ -30,6 +30,7 @@ import logging
 from typing import Annotated
 
 import httpx
+from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.common import UUID4Type
@@ -40,7 +41,7 @@ from cml_mcp.tools.model_helpers import build_payload, field_from
 logger = logging.getLogger("cml-mcp.tools.links")
 
 
-def register_tools(mcp):
+def register_tools(mcp: FastMCP) -> None:
     """Register all link-related tools with the FastMCP server."""
 
     # Source schema: LinkCreate (cml/simple_webserver/schemas/links.py)
@@ -76,10 +77,10 @@ def register_tools(mcp):
             resp = await client.post(f"/labs/{lab_id}/links", data=payload)
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error creating link between %s and %s", src_int, dst_int)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={
@@ -100,12 +101,13 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         try:
             resp = await client.get(f"/labs/{lab_id}/links", params={"data": True})
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return [LinkResponse(**link).model_dump(exclude_unset=True) for link in resp]
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting links for lab %s", lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     # Source schema: LinkConditionConfiguration (cml/simple_webserver/schemas/links.py)
     # Exposed: enabled, bandwidth, latency, delay_corr, limit, loss, loss_corr, gap, duplicate,
@@ -168,10 +170,10 @@ def register_tools(mcp):
             await client.patch(f"/labs/{lab_id}/links/{link_id}/condition", data=payload)
             return True
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error conditioning link %s in lab %s", link_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={
@@ -195,10 +197,10 @@ def register_tools(mcp):
             await client.put(f"/labs/{lab_id}/links/{link_id}/state/start")
             return True
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error starting CML link %s in lab %s", link_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={
@@ -222,7 +224,7 @@ def register_tools(mcp):
             await client.put(f"/labs/{lab_id}/links/{link_id}/state/stop")
             return True
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error stopping CML link %s in lab %s", link_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e

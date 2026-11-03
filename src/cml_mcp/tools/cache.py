@@ -24,12 +24,13 @@
 
 """Definitions for a cache for session management."""
 
+from __future__ import annotations
+
 import asyncio
 import logging
 import time
 from asyncio import Lock
 from dataclasses import dataclass, field
-from typing import Dict, Optional
 
 from cml_mcp.cml_client import CMLClient
 
@@ -52,11 +53,11 @@ class ThreadSafeCache:
     """Thread-safe cache with TTL support."""
 
     def __init__(self, ttl: int = 3600):
-        self._cache: Dict[str, CacheEntry] = {}
+        self._cache: dict[str, CacheEntry] = {}
         self._lock = Lock()
         self._ttl = ttl
 
-    async def get(self, key: str) -> Optional[CMLClient]:
+    async def get(self, key: str) -> CMLClient | None:
         """Retrieve value from cache if not expired."""
         expired_client = None
         async with self._lock:
@@ -72,13 +73,25 @@ class ThreadSafeCache:
             await expired_client.close()
         return None
 
-    async def set(self, key: str, value: CMLClient) -> None:
-        """Store value in cache with current timestamp, closing any displaced entry."""
+    async def set(self, key: str, value: CMLClient) -> CMLClient:
+        """Store value, or return the existing client if another request won the race.
+
+        Concurrent requests can both miss the same key and initialize a client.
+        Keep the first cached client and close the redundant new one, rather than
+        replacing and closing a client that another request may already be using.
+        """
         async with self._lock:
             old_entry = self._cache.get(key)
-            self._cache[key] = CacheEntry(value=value)
-        if old_entry and old_entry.value is not value:
-            await old_entry.value.close()
+            if old_entry and not old_entry.is_expired(self._ttl):
+                winner = old_entry.value
+                displaced = value if value is not winner else None
+            else:
+                self._cache[key] = CacheEntry(value=value)
+                winner = value
+                displaced = old_entry.value if old_entry and old_entry.value is not value else None
+        if displaced is not None:
+            await displaced.close()
+        return winner
 
     async def clear(self) -> None:
         """Clear all cache entries and close all sessions.

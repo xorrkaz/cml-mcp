@@ -34,11 +34,10 @@ from pathlib import Path
 from typing import Any, Sequence
 
 import yaml
-from fastmcp.exceptions import ToolError
+from fastmcp.exceptions import McpError, ToolError
 from fastmcp.server.dependencies import get_http_headers
 from fastmcp.server.middleware import Middleware, MiddlewareContext
 from fastmcp.tools.base import Tool
-from mcp.shared.exceptions import McpError
 from mcp.types import ErrorData
 from pydantic import AnyHttpUrl, TypeAdapter, ValidationError
 
@@ -368,7 +367,7 @@ class CustomHttpRequestMiddleware(Middleware):
                 logger.warning("Authentication failed: %s", e)
                 raise McpError(ErrorData(message=f"Unauthorized: {str(e)}", code=-31002))
 
-            await cml_client_cache.set(client_cache_key, request_client)
+            request_client = await cml_client_cache.set(client_cache_key, request_client)
 
         # Store the client in context variable for this request
         _request_client.set(request_client)

@@ -30,6 +30,7 @@ import logging
 from typing import Any
 
 import httpx
+from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 
 from cml_mcp.cml.simple_webserver.schemas.system import SystemHealth, SystemInformation, SystemStats
@@ -38,7 +39,7 @@ from cml_mcp.tools.dependencies import get_cml_client_dep
 logger = logging.getLogger("cml-mcp.tools.system")
 
 
-def register_tools(mcp):
+def register_tools(mcp: FastMCP) -> None:
     """Register all system-related tools with the FastMCP server."""
 
     @mcp.tool(
@@ -60,12 +61,13 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         try:
             info = await client.get("/system_information")
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return SystemInformation(**info).model_dump(exclude_unset=True)
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting CML information")
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={
@@ -85,12 +87,13 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         try:
             status = await client.get("/system_health")
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return SystemHealth(**status).model_dump(exclude_unset=True)
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting CML status")
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={
@@ -111,12 +114,13 @@ def register_tools(mcp):
         client = get_cml_client_dep()
         try:
             stats = await client.get("/system_stats")
+            # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
             return SystemStats(**stats).model_dump(exclude_unset=True)
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting CML statistics")
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={
@@ -141,7 +145,7 @@ def register_tools(mcp):
             # is notably affected whereas Claude Desktop is not.
             return dict(licensing_info)
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting CML licensing details")
-            raise ToolError(e)
+            raise ToolError(e) from e

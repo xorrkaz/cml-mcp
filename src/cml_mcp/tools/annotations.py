@@ -30,7 +30,7 @@ import logging
 from typing import Annotated, Literal
 
 import httpx
-from fastmcp import Context
+from fastmcp import Context, FastMCP
 from fastmcp.exceptions import ToolError
 from pydantic import BaseModel
 
@@ -82,7 +82,7 @@ def _normalize_border_style_fields(annotation: dict) -> dict:
     }
 
 
-def register_tools(mcp):
+def register_tools(mcp: FastMCP) -> None:
     """Register all annotation-related tools with the FastMCP server."""
 
     @mcp.tool(
@@ -113,14 +113,14 @@ def register_tools(mcp):
                 if model is None:
                     raise ToolError(f"Unknown annotation type: {ann_type!r}. " f"Expected one of {sorted(_ANNOTATION_RESPONSE_TYPES)}.")
                 annotation = _normalize_border_style_fields(annotation)
-                # See model_helpers.py / DEVELOPMENT.md: dump after construction to bypass FastMCP double marshalling.
+                # See DEVELOPMENT.md "Object-typed return values" for why this is a dict, not a model instance.
                 ann_list.append(model(**annotation).model_dump(exclude_unset=True))
             return ann_list
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error getting annotations for lab %s", lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     # Source schema: TextAnnotation (cml/simple_webserver/schemas/annotations.py)
     # Exposed: x1, y1, border_color, border_style, color, thickness, z_index, rotation,
@@ -190,10 +190,10 @@ def register_tools(mcp):
             resp = await client.post(f"/labs/{lab_id}/annotations", data=_wire_border_style(payload))
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error adding text annotation to lab %s", lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     # Source schema: RectangleAnnotation (cml/simple_webserver/schemas/annotations.py)
     # Exposed: x1, y1, x2, y2, border_color, border_style, color, thickness, z_index, rotation, border_radius
@@ -256,10 +256,10 @@ def register_tools(mcp):
             resp = await client.post(f"/labs/{lab_id}/annotations", data=_wire_border_style(payload))
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error adding rectangle annotation to lab %s", lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     # Source schema: EllipseAnnotation (cml/simple_webserver/schemas/annotations.py)
     # Exposed: x1, y1, x2, y2, border_color, border_style, color, thickness, z_index, rotation
@@ -320,10 +320,10 @@ def register_tools(mcp):
             resp = await client.post(f"/labs/{lab_id}/annotations", data=_wire_border_style(payload))
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error adding ellipse annotation to lab %s", lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     # Source schema: LineAnnotation (cml/simple_webserver/schemas/annotations.py)
     # Exposed: x1, y1, x2, y2, border_color, border_style, color, thickness, z_index, line_start, line_end
@@ -388,10 +388,10 @@ def register_tools(mcp):
             resp = await client.post(f"/labs/{lab_id}/annotations", data=_wire_border_style(payload))
             return UUID4Type(resp["id"])
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error adding line annotation to lab %s", lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
 
     @mcp.tool(
         annotations={
@@ -423,7 +423,7 @@ def register_tools(mcp):
             await client.delete(f"/labs/{lab_id}/annotations/{annotation_id}")
             return True
         except httpx.HTTPStatusError as e:
-            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}")
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
         except Exception as e:
             logger.exception("Error deleting annotation %s from lab %s", annotation_id, lab_id)
-            raise ToolError(e)
+            raise ToolError(e) from e
