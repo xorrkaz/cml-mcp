@@ -1,0 +1,11 @@
+{
+  "id": "77123eb8-589f-4dad-bf3c-d65ce178ebc7",
+  "interface_a": "fc95a732-374b-432e-a38c-6a7f85879ca3",
+  "interface_b": "c041676b-9369-40bb-8a88-e03693dffb7b",
+  "lab_id": "7564e31d-941a-4f2d-af5b-3eb212c3b84f",
+  "label": "ext-conn-0-port<->chrome-0-eth0",
+  "link_capture_key": "77123eb8-589f-4dad-bf3c-d65ce178ebc7",
+  "node_a": "b4270cbe-ff4a-403d-9205-f976b83ef91a",
+  "node_b": "8e181aea-cc67-4222-b1b3-2c18a4bf8755",
+  "state": "STARTED"
+}

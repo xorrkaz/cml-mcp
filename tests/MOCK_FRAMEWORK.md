@@ -57,7 +57,7 @@ The mock framework is implemented in `tests/conftest.py` and consists of:
 
 **Mock-Compatible Tests (14 pass in mock mode)**:
 
-- ✅ test_list_tools (asserts the registered tool count, currently 51)
+- ✅ test_list_tools (asserts the registered tool count, currently 54)
 - ✅ test_get_cml_labs
 - ✅ test_get_cml_users
 - ✅ test_get_cml_groups
@@ -139,6 +139,7 @@ The following mock data files are used:
 | `get_nodes_for_cml_lab.json`        | `/labs/{id}/nodes`                           | Nodes in a lab          |
 | `get_interfaces_for_node.json`      | `/labs/{id}/nodes/{nid}/interfaces`          | Node interfaces         |
 | `get_all_links_for_lab.json`        | `/labs/{id}/links`                           | Links in a lab          |
+| `get_link_details.json`             | `/labs/{id}/links/{lid}`                     | Single link details     |
 | `get_cml_lab_by_title.json`         | `/labs/{id}`                                 | Lab details             |
 | `get_cml_licensing_details.json`    | `/licensing`                                 | Licensing info          |
 | `get_annotations_for_cml_lab.json`  | `/labs/{id}/annotations`                     | Lab annotations         |

@@ -640,7 +640,7 @@ To configure ACLs, you'll need to know the exact tool names. Here are all availa
 
 **Node Management:** `get_cml_node_definitions`, `get_node_definition_detail`, `add_node_to_cml_lab`, `get_nodes_for_cml_lab`, `configure_cml_node`, `start_cml_node`, `stop_cml_node`, `wipe_cml_node`, `delete_cml_node`, `get_console_log`, `send_cli_command`, `send_cli_config_command`
 
-**Interface & Link Management:** `add_interface_to_node`, `get_interfaces_for_node`, `connect_two_nodes`, `get_all_links_for_lab`, `apply_link_conditioning`, `start_cml_link`, `stop_cml_link`
+**Interface & Link Management:** `add_interface_to_node`, `get_interfaces_for_node`, `connect_two_nodes`, `get_all_links_for_lab`, `apply_link_conditioning`, `start_cml_link`, `stop_cml_link`, `connect_cml_link`, `disconnect_cml_link`
 
 **Annotations:** `get_annotations_for_cml_lab`, `add_text_annotation`, `add_rectangle_annotation`, `add_ellipse_annotation`, `add_line_annotation`, `delete_annotation_from_lab`
 

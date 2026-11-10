@@ -43,7 +43,7 @@ Each module exposes a `register_tools(mcp)` function called from `server.py`.
 | `nodes.py` | get_nodes_for_cml_lab, add_node_to_cml_lab, configure_cml_node, start/stop/wipe/delete_cml_node |
 | `node_definitions.py` | get_cml_node_definitions, get_node_definition_detail |
 | `interfaces.py` | add_interface_to_node (returns a list — a single slot request may add multiple interfaces), get_interfaces_for_node |
-| `links.py` | connect_two_nodes, get_all_links_for_lab, apply_link_conditioning, start/stop_cml_link |
+| `links.py` | connect_two_nodes, get_all_links_for_lab, apply_link_conditioning, start/stop_cml_link, connect/disconnect_cml_link |
 | `annotations.py` | get_annotations_for_cml_lab, add_text_annotation, add_rectangle_annotation, add_ellipse_annotation, add_line_annotation, delete_annotation_from_lab |
 | `pcap.py` | start/stop_packet_capture, check_packet_capture_status, get_captured_packet_overview, get_packet_capture_data |
 | `users_groups.py` | get_cml_users/groups, create/delete_cml_user/group |

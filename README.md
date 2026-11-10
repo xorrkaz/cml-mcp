@@ -86,7 +86,7 @@ The easiest way to get started is using `uvx` with Claude Desktop (or other MCP-
 
 ## Available MCP Tools
 
-The server provides 52 MCP tools organized into the following categories:
+The server provides 54 MCP tools organized into the following categories:
 
 ### Lab Management
 
@@ -127,6 +127,8 @@ The server provides 52 MCP tools organized into the following categories:
 - **apply_link_conditioning** - Configure network conditions (bandwidth, latency, jitter, loss)
 - **start_cml_link** - Enable connectivity on a link
 - **stop_cml_link** - Disable connectivity on a link
+- **connect_cml_link** - Bring up both endpoint interfaces of a link (fixes a dark endpoint after linking to an already-running node)
+- **disconnect_cml_link** - Bring down both endpoint interfaces of a started link
 
 ### Annotations (Visual Elements)
 

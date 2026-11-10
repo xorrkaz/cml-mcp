@@ -135,6 +135,7 @@ Mock data is stored in `tests/mocks/` as JSON files. Each file corresponds to a 
 - `get_nodes_for_cml_lab.json` - Nodes in a lab
 - `get_interfaces_for_node.json` - Interfaces for a node
 - `get_all_links_for_lab.json` - Links in a lab
+- `get_link_details.json` - Single link details (used by connect/disconnect_cml_link)
 - `get_annotations_for_cml_lab.json` - Visual annotations in a lab
 - `get_cml_lab_by_title.json` - Lab details by title
 - `check_packet_capture_status.json` - Packet capture status
@@ -165,7 +166,7 @@ mv .inline-snapshot/external/<hash>.json tests/mocks/get_labs.json
 
 ### Mock-Compatible Tests (14 in mock mode)
 
-- `test_list_tools` - Verify available MCP tools (currently asserts 51)
+- `test_list_tools` - Verify available MCP tools (currently asserts 54)
 - `test_get_cml_labs` - List all labs
 - `test_get_cml_users` - List all users
 - `test_get_cml_groups` - List all groups

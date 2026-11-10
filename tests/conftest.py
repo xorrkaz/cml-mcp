@@ -132,6 +132,9 @@ class MockCMLClient:
             elif "/links/" in endpoint and "/capture/key" in endpoint:
                 # Return a mock capture key
                 return "3464b046-c8ab-4624-af57-4bfc66429139"
+            elif len(parts) == 5 and parts[3] == "links":
+                # /labs/{lab_id}/links/{link_id} - individual link details
+                return self._load_mock_file("get_link_details.json") or {}
             elif len(parts) == 3:
                 # /labs/{lab_id} - return individual lab details
                 # Load all labs and find the matching one

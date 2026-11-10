@@ -26,6 +26,7 @@ Usage:
   pytest -m live_only tests/test_cml_mcp.py
 """
 
+import json
 from pathlib import Path
 
 import pytest
@@ -71,7 +72,7 @@ def _to_model(obj, cls):
 async def test_list_tools(main_mcp_client: Client[FastMCPTransport]):
     list_tools = await main_mcp_client.list_tools()
 
-    assert len(list_tools) == snapshot(52)
+    assert len(list_tools) == snapshot(54)
 
 
 async def test_get_cml_labs(main_mcp_client: Client[FastMCPTransport], created_lab: UUID4Type):
@@ -396,6 +397,63 @@ async def test_packet_capture_operations(main_mcp_client: Client[FastMCPTranspor
         if item.protocol.lower() == "icmp":
             found_icmp = True
     assert found_icmp is True
+
+
+def _record_puts(monkeypatch) -> list[str]:
+    """Capture PUT endpoints issued by the mock CML client."""
+    from cml_mcp.tools import dependencies
+
+    calls: list[str] = []
+
+    async def fake_put(endpoint: str, data: dict | None = None):
+        calls.append(endpoint)
+
+    monkeypatch.setattr(dependencies.cml_client, "put", fake_put)
+    return calls
+
+
+def _mock_link_details() -> dict:
+    return json.loads((Path(__file__).parent / "mocks" / "get_link_details.json").read_text())
+
+
+@pytest.mark.mock_only
+@pytest.mark.parametrize("tool_name, action", [("connect_cml_link", "start"), ("disconnect_cml_link", "stop")])
+async def test_link_interface_state(main_mcp_client: Client[FastMCPTransport], monkeypatch, tool_name: str, action: str):
+    """connect/disconnect_cml_link must act on both endpoint interfaces, not on the link itself."""
+    link = _mock_link_details()
+    lab_id = link["lab_id"]
+    calls = _record_puts(monkeypatch)
+
+    result = await main_mcp_client.call_tool(name=tool_name, arguments={"lab_id": lab_id, "link_id": link["id"]})
+
+    assert result.data is True
+    assert calls == [
+        f"/labs/{lab_id}/interfaces/{link['interface_a']}/state/{action}",
+        f"/labs/{lab_id}/interfaces/{link['interface_b']}/state/{action}",
+    ]
+
+
+@pytest.mark.mock_only
+async def test_disconnect_cml_link_requires_started(main_mcp_client: Client[FastMCPTransport], monkeypatch):
+    from cml_mcp.tools import dependencies
+
+    link = _mock_link_details() | {"state": "STOPPED"}
+    calls = _record_puts(monkeypatch)
+
+    async def fake_get(endpoint: str, params: dict | None = None, is_binary: bool = False):
+        return link
+
+    monkeypatch.setattr(dependencies.cml_client, "get", fake_get)
+
+    result = await main_mcp_client.call_tool(
+        name="disconnect_cml_link",
+        arguments={"lab_id": link["lab_id"], "link_id": link["id"]},
+        raise_on_error=False,
+    )
+
+    assert result.is_error is True
+    assert "must be started" in result.content[0].text
+    assert calls == []
 
 
 @pytest.mark.live_only
@@ -826,6 +884,13 @@ async def test_connect_two_nodes(main_mcp_client: Client[FastMCPTransport], crea
         },
     )
     assert cond_result.data is True
+
+    for tool_name in ("disconnect_cml_link", "connect_cml_link"):
+        state_result = await main_mcp_client.call_tool(
+            name=tool_name,
+            arguments={"lab_id": lab_id, "link_id": _to_model(link_result.data[0], LinkResponse).id},
+        )
+        assert state_result.data is True
 
 
 @pytest.mark.live_only

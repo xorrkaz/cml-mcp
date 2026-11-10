@@ -7,6 +7,7 @@ Read when the task goes beyond building and configuring a lab.
 - `start_cml_lab(lab_id)` / `stop_cml_lab(lab_id)` — boot or power off every node in the lab.
 - `start_cml_node` / `stop_cml_node` — single node. `start_cml_node(..., wait_for_convergence=true)` blocks until stable; use it when a following step (CLI, capture) needs the node ready.
 - `start_cml_link` / `stop_cml_link` — enable/disable a single link. Stopping a link simulates a cable pull, useful for failover testing without deleting topology.
+- `connect_cml_link` / `disconnect_cml_link` — bring both endpoint **interfaces** of a link up or down. This is a different level from the link state: a link can report STARTED while one endpoint interface is still down. `disconnect_cml_link` requires the link to be STARTED.
 - Sequencing: seed startup configs on CREATED nodes (`configure_cml_node`) *before* starting, so devices come up configured. Only fall back to live `send_cli_config_command` (BOOTED state, node identified by label) for changes after boot.
 
 ## Packet capture

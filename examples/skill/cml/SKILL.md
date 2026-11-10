@@ -52,6 +52,8 @@ If `connect_two_nodes` fails, re-fetch interfaces on both nodes (the one you pic
 
 After connecting, optionally `get_all_links_for_lab` to confirm the topology matches intent before configuring or starting.
 
+**Linking to an already-running node:** when either endpoint node was already BOOTED/STARTED at the time `connect_two_nodes` ran, that node's endpoint interface can stay down even though the link reports STARTED. A node only brings up its connected interfaces when it starts, so the running node's new interface is never started. After cabling to a running node (and after the other node finishes booting), call `connect_cml_link(lab_id, link_id)` to bring up both endpoint interfaces. Do **not** cycle `stop_cml_link`/`start_cml_link` for this; those act on the link, not on the endpoint interfaces, and will not fix it.
+
 ## Layout: arrange for a human who will open the canvas
 
 Unless the user specifies coordinates, place nodes so a person opening the lab in the CML UI sees a readable diagram they can manipulate — not an overlapping pile. Set `x`/`y` on every node at creation time (range −15000..15000; keeping things near the origin is fine).
@@ -88,6 +90,7 @@ When the user just wants a working baseline, prefer seeding startup configs on C
 - `get_nodes_for_cml_lab` / `get_all_links_for_lab` to confirm structure and read node state.
 - After starting a node, `get_console_log(lab_id, node_id)` to watch boot progress; pass `console=1` for the second serial port on multi-console nodes (some container nodes).
 - `start_cml_node(..., wait_for_convergence=true)` when a later step depends on the node being stable.
+- A link that shows STARTED but has one side down/down (no ARP, interface admin-up) usually means that endpoint's interface was never started — typically because its node was already running when the link was added. Call `connect_cml_link` before troubleshooting routing or device config. If that does not fix it, stop and tell the user plainly which node and interface is dark, and that toggling that interface's "Running" switch in the CML UI's Link Statistics pane should restore it. Do not keep chasing routing or carrier theories.
 
 ## Destructive operations — confirm first
 
@@ -96,6 +99,7 @@ When the user just wants a working baseline, prefer seeding startup configs on C
 ## Gotchas
 
 - `connect_two_nodes` wants **interface UUIDs**, not node UUIDs. Always `get_interfaces_for_node` first.
+- Cabling to a running node can leave that endpoint's interface down while the link reads STARTED. Fix with `connect_cml_link`, not by cycling the link.
 - Applying config has two traps that differ by tool — node **state** (`configure_cml_node` needs CREATED, `send_cli_command`/`send_cli_config_command` need BOOTED) and node **identity** (`send_cli_command`/`send_cli_config_command` take the `label`; nearly everything else takes the UUID). See **Configuration** for the full rules.
 - Valid `node_definition` values are server-specific. Call `get_cml_node_definitions` (and `get_node_definition_detail` for interface counts/defaults) instead of assuming a device exists.
 - `add_node_to_cml_lab` auto-creates default interfaces; only `add_interface_to_node` when you've exhausted them.
@@ -106,7 +110,7 @@ When the user just wants a working baseline, prefer seeding startup configs on C
 - `references/node_selection_guidance.md` — which `node_definition` to prefer for a given role (routers, switches, hosts, firewalls, special nodes) and how to map loose requests ("a Nexus switch") to installed definitions. Read when picking node types or when the user names a device family rather than an exact definition.
 - `references/topology-schema.md` — the full `create_full_lab_topology` object shape. Read this only when calling `create_full_lab_topology` — either because the user supplied an already-structured topology object, or because the user explicitly demanded a single atomic import.
 - `references/annotations-and-layout.md` — coordinate recipes for common layouts (hub-spoke, spine-leaf, linear) and the argument shapes for text/shape/smart annotations and link conditioning. Read when laying out a non-trivial topology or adding visual grouping.
-- `references/operations.md` — lifecycle (start/stop lab), packet capture on links, link conditioning (latency/loss/jitter), and user/group/permission admin. Read when the task goes beyond building and configuring.
+- `references/operations.md` — lifecycle (start/stop lab, link and link-interface state), packet capture on links, link conditioning (latency/loss/jitter), and user/group/permission admin. Read when the task goes beyond building and configuring.
 
 ## Helper scripts
 

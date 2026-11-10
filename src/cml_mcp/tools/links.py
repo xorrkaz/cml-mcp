@@ -228,3 +228,64 @@ def register_tools(mcp: FastMCP) -> None:
         except Exception as e:
             logger.exception("Error stopping CML link %s in lab %s", link_id, lab_id)
             raise ToolError(e) from e
+
+    @mcp.tool(
+        annotations={
+            "title": "Connect a CML Link",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": True,
+        },
+    )
+    async def connect_cml_link(lab_id: UUID4Type, link_id: UUID4Type) -> bool:
+        """
+        Connect a link (bring up both ends of the link) by lab and link UUID.  This may be needed if a
+        link is added to a node that is already running to ensure both endpoint interfaces are running.
+
+        Examples:
+        - "Connect the link between R1 and R2"
+        - "Establish link xyz"
+        - "Bring up the WAN connection"
+        """
+        client = get_cml_client_dep()
+        try:
+            link_details = await client.get(f"/labs/{lab_id}/links/{link_id}")
+            for intf in (link_details["interface_a"], link_details["interface_b"]):
+                await client.put(f"/labs/{lab_id}/interfaces/{intf}/state/start")
+            return True
+        except httpx.HTTPStatusError as e:
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
+        except Exception as e:
+            logger.exception("Error connecting CML link %s in lab %s", link_id, lab_id)
+            raise ToolError(e) from e
+
+    @mcp.tool(
+        annotations={
+            "title": "Disconnect a CML Link",
+            "readOnlyHint": False,
+            "destructiveHint": False,
+            "idempotentHint": True,
+        },
+    )
+    async def disconnect_cml_link(lab_id: UUID4Type, link_id: UUID4Type) -> bool:
+        """
+        Disconnect a link (bring down both ends of the link) by lab and link UUID.
+
+        Examples:
+        - "Disconnect the link between R1 and R2"
+        - "Tear down link xyz"
+        - "Bring down the WAN connection"
+        """
+        client = get_cml_client_dep()
+        try:
+            link_details = await client.get(f"/labs/{lab_id}/links/{link_id}")
+            if link_details["state"] != "STARTED":
+                raise ToolError("Link must be started before it can be disconnected")
+            for intf in (link_details["interface_a"], link_details["interface_b"]):
+                await client.put(f"/labs/{lab_id}/interfaces/{intf}/state/stop")
+            return True
+        except httpx.HTTPStatusError as e:
+            raise ToolError(f"HTTP error {e.response.status_code}: {e.response.text}") from e
+        except Exception as e:
+            logger.exception("Error disconnecting CML link %s in lab %s", link_id, lab_id)
+            raise ToolError(e) from e
